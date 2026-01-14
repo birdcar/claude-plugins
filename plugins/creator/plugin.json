@@ -1,0 +1,6 @@
+{
+  "name": "creator",
+  "version": "0.1.0",
+  "description": "Meta-skill for generating new Claude Code skills from natural language",
+  "skills": ["./skills/"]
+}
