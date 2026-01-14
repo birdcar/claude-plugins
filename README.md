@@ -12,14 +12,17 @@ Personal Claude Code plugin marketplace.
 
 2. Install plugins:
    ```
-   /plugin install hello@birdcar
+   /plugin install essentials@birdcar
+   /plugin install creator@birdcar
    ```
 
 ## Available Plugins
 
-| Plugin | Description    | Skills |
-| ------ | -------------- | ------ |
-| hello  | Example plugin | /hello |
+| Plugin     | Description                          | Skills        |
+| ---------- | ------------------------------------ | ------------- |
+| essentials | Core Git workflow skills             | /commit, /pr  |
+| creator    | Generate new skills from description | /create-skill |
+| hello      | Example plugin                       | /hello        |
 
 ## Development
 

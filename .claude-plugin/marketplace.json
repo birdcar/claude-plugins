@@ -7,9 +7,21 @@
   "description": "Personal Claude Code plugin marketplace",
   "plugins": [
     {
+      "name": "creator",
+      "source": "./plugins/creator",
+      "description": "Meta-skill for generating new Claude Code skills from natural language",
+      "version": "0.1.0"
+    },
+    {
       "name": "hello",
       "source": "./plugins/hello",
-      "description": "Example hello world plugin",
+      "description": "Simple hello world example plugin demonstrating the skill structure",
+      "version": "0.1.0"
+    },
+    {
+      "name": "essentials",
+      "source": "./plugins/essentials",
+      "description": "Core Git workflow skills for commits and pull requests",
       "version": "0.1.0"
     }
   ]
