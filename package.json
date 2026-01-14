@@ -1,0 +1,19 @@
+{
+  "name": "claude-plugins",
+  "private": true,
+  "workspaces": [
+    "plugins/*"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "typecheck": "tsc --build --noEmit",
+    "clean": "rm -rf plugins/*/dist plugins/*/*.tsbuildinfo",
+    "sync": "bun scripts/sync.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "prettier": "^3.4.0"
+  }
+}
