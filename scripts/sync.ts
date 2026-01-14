@@ -45,7 +45,8 @@ async function discoverPlugins(pluginsDir: string): Promise<PluginEntry[]> {
     }
   }
 
-  return plugins;
+  // Sort alphabetically for deterministic output across platforms
+  return plugins.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function updateMarketplace(plugins: PluginEntry[]): Promise<void> {
