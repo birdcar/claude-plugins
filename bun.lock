@@ -8,13 +8,25 @@
         "typescript": "^5.7.0",
       },
     },
-    "plugins/hello": {
-      "name": "@birdcar/claude-plugin-hello",
+    "plugins/creator": {
+      "name": "@birdcar/claude-plugin-creator",
+      "version": "0.1.0",
+    },
+    "plugins/essentials": {
+      "name": "@birdcar/claude-plugin-essentials",
+      "version": "0.1.0",
+    },
+    "plugins/meta": {
+      "name": "@birdcar/claude-plugin-meta",
       "version": "0.1.0",
     },
   },
   "packages": {
-    "@birdcar/claude-plugin-hello": ["@birdcar/claude-plugin-hello@workspace:plugins/hello"],
+    "@birdcar/claude-plugin-creator": ["@birdcar/claude-plugin-creator@workspace:plugins/creator"],
+
+    "@birdcar/claude-plugin-essentials": ["@birdcar/claude-plugin-essentials@workspace:plugins/essentials"],
+
+    "@birdcar/claude-plugin-meta": ["@birdcar/claude-plugin-meta@workspace:plugins/meta"],
 
     "prettier": ["prettier@3.7.4", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-v6UNi1+3hSlVvv8fSaoUbggEM5VErKmmpGA7Pl3HF8V6uKY7rvClBOJlH6yNwQtfTueNkGVpOv/mtWL9L4bgRA=="],
 
