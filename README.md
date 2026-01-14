@@ -18,11 +18,11 @@ Personal Claude Code plugin marketplace.
 
 ## Available Plugins
 
-| Plugin     | Description                          | Skills        |
-| ---------- | ------------------------------------ | ------------- |
-| essentials | Core Git workflow skills             | /commit, /pr  |
-| creator    | Generate new skills from description | /create-skill |
-| hello      | Example plugin                       | /hello        |
+| Plugin     | Description                          | Skills                           |
+| ---------- | ------------------------------------ | -------------------------------- |
+| essentials | Core Git workflow skills             | /commit, /pr                     |
+| creator    | Generate new skills from description | /create-skill                    |
+| meta       | Self-improvement and analysis        | /analyze-plugins, /improve-skill |
 
 ## Development
 
