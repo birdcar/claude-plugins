@@ -13,15 +13,15 @@
       "version": "0.1.0"
     },
     {
-      "name": "meta",
-      "source": "./plugins/meta",
-      "description": "Self-improvement skills for analyzing and enhancing Claude Code plugins",
+      "name": "octoflow",
+      "source": "./plugins/octoflow",
+      "description": "Core Git workflow skills for commits and pull requests",
       "version": "0.1.0"
     },
     {
-      "name": "essentials",
-      "source": "./plugins/essentials",
-      "description": "Core Git workflow skills for commits and pull requests",
+      "name": "plugin-tools",
+      "source": "./plugins/plugin-tools",
+      "description": "Self-improvement skills for analyzing and enhancing Claude Code plugins",
       "version": "0.1.0"
     }
   ]

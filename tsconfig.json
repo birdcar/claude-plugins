@@ -1,8 +1,8 @@
 {
   "files": [],
   "references": [
-    { "path": "plugins/essentials" },
+    { "path": "plugins/octoflow" },
     { "path": "plugins/creator" },
-    { "path": "plugins/meta" }
+    { "path": "plugins/plugin-tools" }
   ]
 }

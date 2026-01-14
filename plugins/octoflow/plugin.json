@@ -1,5 +1,5 @@
 {
-  "name": "essentials",
+  "name": "octoflow",
   "version": "0.1.0",
   "description": "Core Git workflow skills for commits and pull requests",
   "skills": ["./skills/"]
