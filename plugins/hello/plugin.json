@@ -1,0 +1,13 @@
+{
+  "name": "hello",
+  "version": "0.1.0",
+  "description": "Simple hello world example plugin demonstrating the skill structure",
+  "skills": [
+    {
+      "name": "hello",
+      "type": "skill",
+      "description": "A friendly greeting command",
+      "instructions": "./skills/hello/INSTRUCTIONS.md"
+    }
+  ]
+}
