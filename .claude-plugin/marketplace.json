@@ -1,13 +1,16 @@
 {
   "name": "birdcar-plugins",
+  "owner": {
+    "name": "birdcar"
+  },
   "version": "0.1.0",
   "description": "Personal Claude Code plugin marketplace",
-  "author": "birdcar",
   "plugins": [
     {
       "name": "hello",
-      "path": "plugins/hello",
-      "description": "Example hello world plugin"
+      "source": "./plugins/hello",
+      "description": "Example hello world plugin",
+      "version": "0.1.0"
     }
   ]
 }
