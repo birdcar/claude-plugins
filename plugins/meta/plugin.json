@@ -1,0 +1,6 @@
+{
+  "name": "meta",
+  "version": "0.1.0",
+  "description": "Self-improvement skills for analyzing and enhancing Claude Code plugins",
+  "skills": ["./skills/"]
+}
