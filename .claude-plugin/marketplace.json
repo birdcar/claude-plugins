@@ -13,6 +13,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "dev-commands",
+      "source": "./plugins/dev-commands",
+      "description": "Slash commands for common development workflows",
+      "version": "0.1.0"
+    },
+    {
       "name": "octoflow",
       "source": "./plugins/octoflow",
       "description": "Core Git workflow skills for commits and pull requests",
