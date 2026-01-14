@@ -1,8 +1,8 @@
 {
   "files": [],
   "references": [
-    { "path": "plugins/hello" },
     { "path": "plugins/essentials" },
-    { "path": "plugins/creator" }
+    { "path": "plugins/creator" },
+    { "path": "plugins/meta" }
   ]
 }

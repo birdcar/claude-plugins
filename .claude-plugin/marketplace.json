@@ -13,9 +13,9 @@
       "version": "0.1.0"
     },
     {
-      "name": "hello",
-      "source": "./plugins/hello",
-      "description": "Simple hello world example plugin demonstrating the skill structure",
+      "name": "meta",
+      "source": "./plugins/meta",
+      "description": "Self-improvement skills for analyzing and enhancing Claude Code plugins",
       "version": "0.1.0"
     },
     {
