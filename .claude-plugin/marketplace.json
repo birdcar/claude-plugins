@@ -9,7 +9,7 @@
     {
       "name": "creator",
       "source": "./plugins/creator",
-      "description": "Meta-skill for generating new Claude Code skills from natural language",
+      "description": "Commands for generating new Claude Code components from natural language",
       "version": "0.1.0"
     },
     {
@@ -27,7 +27,7 @@
     {
       "name": "plugin-tools",
       "source": "./plugins/plugin-tools",
-      "description": "Self-improvement skills for analyzing and enhancing Claude Code plugins",
+      "description": "Commands for analyzing and enhancing Claude Code plugins",
       "version": "0.1.0"
     }
   ]
