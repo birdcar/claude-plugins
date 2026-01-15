@@ -1,10 +1,10 @@
-# PR Skill
+---
+name: pr
+description: Create a GitHub pull request with a structured description
+allowed-tools: [Bash, Read, Glob, Grep]
+---
 
 Create GitHub pull requests with structured descriptions.
-
-## Trigger
-
-Invoked via `/pr` or when user requests PR creation.
 
 ## Process
 
@@ -37,6 +37,21 @@ Invoked via `/pr` or when user requests PR creation.
 
 - Never create PR without user approval of the description
 - Always push branch before creating PR
-- Use HEREDOC syntax for PR body to preserve formatting
+- Use HEREDOC syntax for PR body to preserve formatting:
+
+```bash
+gh pr create --title "the pr title" --body "$(cat <<'EOF'
+## Summary
+- Change 1
+- Change 2
+
+## Test plan
+- [ ] Verify change 1
+- [ ] Verify change 2
+EOF
+)"
+```
+
 - Return the PR URL when complete so user can review
 - If `gh` CLI is not installed, inform user how to install it
+- If the base branch is not main/master, ask user which branch to target

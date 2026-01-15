@@ -9,6 +9,7 @@ Run the project's linter and optionally fix issues.
 ## Detection
 
 Check for linting tools:
+
 1. `package.json` - eslint, biome, prettier, oxlint
 2. `pyproject.toml` - ruff, black, flake8
 3. `Cargo.toml` - clippy
@@ -17,6 +18,7 @@ Check for linting tools:
 ## Execution
 
 Run the linter:
+
 - **ESLint**: `npx eslint . --fix`
 - **Biome**: `npx biome check --write`
 - **Prettier**: `npx prettier --write .`

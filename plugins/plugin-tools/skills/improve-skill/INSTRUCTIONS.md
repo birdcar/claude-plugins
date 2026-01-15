@@ -61,6 +61,26 @@ Invoked via `/improve-skill {skill-name}` with optional feedback or context.
 
 ## Improvement Categories
 
+### Component Type Assessment
+
+Before improving, verify the component is the right type:
+
+**Commands** (`commands/*.md`) - Use when:
+
+- User should invoke explicitly via `/command-name`
+- Needs to appear in autocomplete
+- Discrete, user-initiated action (commit, build, test, deploy)
+- Format: YAML frontmatter with `name`, `description`, `allowed-tools`
+
+**Skills** (`skills/*/INSTRUCTIONS.md`) - Use when:
+
+- Agent should trigger proactively based on context
+- No explicit user invocation needed
+- Background behavior or analysis
+- Format: Markdown with `## Trigger` and `when-to-use` description
+
+If a skill should be a command (user-invoked action), recommend converting it.
+
 ### Clarity Improvements
 
 - Ambiguous language made specific
@@ -81,7 +101,7 @@ Invoked via `/improve-skill {skill-name}` with optional feedback or context.
 
 ### Consistency Improvements
 
-- Alignment with other skills in the repo
+- Alignment with other components in the repo
 - Standardized formatting
 - Consistent terminology
 

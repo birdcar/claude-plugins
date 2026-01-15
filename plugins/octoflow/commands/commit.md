@@ -1,10 +1,10 @@
-# Commit Skill
+---
+name: commit
+description: Create a git commit with a well-crafted message
+allowed-tools: [Bash, Read, Glob, Grep]
+---
 
 Generate well-crafted commit messages and create Git commits following best practices.
-
-## Trigger
-
-Invoked via `/commit` or when user requests a commit.
 
 ## Process
 
@@ -105,27 +105,6 @@ feat!: Remove deprecated authentication method
 BREAKING CHANGE: The `legacyAuth()` function has been removed.
 Migrate to `newAuth()` before upgrading. See migration guide
 in docs/migration-v2.md.
-```
-
-## Merge Commits
-
-When committing a merge:
-
-```
-merge: Integrate feature-branch into main
-```
-
-## Revert Commits
-
-When reverting:
-
-```
-revert: Remove broken feature X
-
-This reverts commit abc123.
-
-The feature caused regression in Y. Will re-implement after
-fixing the underlying issue.
 ```
 
 ## Examples

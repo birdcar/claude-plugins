@@ -24,6 +24,7 @@ Execute checks in order, stopping on first failure:
 ## Output
 
 Summarize results:
+
 - Total checks run
 - Pass/fail status for each
 - First error details if any failed

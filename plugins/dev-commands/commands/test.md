@@ -9,6 +9,7 @@ Run the test suite for this project.
 ## Detection
 
 First, detect the test runner by checking:
+
 1. `package.json` for test scripts (npm test, vitest, jest, etc.)
 2. `pyproject.toml` or `pytest.ini` for pytest
 3. `Cargo.toml` for Rust tests
@@ -17,6 +18,7 @@ First, detect the test runner by checking:
 ## Execution
 
 Run the appropriate test command:
+
 - **Node/Bun**: `npm test` or `bun test` or `pnpm test`
 - **Python**: `pytest` or `python -m pytest`
 - **Rust**: `cargo test`

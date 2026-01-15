@@ -9,6 +9,7 @@ Install or update project dependencies.
 ## Detection
 
 Identify package manager:
+
 - `bun.lock` or `bun.lockb` -> bun
 - `pnpm-lock.yaml` -> pnpm
 - `package-lock.json` -> npm
@@ -22,6 +23,7 @@ Identify package manager:
 ## Execution
 
 If $ARGUMENTS contains "update" or "upgrade":
+
 - **bun**: `bun update`
 - **npm**: `npm update`
 - **pnpm**: `pnpm update`
@@ -30,6 +32,7 @@ If $ARGUMENTS contains "update" or "upgrade":
 - **go**: `go get -u ./...`
 
 Otherwise install:
+
 - **bun**: `bun install`
 - **npm**: `npm install`
 - **pnpm**: `pnpm install`
