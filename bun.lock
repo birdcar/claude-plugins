@@ -12,6 +12,10 @@
       "name": "@birdcar/claude-plugin-creator",
       "version": "0.1.0",
     },
+    "plugins/dev-commands": {
+      "name": "@birdcar/dev-commands",
+      "version": "0.1.0",
+    },
     "plugins/octoflow": {
       "name": "@birdcar/claude-plugin-octoflow",
       "version": "0.1.0",
@@ -28,7 +32,9 @@
 
     "@birdcar/claude-plugin-plugin-tools": ["@birdcar/claude-plugin-plugin-tools@workspace:plugins/plugin-tools"],
 
-    "prettier": ["prettier@3.7.4", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-v6UNi1+3hSlVvv8fSaoUbggEM5VErKmmpGA7Pl3HF8V6uKY7rvClBOJlH6yNwQtfTueNkGVpOv/mtWL9L4bgRA=="],
+    "@birdcar/dev-commands": ["@birdcar/dev-commands@workspace:plugins/dev-commands"],
+
+    "prettier": ["prettier@3.8.0", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-yEPsovQfpxYfgWNhCfECjG5AQaO+K3dp6XERmOepyPDVqcJm+bjyCVO3pmU+nAPe0N5dDvekfGezt/EIiRe1TA=="],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
   }
