@@ -1,36 +1,36 @@
-# Analyze Plugins
+---
+name: analyze-plugins
+description: Analyze plugin repository to identify improvements and suggest enhancements
+allowed-tools: [Bash, Read, Glob, Grep]
+---
 
 Analyze this plugin repository to identify improvements, discover patterns, and suggest enhancements.
-
-## Trigger
-
-Invoked via `/analyze-plugins` with an optional focus area.
 
 ## Process
 
 1. **Scan Repository Structure**
    - Read all plugin directories under `plugins/`
    - Parse each `plugin.json` for metadata
-   - Collect all skill INSTRUCTIONS.md files
+   - Collect all skill INSTRUCTIONS.md and command files
 
 2. **Analyze Plugin Quality**
    For each plugin, evaluate:
-   - Completeness: Does it have all required files? (package.json, tsconfig.json, plugin.json, skills/)
+   - Completeness: Does it have all required files? (package.json, tsconfig.json, plugin.json, commands/ or skills/)
    - Consistency: Do naming conventions match? (kebab-case everywhere)
-   - Documentation: Are INSTRUCTIONS.md files comprehensive?
-   - Structure: Does it follow the established patterns?
+   - Documentation: Are instructions comprehensive?
+   - Structure: Does it follow established patterns?
 
 3. **Identify Improvement Opportunities**
    Look for:
    - Missing or sparse documentation
    - Inconsistent patterns between plugins
-   - Skills that could be more robust
+   - Components that could be more robust
    - Common patterns that could be extracted
-   - Error handling gaps in skill instructions
+   - Error handling gaps in instructions
 
 4. **Check Against Best Practices**
-   Compare skills against:
-   - Clear trigger documentation
+   Compare components against:
+   - Clear trigger/description documentation
    - Step-by-step process instructions
    - Important rules section
    - Example usage
@@ -43,12 +43,16 @@ Invoked via `/analyze-plugins` with an optional focus area.
    - Specific improvement suggestions
    - Priority ranking of fixes
 
+## Arguments
+
+| Argument | Required | Description                                                                 |
+| -------- | -------- | --------------------------------------------------------------------------- |
+| focus    | No       | Focus area: `structure`, `documentation`, `consistency`, or `{plugin-name}` |
+
 ## Focus Areas
 
-When invoked with a focus area, narrow analysis to:
-
 - `/analyze-plugins structure` - Focus on directory and file organization
-- `/analyze-plugins documentation` - Focus on INSTRUCTIONS.md quality
+- `/analyze-plugins documentation` - Focus on instruction quality
 - `/analyze-plugins consistency` - Focus on pattern consistency across plugins
 - `/analyze-plugins {plugin-name}` - Deep dive into a specific plugin
 
@@ -60,6 +64,7 @@ When invoked with a focus area, narrow analysis to:
 ### Summary
 
 - Total plugins: N
+- Total commands: N
 - Total skills: N
 - Overall health: Good/Needs Attention/Critical
 
@@ -68,7 +73,7 @@ When invoked with a focus area, narrow analysis to:
 #### {plugin-name}
 
 - **Status**: Complete/Incomplete
-- **Skills**: skill1, skill2
+- **Components**: command1, command2, skill1
 - **Issues**:
   - Issue 1
   - Issue 2

@@ -1,17 +1,17 @@
-# Improve Skill
+---
+name: improve-skill
+description: Iteratively improve an existing skill or command based on feedback
+allowed-tools: [Bash, Read, Write, Edit, Glob, Grep]
+---
 
-Iteratively improve an existing skill based on feedback, corrections, or identified issues.
-
-## Trigger
-
-Invoked via `/improve-skill {skill-name}` with optional feedback or context.
+Iteratively improve an existing skill or command based on feedback, corrections, or identified issues.
 
 ## Process
 
-1. **Locate the Skill**
-   - Search `plugins/*/skills/` for the specified skill name
-   - Read the current INSTRUCTIONS.md
-   - Understand the skill's purpose and current implementation
+1. **Locate the Component**
+   - Search `plugins/*/commands/` and `plugins/*/skills/` for the specified name
+   - Read the current instruction file
+   - Understand its purpose and current implementation
 
 2. **Gather Context**
    If feedback is provided, analyze it. Otherwise, prompt for:
@@ -20,8 +20,8 @@ Invoked via `/improve-skill {skill-name}` with optional feedback or context.
    - Any specific scenarios that fail?
 
 3. **Analyze Current Instructions**
-   Evaluate the existing skill for:
-   - Clarity of trigger documentation
+   Evaluate the existing component for:
+   - Clarity of description/trigger documentation
    - Completeness of process steps
    - Coverage of edge cases
    - Robustness of rules
@@ -39,7 +39,7 @@ Invoked via `/improve-skill {skill-name}` with optional feedback or context.
    Show a diff-style view of proposed changes:
 
    ```
-   ## Proposed Changes to {skill-name}
+   ## Proposed Changes to {component-name}
 
    ### Addition: New Rule
    + - Handle edge case X by doing Y
@@ -50,18 +50,23 @@ Invoked via `/improve-skill {skill-name}` with optional feedback or context.
 
    ### Addition: Example
    + ## Example: Edge Case Handling
-   + User: `/skill-name --edge-case`
+   + User: `/component-name --edge-case`
    + Result: Handles it gracefully
    ```
 
 6. **Apply or Iterate**
-   - If user approves, apply the changes to INSTRUCTIONS.md
+   - If user approves, apply the changes
    - If user has more feedback, incorporate and re-propose
    - Track what was changed for potential rollback
 
-## Improvement Categories
+## Arguments
 
-### Component Type Assessment
+| Argument | Required | Description                             |
+| -------- | -------- | --------------------------------------- |
+| name     | Yes      | Name of the skill or command to improve |
+| feedback | No       | Specific feedback or issues to address  |
+
+## Component Type Assessment
 
 Before improving, verify the component is the right type:
 
@@ -77,9 +82,11 @@ Before improving, verify the component is the right type:
 - Agent should trigger proactively based on context
 - No explicit user invocation needed
 - Background behavior or analysis
-- Format: Markdown with `## Trigger` and `when-to-use` description
+- Format: Markdown with `## When to Use` description
 
 If a skill should be a command (user-invoked action), recommend converting it.
+
+## Improvement Categories
 
 ### Clarity Improvements
 
@@ -128,22 +135,12 @@ When committing a merge, use the format:
 For breaking changes, use:
 `feat!: description` or `fix!: description`
 Include a BREAKING CHANGE footer explaining the impact.
-
-### Commit Type Selection
-
-- `feat`: New functionality visible to users
-- `fix`: Bug fix for existing functionality
-- `docs`: Documentation only
-- `chore`: Maintenance (deps, configs)
-- `refactor`: Code change that doesn't alter behavior
-- `ci`: CI/CD changes
 ```
 
 ## Important Rules
 
 - Always show proposed changes before applying
-- Preserve the skill's original intent - don't change what it does, just how well it does it
-- Make incremental improvements - don't rewrite entire skills
+- Preserve the component's original intent - don't change what it does, just how well it does it
+- Make incremental improvements - don't rewrite entire components
 - Reference specific feedback when explaining changes
-- Keep backup of original in case rollback is needed
 - After applying changes, run `bun run typecheck` and `bun run build` to verify
