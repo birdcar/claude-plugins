@@ -1,5 +1,5 @@
 ---
-name: /test
+name: test
 description: Run the project's test suite
 allowed-tools: [Bash, Read, Glob]
 ---

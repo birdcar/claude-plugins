@@ -1,5 +1,5 @@
 ---
-name: /check
+name: check
 description: Run all checks (typecheck, lint, test)
 allowed-tools: [Bash, Read, Glob]
 ---

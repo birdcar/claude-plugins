@@ -1,5 +1,5 @@
 ---
-name: /deps
+name: deps
 description: Install or update project dependencies
 allowed-tools: [Bash, Read, Glob]
 ---

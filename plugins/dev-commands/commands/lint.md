@@ -1,5 +1,5 @@
 ---
-name: /lint
+name: lint
 description: Run linter and fix issues
 allowed-tools: [Bash, Read, Glob, Edit]
 ---

@@ -1,5 +1,5 @@
 ---
-name: /build
+name: build
 description: Build the project
 allowed-tools: [Bash, Read, Glob]
 ---
