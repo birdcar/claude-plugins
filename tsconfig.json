@@ -4,6 +4,7 @@
     { "path": "plugins/dev-commands" },
     { "path": "plugins/octoflow" },
     { "path": "plugins/creator" },
-    { "path": "plugins/plugin-tools" }
+    { "path": "plugins/plugin-tools" },
+    { "path": "plugins/github-actions-generator" }
   ]
 }

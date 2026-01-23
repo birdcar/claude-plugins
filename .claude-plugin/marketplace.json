@@ -19,6 +19,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "github-actions-generator",
+      "source": "./plugins/github-actions-generator",
+      "description": "Generate TypeScript GitHub Actions with Bun workspaces",
+      "version": "0.1.0"
+    },
+    {
       "name": "octoflow",
       "source": "./plugins/octoflow",
       "description": "Core Git workflow commands for commits and pull requests",
