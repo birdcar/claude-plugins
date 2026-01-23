@@ -1,0 +1,6 @@
+{
+  "name": "github-actions-generator",
+  "version": "0.1.0",
+  "description": "Generate TypeScript GitHub Actions with Bun workspaces",
+  "skills": ["./skills/"]
+}
