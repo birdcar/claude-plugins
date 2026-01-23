@@ -1,0 +1,10 @@
+pre-commit:
+  commands:
+    check-lockfile:
+      run: |
+        if bun install --dry-run 2>&1 | grep -q 'Saved lockfile'; then
+          echo "❌ Lockfile out of sync with workspace packages."
+          echo ""
+          echo "Run 'bun install' and commit the updated bun.lock"
+          exit 1
+        fi
