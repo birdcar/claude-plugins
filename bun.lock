@@ -16,6 +16,10 @@
       "name": "@birdcar/dev-commands",
       "version": "0.1.0",
     },
+    "plugins/github-actions-generator": {
+      "name": "@birdcar/github-actions-generator",
+      "version": "0.1.0",
+    },
     "plugins/octoflow": {
       "name": "@birdcar/claude-plugin-octoflow",
       "version": "0.1.0",
@@ -33,6 +37,8 @@
     "@birdcar/claude-plugin-plugin-tools": ["@birdcar/claude-plugin-plugin-tools@workspace:plugins/plugin-tools"],
 
     "@birdcar/dev-commands": ["@birdcar/dev-commands@workspace:plugins/dev-commands"],
+
+    "@birdcar/github-actions-generator": ["@birdcar/github-actions-generator@workspace:plugins/github-actions-generator"],
 
     "prettier": ["prettier@3.8.0", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-yEPsovQfpxYfgWNhCfECjG5AQaO+K3dp6XERmOepyPDVqcJm+bjyCVO3pmU+nAPe0N5dDvekfGezt/EIiRe1TA=="],
 
