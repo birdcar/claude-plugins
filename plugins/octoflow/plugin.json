@@ -2,5 +2,14 @@
   "name": "octoflow",
   "version": "0.1.0",
   "description": "Core Git workflow commands for commits and pull requests",
-  "commands": ["./commands/"]
+  "commands": ["./commands/"],
+  "hooks": [
+    {
+      "event": "PreToolUse",
+      "tools": ["Bash"],
+      "matcher": "git commit",
+      "type": "prompt",
+      "prompt": "./hooks/intercept-git-commit.md"
+    }
+  ]
 }
