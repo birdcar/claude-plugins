@@ -8,14 +8,65 @@ Generate well-crafted commit messages and create Git commits following best prac
 
 ## Process
 
-1. Run `git status` to check for staged changes
-2. If no staged changes, ask user what to stage or offer to stage all modified files
-3. Run `git diff --cached` to analyze staged changes
-4. Run `git log --oneline -10` to understand the repository's commit message style
-5. Generate a commit message following the rules below
-6. Present the message to user for approval or editing
-7. Execute the commit with the approved message
-8. Show the commit result
+1. Run `git status` to check for staged and unstaged changes
+2. Run `git diff` (unstaged) and `git diff --cached` (staged) to analyze ALL changes
+3. **Evaluate if changes should be split** into multiple logical commits (see Splitting Commits below)
+4. If splitting: guide user through staging and committing each logical unit separately
+5. Run `git log --oneline -10` to understand the repository's commit message style
+6. Generate a commit message following the rules below
+7. Present the message to user for approval or editing
+8. Execute the commit with the approved message
+9. Repeat for remaining logical units if splitting
+10. Show the final result
+
+## Splitting Commits
+
+**Every commit should represent ONE logical change.** Before committing, analyze whether changes should be split.
+
+### When to Split
+
+Split changes into separate commits when you see:
+
+- **Multiple unrelated fixes** - Bug fix in auth AND bug fix in payments = 2 commits
+- **Feature + refactor** - New feature AND cleanup of existing code = 2 commits
+- **Multiple files for different purposes** - Config change AND code change = likely 2 commits
+- **Distinct logical steps** - Add migration, then add model, then add API = 3 commits
+
+### Chronological Ordering
+
+Commits should follow the logical order of development:
+
+1. **Infrastructure first** - Dependencies, config, migrations
+2. **Core changes second** - Models, business logic, services
+3. **Surface changes last** - UI, API endpoints, tests for new behavior
+4. **Cleanup at the end** - Refactors, removals, formatting (if any)
+
+### How to Split
+
+1. Use `git add -p` or `git add <specific-files>` to stage only related changes
+2. Commit that logical unit with a focused message
+3. Stage the next logical unit
+4. Repeat until all changes are committed
+
+### Examples
+
+**Bad**: One commit with message "Update auth and fix payment bug and add tests"
+
+**Good**: Three commits:
+
+```
+fix(payments): Handle null amount in refund calculation
+feat(auth): Add session timeout configuration
+test(auth): Add tests for session timeout behavior
+```
+
+### When NOT to Split
+
+Keep changes together when:
+
+- They are tightly coupled (changing a function signature + all its callers)
+- One change doesn't make sense without the other
+- Splitting would leave the codebase in a broken intermediate state
 
 ## The Seven Rules of Great Commits
 
@@ -149,7 +200,7 @@ WIP                              # Meaningless
 - Never add a Co-Authored-By line unless the user explicitly requests it
 - Warn user if staging files that look like secrets (.env, credentials, tokens, keys, \*.pem, id_rsa)
 - Match the existing commit style in the repository when possible
-- For multi-file changes, consider whether they should be separate commits
+- For multi-file changes, follow the Splitting Commits section to create logical, focused commits
 - If the diff is large, summarize the key changes in the body
 
 ## Edge Cases
@@ -170,7 +221,7 @@ Never create empty commits unless explicitly requested for CI triggers.
 
 ### Large Changesets
 
-If staging many files, ask user if changes should be split into multiple focused commits.
+If there are many changed files, follow the Splitting Commits section above to break them into logical units.
 
 ### Generated Files
 
