@@ -29,6 +29,10 @@
       "name": "@birdcar/claude-plugin-plugin-tools",
       "version": "0.1.0",
     },
+    "plugins/repo-structure": {
+      "name": "@birdcar/claude-plugin-repo-structure",
+      "version": "0.1.0",
+    },
   },
   "packages": {
     "@birdcar/claude-plugin-creator": ["@birdcar/claude-plugin-creator@workspace:plugins/creator"],
@@ -36,6 +40,8 @@
     "@birdcar/claude-plugin-octoflow": ["@birdcar/claude-plugin-octoflow@workspace:plugins/octoflow"],
 
     "@birdcar/claude-plugin-plugin-tools": ["@birdcar/claude-plugin-plugin-tools@workspace:plugins/plugin-tools"],
+
+    "@birdcar/claude-plugin-repo-structure": ["@birdcar/claude-plugin-repo-structure@workspace:plugins/repo-structure"],
 
     "@birdcar/dev-commands": ["@birdcar/dev-commands@workspace:plugins/dev-commands"],
 
