@@ -1,0 +1,63 @@
+{
+  "name": "repo-structure",
+  "version": "0.1.0",
+  "description": "Enforces ~/Code/ORG/REPO directory convention for cloned repos and new projects",
+  "hooks": [
+    {
+      "event": "PreToolUse",
+      "tools": ["Bash"],
+      "matcher": "git clone",
+      "type": "prompt",
+      "prompt": "./hooks/intercept-git-clone.md"
+    },
+    {
+      "event": "PreToolUse",
+      "tools": ["Bash"],
+      "matcher": "gh repo clone",
+      "type": "prompt",
+      "prompt": "./hooks/intercept-git-clone.md"
+    },
+    {
+      "event": "PreToolUse",
+      "tools": ["Bash"],
+      "matcher": "bun init",
+      "type": "prompt",
+      "prompt": "./hooks/intercept-scaffolding.md"
+    },
+    {
+      "event": "PreToolUse",
+      "tools": ["Bash"],
+      "matcher": "npm init",
+      "type": "prompt",
+      "prompt": "./hooks/intercept-scaffolding.md"
+    },
+    {
+      "event": "PreToolUse",
+      "tools": ["Bash"],
+      "matcher": "pnpm init",
+      "type": "prompt",
+      "prompt": "./hooks/intercept-scaffolding.md"
+    },
+    {
+      "event": "PreToolUse",
+      "tools": ["Bash"],
+      "matcher": "uv init",
+      "type": "prompt",
+      "prompt": "./hooks/intercept-scaffolding.md"
+    },
+    {
+      "event": "PreToolUse",
+      "tools": ["Bash"],
+      "matcher": "cargo init",
+      "type": "prompt",
+      "prompt": "./hooks/intercept-scaffolding.md"
+    },
+    {
+      "event": "PreToolUse",
+      "tools": ["Bash"],
+      "matcher": "cargo new",
+      "type": "prompt",
+      "prompt": "./hooks/intercept-scaffolding.md"
+    }
+  ]
+}

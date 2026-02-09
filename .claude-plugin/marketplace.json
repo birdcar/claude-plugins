@@ -35,6 +35,12 @@
       "source": "./plugins/plugin-tools",
       "description": "Commands for analyzing and enhancing Claude Code plugins",
       "version": "0.1.0"
+    },
+    {
+      "name": "repo-structure",
+      "source": "./plugins/repo-structure",
+      "description": "Enforces ~/Code/ORG/REPO directory convention for cloned repos and new projects",
+      "version": "0.1.0"
     }
   ]
 }
