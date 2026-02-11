@@ -8,8 +8,8 @@
       "event": "PreToolUse",
       "tools": ["Bash"],
       "matcher": "git commit",
-      "type": "prompt",
-      "prompt": "./hooks/intercept-git-commit.md"
+      "type": "command",
+      "command": "echo '{\"decision\": \"block\", \"reason\": \"Use /commit instead of raw git commit\"}'"
     }
   ]
 }
