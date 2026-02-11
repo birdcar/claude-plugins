@@ -26,6 +26,6 @@ If a suitable existing plugin already exists, it will offer to add the component
 
 ## Components
 
-| Component      | Type    | Description                                    |
-| -------------- | ------- | ---------------------------------------------- |
+| Component       | Type    | Description                                                 |
+| --------------- | ------- | ----------------------------------------------------------- |
 | `/create-skill` | Command | Scaffold a new plugin or add a component to an existing one |

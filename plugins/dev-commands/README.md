@@ -8,13 +8,13 @@ Every project uses different build tools, test runners, and linters. Instead of 
 
 ## Usage
 
-| Command  | Description                                  |
-| -------- | -------------------------------------------- |
-| `/build` | Build the project using the detected build system |
+| Command  | Description                                                             |
+| -------- | ----------------------------------------------------------------------- |
+| `/build` | Build the project using the detected build system                       |
 | `/check` | Run all checks in order: typecheck, lint, test (stops on first failure) |
-| `/deps`  | Install dependencies (`/deps`) or update them (`/deps update`) |
-| `/lint`  | Run the project's linter with auto-fix       |
-| `/test`  | Run the test suite (supports filtering: `/test auth`) |
+| `/deps`  | Install dependencies (`/deps`) or update them (`/deps update`)          |
+| `/lint`  | Run the project's linter with auto-fix                                  |
+| `/test`  | Run the test suite (supports filtering: `/test auth`)                   |
 
 ## Detection
 

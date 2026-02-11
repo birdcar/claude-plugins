@@ -8,10 +8,10 @@ As your plugin collection grows, it's easy for quality to drift — inconsistent
 
 ## Usage
 
-| Command             | Description                                           |
-| ------------------- | ----------------------------------------------------- |
-| `/analyze-plugins`  | Read-only audit of plugin quality, structure, and consistency |
-| `/improve-skill`    | Iteratively improve an existing skill or command       |
+| Command            | Description                                                   |
+| ------------------ | ------------------------------------------------------------- |
+| `/analyze-plugins` | Read-only audit of plugin quality, structure, and consistency |
+| `/improve-skill`   | Iteratively improve an existing skill or command              |
 
 ### `/analyze-plugins`
 

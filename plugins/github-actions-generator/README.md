@@ -19,9 +19,9 @@ The skill activates when you want to create or implement a GitHub Action. It wal
 
 ## Components
 
-| Component          | Type  | Description                                       |
-| ------------------ | ----- | ------------------------------------------------- |
-| `generate-action`  | Skill | Full lifecycle GitHub Action generation and implementation |
+| Component         | Type  | Description                                                |
+| ----------------- | ----- | ---------------------------------------------------------- |
+| `generate-action` | Skill | Full lifecycle GitHub Action generation and implementation |
 
 ## Conventions
 

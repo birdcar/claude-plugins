@@ -10,11 +10,11 @@ The hook ensures this workflow is always used — even when Claude tries to run 
 
 ## Usage
 
-| Component             | Type    | Description                                              |
-| --------------------- | ------- | -------------------------------------------------------- |
-| `/commit`             | Command | Analyze changes, split into logical commits, generate proper messages |
-| `/pr`                 | Command | Create GitHub PRs with structured summary and test plan  |
-| `intercept-git-commit` | Hook   | Blocks raw `git commit` and redirects to `/commit`       |
+| Component              | Type    | Description                                                           |
+| ---------------------- | ------- | --------------------------------------------------------------------- |
+| `/commit`              | Command | Analyze changes, split into logical commits, generate proper messages |
+| `/pr`                  | Command | Create GitHub PRs with structured summary and test plan               |
+| `intercept-git-commit` | Hook    | Blocks raw `git commit` and redirects to `/commit`                    |
 
 ### `/commit`
 
