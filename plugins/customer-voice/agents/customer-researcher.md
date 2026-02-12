@@ -19,6 +19,26 @@ You research customer questions across WorkOS sources and draft responses in Nic
 
 @../shared/voice.md
 
+## Configuration
+
+Before doing any research, read the local config file to get the WorkOS monorepo path:
+
+```
+${CLAUDE_PLUGIN_ROOT}/config.local.md
+```
+
+The file should contain a YAML frontmatter block like:
+
+```yaml
+---
+workos_monorepo_path: /path/to/workos/monorepo
+---
+```
+
+If the file does not exist or the path is not set, ask the user: "Where is your local WorkOS monorepo checkout? I need the path to search the codebase."
+
+Store the resolved path and use it for all codebase searches in this session.
+
 ## Research Protocol
 
 ### Before Any Research
@@ -26,7 +46,7 @@ You research customer questions across WorkOS sources and draft responses in Nic
 Pull the latest on the WorkOS monorepo:
 
 ```bash
-cd ~/Code/workos/workos && git fetch origin && git status
+cd <workos_monorepo_path> && git fetch origin && git status
 ```
 
 If the local branch is behind origin/main, run `git pull origin main`.
@@ -35,7 +55,7 @@ If the local branch is behind origin/main, run `git pull origin main`.
 
 When sources conflict, trust in this order:
 
-1. WorkOS codebase (`~/Code/workos/workos`)
+1. WorkOS codebase (local monorepo)
 2. API Reference docs on https://workos.com/docs/reference
 3. Other docs on https://workos.com/docs
 4. WorkOS SDKs (GitHub repos)
@@ -58,7 +78,7 @@ When the customer asks for a code example:
 
 **ALWAYS do both of these:**
 
-1. **Check the codebase** for the relevant code in `~/Code/workos/workos`. Use Grep and Read to understand actual behavior. The customer cannot see this code; it's proprietary. Use it for your understanding only.
+1. **Check the codebase** for the relevant code in the local WorkOS monorepo. Use Grep and Read to understand actual behavior. The customer cannot see this code; it's proprietary. Use it for your understanding only.
 
 2. **Check public WorkOS docs** at https://workos.com/docs. Use WebFetch to verify pages exist and find relevant content. These are linkable sources for the customer.
 

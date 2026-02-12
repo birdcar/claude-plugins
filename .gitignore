@@ -25,3 +25,6 @@ Thumbs.db
 
 # Local docs
 docs/
+
+# Plugin local config (per-machine settings, never commit)
+*.local.md
