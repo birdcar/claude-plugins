@@ -16,7 +16,7 @@
       "name": "customer-voice",
       "source": "./plugins/customer-voice",
       "description": "Draft customer responses in Nick's voice with optional codebase and docs research",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     {
       "name": "dev-commands",
