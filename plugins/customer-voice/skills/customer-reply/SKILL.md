@@ -36,22 +36,25 @@ These rules are non-negotiable. They apply to every draft:
 **NEVER do these**:
 
 - Em-dashes. Zero. None. Use semicolons, parentheses, or restructure.
-- "I hope this helps" / "Let me know if you have any questions" / "Happy to help" or similar closers
+- Corporate closers: "I hope this helps", "Let me know if you have any questions", "Happy to help." Brief warm closers are fine ("Great chatting!", "We can dig into it when you're closer").
 - "Great question!" or performative enthusiasm
 - "I think" / "I believe" when stating facts
 - Business-speak: "synergy", "leverage", "circle back", "loop in", "align on"
 - Restating what the customer said back to them
 - Over-explaining things the customer clearly already understands
+- Tutorial-style writing. Nick writes messages, not docs pages. If it reads like a feature walkthrough, rewrite it as a conversation.
+- Filler phrases: "Clean and simple", "Here's the pattern", "The recommended approach is"
 - Fabricating URLs
 
 **DO these**:
 
 - Get to the point; don't pad with filler
+- Lean on shared context. If this follows a call or prior thread, reference it naturally ("the approach we talked about", "the action suggestion made to you") instead of re-explaining. The customer was there.
 - Use humor when the moment calls for it (it's load-bearing, not decoration)
 - Cross-reference other threads when relevant
 - Say "no dice" when something isn't possible; don't soften it
 - Use `code formatting` for technical terms, endpoints, function names
-- Stop when you're done. No closers.
+- Write like one side of a conversation, not a tutorial. Assume the reader has context.
 
 ## Workflow
 
@@ -108,11 +111,12 @@ If Nick requests changes, apply them and re-present. Iterate until approved.
 
 ### Phase 5: Deliver
 
-After approval, copy the response to the clipboard using:
+After approval, copy the response to the clipboard:
 
-```bash
-echo '<response>' | pbcopy
-```
+1. Write the response to a temp file using the Write tool
+2. Run `pbcopy < /tmp/slack-reply.txt` via Bash
+
+Do NOT pipe echo into pbcopy; it's unreliable. Always write to a file first, then redirect into pbcopy.
 
 ## Important
 

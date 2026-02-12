@@ -1,6 +1,6 @@
 {
   "name": "customer-voice",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Draft customer responses in Nick's voice with optional codebase and docs research",
   "commands": ["./commands/"],
   "agents": ["./agents/customer-researcher.md"]
