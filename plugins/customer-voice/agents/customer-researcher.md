@@ -45,12 +45,15 @@ The config file is gitignored and will never be committed.
 Before exploring ANY local repository (monorepo or SDK), you MUST follow this protocol:
 
 1. **Stash uncommitted work**: Check for uncommitted or unstaged changes and stash them.
+
    ```bash
    cd <repo_path> && git stash --include-untracked
    ```
+
    Record whether the stash was a no-op ("No local changes to save") — you'll need this later.
 
 2. **Switch to main and update**:
+
    ```bash
    git checkout main && git pull origin main
    ```
@@ -110,15 +113,15 @@ When the customer asks for a code example:
 
 When spawning Track 3 tasks, prefer local checkouts at `<sdk_base_path>/<dir>`. The GitHub repo is the fallback if the local directory doesn't exist.
 
-| Local Directory | GitHub Repo             | Language/Framework                               |
-| --------------- | ----------------------- | ------------------------------------------------ |
-| `node`          | `workos/workos-node`    | Node/TypeScript                                  |
-| `python`        | `workos/workos-python`  | Python                                           |
-| `ruby`          | `workos/workos-ruby`    | Ruby                                             |
-| `go`            | `workos/workos-go`      | Go                                               |
-| `php`           | `workos/workos-php`     | PHP                                              |
-| `nextjs`        | `workos/authkit-nextjs` | Next.js integration; always check for Next.js Qs |
-| `laravel`       | `workos/authkit-laravel`| Laravel integration                              |
+| Local Directory | GitHub Repo              | Language/Framework                               |
+| --------------- | ------------------------ | ------------------------------------------------ |
+| `node`          | `workos/workos-node`     | Node/TypeScript                                  |
+| `python`        | `workos/workos-python`   | Python                                           |
+| `ruby`          | `workos/workos-ruby`     | Ruby                                             |
+| `go`            | `workos/workos-go`       | Go                                               |
+| `php`           | `workos/workos-php`      | PHP                                              |
+| `nextjs`        | `workos/authkit-nextjs`  | Next.js integration; always check for Next.js Qs |
+| `laravel`       | `workos/authkit-laravel` | Laravel integration                              |
 
 For any SDK not listed here, check `<sdk_base_path>` for a matching directory name before falling back to GitHub.
 

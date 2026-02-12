@@ -22,7 +22,7 @@ claude-plugins/
 │       ├── plugin.json     # Skills/agents definition
 │       └── skills/
 │           └── {skill}/
-│               └── INSTRUCTIONS.md
+│               └── SKILL.md
 ├── scripts/
 │   └── sync.ts             # Plugin discovery
 └── .github/workflows/
@@ -51,7 +51,7 @@ claude-plugins/
 ## Adding a Plugin
 
 1. Create `plugins/{name}/` with package.json, tsconfig.json, plugin.json
-2. Add skills in `skills/{skill-name}/INSTRUCTIONS.md`
+2. Add skills in `skills/{skill-name}/SKILL.md`
 3. Add reference to root `tsconfig.json`
 4. Run `bun run sync`
 

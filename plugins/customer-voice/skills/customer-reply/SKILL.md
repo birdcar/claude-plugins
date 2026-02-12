@@ -1,5 +1,6 @@
 ---
-description: Research and draft a customer response in Nick's voice using Slack mrkdwn. Use when replying to customers, teammates, or developer success threads.
+name: customer-reply
+description: This skill should be used when the user asks to "reply to a customer", "draft a customer response", "respond to this customer message", "write a reply for this thread", or mentions customer support, developer success, or customer communication tasks. Researches the codebase and docs, then drafts a response in Nick's voice using Slack mrkdwn.
 ---
 
 # Customer Reply
