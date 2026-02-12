@@ -30,7 +30,11 @@ Research and draft a response to a customer or teammate in Nick's voice.
    - Are there any "business-y" phrases? Remove them.
    - Are there unnecessary closers ("let me know if you have questions")? Remove them.
    - Is anything restated that the customer already said clearly? Remove it.
+   - Are you explaining something the customer already understands? Cut it. Address their actual concern, not background they already have.
+   - Are the customer's distinct points quoted with `>` and addressed inline? If not, restructure.
+   - Is `_italic_` used for emphasis instead of `*bold*`?
    - Are all links verified by the research agent? Remove any unverified links.
+   - Could the response be shorter without losing information? If so, shorten it.
 
 6. Present the draft to Nick for review.
 
