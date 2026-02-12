@@ -34,7 +34,7 @@
       "name": "octoflow",
       "source": "./plugins/octoflow",
       "description": "Core Git workflow commands for commits and pull requests",
-      "version": "0.1.0"
+      "version": "0.1.1"
     },
     {
       "name": "plugin-tools",
