@@ -21,23 +21,25 @@ You research customer questions across WorkOS sources and draft responses in Nic
 
 ## Configuration
 
-Before doing any research, read the local config file to get the WorkOS monorepo path:
+Before doing any research, you MUST resolve the WorkOS monorepo path. Follow these steps in order:
 
-```
-${CLAUDE_PLUGIN_ROOT}/config.local.md
-```
+1. Try to read the config file at `${CLAUDE_PLUGIN_ROOT}/config.local.md`. If it exists and contains a `workos_monorepo_path` value in the YAML frontmatter, use that path.
 
-The file should contain a YAML frontmatter block like:
+2. If the config file does not exist or has no path, ask the user: "Where is your local WorkOS monorepo checkout? I need the absolute path to search the codebase."
 
-```yaml
----
-workos_monorepo_path: /path/to/workos/monorepo
----
-```
+3. After the user provides the path, save it for future sessions by writing the config file using Bash:
 
-If the file does not exist or the path is not set, ask the user: "Where is your local WorkOS monorepo checkout? I need the path to search the codebase."
+   ```bash
+   cat > "${CLAUDE_PLUGIN_ROOT}/config.local.md" << 'CONFIG'
+   ---
+   workos_monorepo_path: <the path the user provided>
+   ---
+   CONFIG
+   ```
 
-Store the resolved path and use it for all codebase searches in this session.
+4. Confirm to the user: "Saved. I'll remember this path for future sessions."
+
+The config file is gitignored and will never be committed.
 
 ## Research Protocol
 

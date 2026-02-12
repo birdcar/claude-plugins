@@ -54,15 +54,15 @@ bun run bootstrap  # Set up local config for plugins that need it
 
 Some plugins require per-machine configuration (e.g., local filesystem paths) that shouldn't be committed to a public repo. These are stored in `*.local.md` files which are gitignored.
 
-After cloning or installing, run the bootstrap script to set up local config:
+Plugins that need local config will **automatically prompt on first use** and save the values for future sessions. No manual setup required.
+
+To set up all plugins at once (or to reconfigure), you can optionally run:
 
 ```bash
 bun run bootstrap
 ```
 
-The script will interactively prompt for any required values and write the appropriate `config.local.md` files. If a plugin's config file already exists, current values are shown as defaults.
-
-Plugins that require local config:
+Plugins that use local config:
 
 | Plugin         | Config File     | Values                 |
 | -------------- | --------------- | ---------------------- |
