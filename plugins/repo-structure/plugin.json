@@ -8,56 +8,56 @@
       "tools": ["Bash"],
       "matcher": "git clone",
       "type": "prompt",
-      "prompt": "./hooks/intercept-git-clone.md"
+      "prompt": "You are intercepting a `git clone` command. Validate the target directory.\n\nAll GitHub repos MUST be cloned to `~/Code/{ORG}/{REPO}` where {ORG} is the GitHub org/user and {REPO} is the repo name.\n\nParse the URL:\n- HTTPS: `https://github.com/{ORG}/{REPO}[.git]`\n- SSH: `git@github.com:{ORG}/{REPO}[.git]`\nStrip any trailing `.git`. If NOT a GitHub URL, ALLOW the command.\n\nCheck the target directory (last arg after URL, or CWD if none). The correct target is `~/Code/{ORG}/{REPO}`.\n\nExceptions (ALLOW without modification):\n- `~/Code/workos/sdk/*`\n- `~/Code/workos/demo`\n- `~/Code/_*/` (underscore directories)\n\nIf target matches `~/Code/{ORG}/{REPO}` → ALLOW.\nIf target is wrong or unspecified → BLOCK and re-execute as:\n`mkdir -p ~/Code/{ORG} && git clone {ORIGINAL_URL} ~/Code/{ORG}/{REPO}`\nPreserve any flags from the original command (e.g., `--depth 1`, `--branch main`)."
     },
     {
       "event": "PreToolUse",
       "tools": ["Bash"],
       "matcher": "gh repo clone",
       "type": "prompt",
-      "prompt": "./hooks/intercept-git-clone.md"
+      "prompt": "You are intercepting a `gh repo clone` command. Validate the target directory.\n\nAll GitHub repos MUST be cloned to `~/Code/{ORG}/{REPO}` where {ORG} is the GitHub org/user and {REPO} is the repo name.\n\nParse the command: `gh repo clone {ORG}/{REPO} [target]`\n\nCheck the target directory (arg after ORG/REPO, or CWD if none). The correct target is `~/Code/{ORG}/{REPO}`.\n\nExceptions (ALLOW without modification):\n- `~/Code/workos/sdk/*`\n- `~/Code/workos/demo`\n- `~/Code/_*/` (underscore directories)\n\nIf target matches `~/Code/{ORG}/{REPO}` → ALLOW.\nIf target is wrong or unspecified → BLOCK and re-execute as:\n`mkdir -p ~/Code/{ORG} && gh repo clone {ORG}/{REPO} ~/Code/{ORG}/{REPO}`\nPreserve any flags from the original command."
     },
     {
       "event": "PreToolUse",
       "tools": ["Bash"],
       "matcher": "bun init",
       "type": "prompt",
-      "prompt": "./hooks/intercept-scaffolding.md"
+      "prompt": "You are intercepting a `bun init` command. Validate the target directory.\n\nNew projects MUST be created under `~/Code/{OWNER}/{PROJECT_NAME}`. Default owner is `birdcar` unless the user specified a different org.\n\nDetermine the target: if a path arg is given, that's the target. Otherwise, CWD is the target.\n\nALLOW if the target matches any of:\n- `~/Code/{any-owner}/{any-project}` or subdirectory thereof\n- `~/Code/_*/` (underscore directories)\n- `~/Code/workos/sdk/*`\n\nIf invalid → BLOCK and re-execute as:\n`mkdir -p ~/Code/birdcar/{PROJECT_NAME} && cd ~/Code/birdcar/{PROJECT_NAME} && bun init`\nInfer PROJECT_NAME from the directory name argument, conversation context, or current directory name. Use the user's specified org if mentioned."
     },
     {
       "event": "PreToolUse",
       "tools": ["Bash"],
       "matcher": "npm init",
       "type": "prompt",
-      "prompt": "./hooks/intercept-scaffolding.md"
+      "prompt": "You are intercepting an `npm init` command. Validate the target directory.\n\nNew projects MUST be created under `~/Code/{OWNER}/{PROJECT_NAME}`. Default owner is `birdcar` unless the user specified a different org.\n\nDetermine the target: if a path arg is given, that's the target. Otherwise, CWD is the target.\n\nALLOW if the target matches any of:\n- `~/Code/{any-owner}/{any-project}` or subdirectory thereof\n- `~/Code/_*/` (underscore directories)\n- `~/Code/workos/sdk/*`\n\nIf invalid → BLOCK and re-execute as:\n`mkdir -p ~/Code/birdcar/{PROJECT_NAME} && cd ~/Code/birdcar/{PROJECT_NAME} && npm init`\nInfer PROJECT_NAME from the directory name argument, conversation context, or current directory name. Use the user's specified org if mentioned."
     },
     {
       "event": "PreToolUse",
       "tools": ["Bash"],
       "matcher": "pnpm init",
       "type": "prompt",
-      "prompt": "./hooks/intercept-scaffolding.md"
+      "prompt": "You are intercepting a `pnpm init` command. Validate the target directory.\n\nNew projects MUST be created under `~/Code/{OWNER}/{PROJECT_NAME}`. Default owner is `birdcar` unless the user specified a different org.\n\nDetermine the target: if a path arg is given, that's the target. Otherwise, CWD is the target.\n\nALLOW if the target matches any of:\n- `~/Code/{any-owner}/{any-project}` or subdirectory thereof\n- `~/Code/_*/` (underscore directories)\n- `~/Code/workos/sdk/*`\n\nIf invalid → BLOCK and re-execute as:\n`mkdir -p ~/Code/birdcar/{PROJECT_NAME} && cd ~/Code/birdcar/{PROJECT_NAME} && pnpm init`\nInfer PROJECT_NAME from the directory name argument, conversation context, or current directory name. Use the user's specified org if mentioned."
     },
     {
       "event": "PreToolUse",
       "tools": ["Bash"],
       "matcher": "uv init",
       "type": "prompt",
-      "prompt": "./hooks/intercept-scaffolding.md"
+      "prompt": "You are intercepting a `uv init` command. Validate the target directory.\n\nNew projects MUST be created under `~/Code/{OWNER}/{PROJECT_NAME}`. Default owner is `birdcar` unless the user specified a different org.\n\nDetermine the target: if a path arg is given, that's the target. Otherwise, CWD is the target.\n\nALLOW if the target matches any of:\n- `~/Code/{any-owner}/{any-project}` or subdirectory thereof\n- `~/Code/_*/` (underscore directories)\n- `~/Code/workos/sdk/*`\n\nIf invalid → BLOCK and re-execute as:\n`mkdir -p ~/Code/birdcar/{PROJECT_NAME} && cd ~/Code/birdcar/{PROJECT_NAME} && uv init`\nInfer PROJECT_NAME from the directory name argument, conversation context, or current directory name. Use the user's specified org if mentioned."
     },
     {
       "event": "PreToolUse",
       "tools": ["Bash"],
       "matcher": "cargo init",
       "type": "prompt",
-      "prompt": "./hooks/intercept-scaffolding.md"
+      "prompt": "You are intercepting a `cargo init` command. Validate the target directory.\n\nNew projects MUST be created under `~/Code/{OWNER}/{PROJECT_NAME}`. Default owner is `birdcar` unless the user specified a different org.\n\nDetermine the target: if a path arg is given, that's the target. Otherwise, CWD is the target.\n\nALLOW if the target matches any of:\n- `~/Code/{any-owner}/{any-project}` or subdirectory thereof\n- `~/Code/_*/` (underscore directories)\n- `~/Code/workos/sdk/*`\n\nIf invalid → BLOCK and re-execute as:\n`mkdir -p ~/Code/birdcar/{PROJECT_NAME} && cd ~/Code/birdcar/{PROJECT_NAME} && cargo init`\nInfer PROJECT_NAME from the directory name argument, conversation context, or current directory name. Use the user's specified org if mentioned."
     },
     {
       "event": "PreToolUse",
       "tools": ["Bash"],
       "matcher": "cargo new",
       "type": "prompt",
-      "prompt": "./hooks/intercept-scaffolding.md"
+      "prompt": "You are intercepting a `cargo new` command. Validate the target directory.\n\nNew projects MUST be created under `~/Code/{OWNER}/{PROJECT_NAME}`. Default owner is `birdcar` unless the user specified a different org.\n\nFor `cargo new <name>`, the name argument becomes a subdirectory of CWD. The target is `{CWD}/{name}`.\n\nALLOW if the target matches any of:\n- `~/Code/{any-owner}/{any-project}` or subdirectory thereof\n- `~/Code/_*/` (underscore directories)\n- `~/Code/workos/sdk/*`\n\nIf invalid → BLOCK and re-execute as:\n`mkdir -p ~/Code/birdcar && cargo new ~/Code/birdcar/{PROJECT_NAME}`\nInfer PROJECT_NAME from the name argument. Use the user's specified org if mentioned."
     }
   ]
 }
