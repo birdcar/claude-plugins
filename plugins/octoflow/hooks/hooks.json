@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'input=$(cat); cmd=$(echo \"$input\" | jq -r \".tool_input.command // empty\"); if echo \"$cmd\" | grep -qE \"^git commit|&& git commit|; git commit\"; then echo \"{\\\"decision\\\": \\\"block\\\", \\\"reason\\\": \\\"Use /commit instead of raw git commit\\\"}\" >&2; exit 2; fi'"
+            "command": "bash -c 'input=$(cat); cmd=$(echo \"$input\" | jq -r \".tool_input.command // empty\"); if echo \"$cmd\" | grep -qE \"^git commit|&& git commit|; git commit\"; then if echo \"$cmd\" | grep -qE \"\\-m .*(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\(|:|!)\"; then exit 0; fi; echo \"{\\\"decision\\\": \\\"block\\\", \\\"reason\\\": \\\"Use /commit instead of raw git commit\\\"}\" >&2; exit 2; fi'"
           }
         ]
       }
