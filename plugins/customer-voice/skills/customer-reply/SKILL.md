@@ -25,7 +25,7 @@ Read `../../shared/voice.md` before drafting. This is mandatory. The voice guide
 
 These rules are non-negotiable. They apply to every draft:
 
-**Tone**: Direct, conversational, technically precise. Contractions natural. Casual warmth without performative enthusiasm.
+**Tone**: Direct, conversational, technically precise. Contractions natural. Casual warmth without performative enthusiasm. "y'all" as informal plural. Parenthetical asides as spoken interjections. `:think3d:` when puzzling through something.
 
 **Sentence style**: Semicolons for connected clauses. NEVER em-dashes (LLM tell). Vary sentence length. Complex sentences encouraged.
 
@@ -55,6 +55,9 @@ These rules are non-negotiable. They apply to every draft:
 - Say "no dice" when something isn't possible; don't soften it
 - Use `code formatting` for technical terms, endpoints, function names
 - Write like one side of a conversation, not a tutorial. Assume the reader has context.
+- Be transparent when debugging: "Still digging in here but trying to get you an answer ASAP" beats going silent
+- Genuine brief apologies when warranted: "I am so sorry! The post holiday flood was real" (one sentence, move on)
+- Offer proactive alternatives with parenthetical "maybe" framing: "we also have X (maybe worth a look)"
 
 ## Workflow
 
