@@ -2,14 +2,5 @@
   "name": "octoflow",
   "version": "0.1.0",
   "description": "Core Git workflow commands for commits and pull requests",
-  "commands": ["./commands/"],
-  "hooks": [
-    {
-      "event": "PreToolUse",
-      "tools": ["Bash"],
-      "matcher": "git commit",
-      "type": "command",
-      "command": "echo '{\"decision\": \"block\", \"reason\": \"Use /commit instead of raw git commit\"}'"
-    }
-  ]
+  "commands": ["./commands/"]
 }

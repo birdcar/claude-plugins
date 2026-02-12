@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are validating a Bash command for directory convention compliance.\n\nFirst, check if the command matches any of these patterns. If it does NOT match any, ALLOW immediately:\n- `git clone`\n- `gh repo clone`\n- `bun init`, `npm init`, `pnpm init`, `uv init`, `cargo init`, `cargo new`\n\n## Clone Commands (git clone, gh repo clone)\n\nAll GitHub repos MUST be cloned to `~/Code/{ORG}/{REPO}`.\n\nParse the URL/identifier:\n- HTTPS: `https://github.com/{ORG}/{REPO}[.git]`\n- SSH: `git@github.com:{ORG}/{REPO}[.git]`\n- gh shorthand: `{ORG}/{REPO}`\nStrip any trailing `.git`. If NOT a GitHub URL, ALLOW.\n\nCheck the target directory (explicit path arg, or CWD if none). Correct target: `~/Code/{ORG}/{REPO}`.\n\nExceptions (ALLOW without modification):\n- `~/Code/workos/sdk/*`\n- `~/Code/workos/demo`\n- `~/Code/_*/` (underscore directories)\n\nIf target matches `~/Code/{ORG}/{REPO}` → ALLOW.\nIf wrong or unspecified → BLOCK and provide corrected command:\n- git clone: `mkdir -p ~/Code/{ORG} && git clone {ORIGINAL_URL} ~/Code/{ORG}/{REPO}` (preserve flags)\n- gh repo clone: `mkdir -p ~/Code/{ORG} && gh repo clone {ORG}/{REPO} ~/Code/{ORG}/{REPO}` (preserve flags)\n\n## Init Commands (bun/npm/pnpm/uv init, cargo init/new)\n\nNew projects MUST be created under `~/Code/{OWNER}/{PROJECT_NAME}`. Default owner: `birdcar`.\n\nDetermine target: path arg if given, otherwise CWD. For `cargo new <name>`, target is `{CWD}/{name}`.\n\nALLOW if target matches:\n- `~/Code/{any-owner}/{any-project}` or subdirectory thereof\n- `~/Code/_*/` (underscore directories)\n- `~/Code/workos/sdk/*`\n\nIf invalid → BLOCK and provide corrected command:\n`mkdir -p ~/Code/{OWNER}/{PROJECT_NAME} && cd ~/Code/{OWNER}/{PROJECT_NAME} && {ORIGINAL_COMMAND}`\nFor `cargo new`: `mkdir -p ~/Code/{OWNER} && cargo new ~/Code/{OWNER}/{PROJECT_NAME}`\nInfer PROJECT_NAME from args or context. Use user's specified org if mentioned."
+          }
+        ]
+      }
+    ]
+  }
+}
