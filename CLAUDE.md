@@ -57,6 +57,16 @@ claude-plugins/
 
 Or use: `/create-skill <description>`
 
+## Versioning & Plugin Updates
+
+When making functional changes to a plugin (skills, agents, commands, hooks), **bump the version** in that plugin's `plugin.json`. Without a version bump, `claude plugin update` won't detect changes — the marketplace cache compares versions, not commit SHAs.
+
+- **Patch** (0.1.0 → 0.1.1): Bug fixes, hook tweaks, formatting
+- **Minor** (0.1.0 → 0.2.0): New features, skill restructuring, behavior changes
+- **Major**: Reserved for breaking changes
+
+After bumping, run `bun run sync` (updates marketplace.json), commit both files, and push. Users must also `git pull` their local marketplace cache at `~/.claude/plugins/marketplaces/birdcar-plugins/` before `claude plugin update` will see the new version — or uninstall/reinstall the plugin.
+
 ## CI Requirements
 
 Before merge, CI checks:
