@@ -13,6 +13,10 @@
       "name": "@birdcar/claude-plugin-creator",
       "version": "0.1.0",
     },
+    "plugins/customer-voice": {
+      "name": "@birdcar/claude-plugin-customer-voice",
+      "version": "0.1.0",
+    },
     "plugins/dev-commands": {
       "name": "@birdcar/dev-commands",
       "version": "0.1.0",
@@ -36,6 +40,8 @@
   },
   "packages": {
     "@birdcar/claude-plugin-creator": ["@birdcar/claude-plugin-creator@workspace:plugins/creator"],
+
+    "@birdcar/claude-plugin-customer-voice": ["@birdcar/claude-plugin-customer-voice@workspace:plugins/customer-voice"],
 
     "@birdcar/claude-plugin-octoflow": ["@birdcar/claude-plugin-octoflow@workspace:plugins/octoflow"],
 
