@@ -11,7 +11,8 @@
     "clean": "rm -rf plugins/*/dist plugins/*/*.tsbuildinfo",
     "sync": "bun scripts/sync.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "bootstrap": "bun scripts/bootstrap.ts"
   },
   "devDependencies": {
     "lefthook": "^1.10.10",
