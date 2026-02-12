@@ -13,6 +13,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "customer-voice",
+      "source": "./plugins/customer-voice",
+      "description": "Draft customer responses in Nick's voice with optional codebase and docs research",
+      "version": "0.1.0"
+    },
+    {
       "name": "dev-commands",
       "source": "./plugins/dev-commands",
       "description": "Slash commands for common development workflows",
