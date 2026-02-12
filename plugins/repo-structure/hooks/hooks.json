@@ -7,10 +7,6 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-clone.sh"
-          },
-          {
-            "type": "prompt",
-            "prompt": "You are validating a Bash command for directory convention compliance.\n\nIf the command is NOT one of these, ALLOW immediately:\n- `bun init`, `npm init`, `pnpm init`, `uv init`, `cargo init`, `cargo new`\n\nAlso ALLOW immediately if the command is `git clone` or `gh repo clone` (these are handled separately).\n\n## Init Commands\n\nNew projects MUST be created under `~/Code/{OWNER}/{PROJECT_NAME}`. Default owner: `birdcar`.\n\nDetermine target: path arg if given, otherwise CWD. For `cargo new <name>`, target is `{CWD}/{name}`.\n\nALLOW if target matches:\n- `~/Code/{any-owner}/{any-project}` or subdirectory thereof\n- `~/Code/_*/` (underscore directories)\n- `~/Code/workos/sdk/*`\n- `~/Code/workos/demos/*`\n\nIf invalid → BLOCK and provide corrected command:\n`mkdir -p ~/Code/{OWNER}/{PROJECT_NAME} && cd ~/Code/{OWNER}/{PROJECT_NAME} && {ORIGINAL_COMMAND}`\nFor `cargo new`: `mkdir -p ~/Code/{OWNER} && cargo new ~/Code/{OWNER}/{PROJECT_NAME}`\nInfer PROJECT_NAME from args or context. Use user's specified org if mentioned."
           }
         ]
       }
