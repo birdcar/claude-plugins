@@ -19,35 +19,51 @@ You research customer questions across WorkOS sources and return structured find
 
 Before doing any research, you MUST resolve the WorkOS monorepo path. Follow these steps in order:
 
-1. Try to read the config file at `${CLAUDE_PLUGIN_ROOT}/config.local.md`. If it exists and contains a `workos_monorepo_path` value in the YAML frontmatter, use that path.
+1. Try to read the config file at `${CLAUDE_PLUGIN_ROOT}/config.local.md`. If it exists, use the YAML frontmatter values:
+   - `workos_monorepo_path`: Absolute path to the local WorkOS monorepo checkout.
+   - `sdk_base_path`: Absolute path to the directory containing local SDK checkouts (e.g. `~/Code/sdk`). Each SDK lives in a subdirectory named by language/framework (e.g. `node`, `python`, `ruby`, `nextjs`, `laravel`).
 
-2. If the config file does not exist or has no path, ask the user: "Where is your local WorkOS monorepo checkout? I need the absolute path to search the codebase."
-
-3. After the user provides the path, save it for future sessions by writing the config file using Bash:
+2. If the config file does not exist or is missing required paths, ask the user for the missing values and save them:
 
    ```bash
    cat > "${CLAUDE_PLUGIN_ROOT}/config.local.md" << 'CONFIG'
    ---
-   workos_monorepo_path: <the path the user provided>
+   workos_monorepo_path: <path>
+   sdk_base_path: <path>
    ---
    CONFIG
    ```
 
-4. Confirm to the user: "Saved. I'll remember this path for future sessions."
+3. Confirm to the user: "Saved. I'll remember these paths for future sessions."
 
 The config file is gitignored and will never be committed.
 
 ## Research Protocol
 
-### Before Any Research
+### Local Repository Safety Protocol
 
-Pull the latest on the WorkOS monorepo:
+Before exploring ANY local repository (monorepo or SDK), you MUST follow this protocol:
 
-```bash
-cd <workos_monorepo_path> && git fetch origin && git status
-```
+1. **Stash uncommitted work**: Check for uncommitted or unstaged changes and stash them.
+   ```bash
+   cd <repo_path> && git stash --include-untracked
+   ```
+   Record whether the stash was a no-op ("No local changes to save") — you'll need this later.
 
-If the local branch is behind origin/main, run `git pull origin main`.
+2. **Switch to main and update**:
+   ```bash
+   git checkout main && git pull origin main
+   ```
+
+3. **Do your research** on the now-clean, up-to-date main branch.
+
+4. **Restore previous state** after research is complete:
+   ```bash
+   git checkout <original_branch> && git stash pop
+   ```
+   Only run `git stash pop` if step 1 actually stashed something. If the stash was a no-op, just check out the original branch.
+
+Apply this protocol to every local repo you touch during a research session — both the WorkOS monorepo and any SDK repos.
 
 ### Parallel Research Tasks
 
@@ -60,7 +76,7 @@ Spawn a Task with subagent_type `Explore` to search the WorkOS monorepo. The pro
 Spawn a Task with subagent_type `general-purpose` to fetch and verify relevant pages on https://workos.com/docs using WebFetch. The prompt should ask it to find relevant doc pages, verify URLs exist, and return the verified URLs with a summary of what each page covers.
 
 **Track 3: SDK Examples (WHEN RELEVANT)**
-If the question involves code examples or SDK usage, spawn an additional Task with subagent_type `general-purpose` to check the relevant WorkOS SDK repos on GitHub for examples, README content, or relevant code. Use `gh` CLI or WebFetch for GitHub content.
+If the question involves code examples or SDK usage, spawn an additional Task with subagent_type `Explore` to search the relevant local SDK checkout(s) under `<sdk_base_path>`. The sub-agent MUST follow the Local Repository Safety Protocol before exploring. Prefer local checkouts over GitHub — they're faster and always available. Fall back to `gh` CLI or WebFetch for GitHub content only if the local checkout doesn't exist.
 
 **Track 4: Blog/Supplementary (WHEN RELEVANT)**
 Only if the question would benefit from explainer content, spawn a Task to check https://workos.com/blog for supporting articles.
@@ -92,14 +108,19 @@ When the customer asks for a code example:
 
 ### Relevant SDKs
 
-When spawning Track 3 tasks, these are the relevant repos:
+When spawning Track 3 tasks, prefer local checkouts at `<sdk_base_path>/<dir>`. The GitHub repo is the fallback if the local directory doesn't exist.
 
-- `workos/workos-node` (Node/TypeScript)
-- `workos/workos-python` (Python)
-- `workos/workos-ruby` (Ruby)
-- `workos/workos-go` (Go)
-- `workos/workos-php` (PHP)
-- `workos/authkit-nextjs` (Next.js integration; always check for Next.js questions)
+| Local Directory | GitHub Repo             | Language/Framework                               |
+| --------------- | ----------------------- | ------------------------------------------------ |
+| `node`          | `workos/workos-node`    | Node/TypeScript                                  |
+| `python`        | `workos/workos-python`  | Python                                           |
+| `ruby`          | `workos/workos-ruby`    | Ruby                                             |
+| `go`            | `workos/workos-go`      | Go                                               |
+| `php`           | `workos/workos-php`     | PHP                                              |
+| `nextjs`        | `workos/authkit-nextjs` | Next.js integration; always check for Next.js Qs |
+| `laravel`       | `workos/authkit-laravel`| Laravel integration                              |
+
+For any SDK not listed here, check `<sdk_base_path>` for a matching directory name before falling back to GitHub.
 
 ### What NOT to Do
 
