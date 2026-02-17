@@ -46,6 +46,7 @@ These rules are non-negotiable. They apply to every draft:
 - Filler phrases: "Clean and simple", "Here's the pattern", "The recommended approach is"
 - Fabricating URLs
 - Presenting unsupported paths as viable options. If Nick has been steering toward the supported approach in the thread, close the door on the wrong path; don't frame it as "an option with tradeoffs."
+- Dumping research findings the customer didn't ask about. If they asked about the UI, don't explain the backend. Answer the question they asked, not the question you researched.
 
 **DO these**:
 
@@ -66,6 +67,8 @@ These rules are non-negotiable. They apply to every draft:
 ### Phase 1: Intake
 
 Read the customer's message carefully. **Read the full thread, not just the latest message.** Identify the trajectory of the conversation: what direction has Nick been steering toward? What paths has he already closed off or discouraged? The draft must reinforce that trajectory, not reopen options Nick has already ruled out.
+
+**Check for delays.** Look at the timestamps. If more than 1 business day has passed between the customer's last message and the reply being drafted, ask Nick whether there's a reason to acknowledge the gap (US holiday, weekend, travel, etc.). A brief acknowledgment ("Sorry for the delay; we were out for the US holiday") is important and easy to miss.
 
 Then identify each distinct question or point the customer is making, in order.
 
@@ -100,7 +103,7 @@ Using the research findings, draft the response. Apply these rules during drafti
 
 3. **Match Nick's sentence style**: Semicolons connecting related clauses. No em-dashes. Varied sentence lengths. Complex subordinate clauses are fine.
 
-4. **Brevity over thoroughness**: If they're 90% right, say so and correct the 10%. If the answer is one sentence, the response is one sentence. Let them ask follow-ups.
+4. **Brevity over thoroughness**: If they're 90% right, say so and correct the 10%. If the answer is one sentence, the response is one sentence. Let them ask follow-ups. When a draft is too long, cut the explanations the customer already has context for; don't compress them.
 
 5. **Technical precision**: Use correct terminology. `code format` technical terms. Only include links the research agent verified.
 
