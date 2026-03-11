@@ -1,0 +1,7 @@
+{
+  "name": "github-profile",
+  "version": "0.1.0",
+  "description": "Generate stunning GitHub Profile READMEs with dynamic content, GitHub Actions workflows, and SVG assets",
+  "commands": ["./commands/"],
+  "agents": ["./agents/profile-researcher.md", "./agents/profile-generator.md"]
+}

@@ -8,6 +8,7 @@
     { "path": "plugins/github-actions-generator" },
     { "path": "plugins/repo-structure" },
     { "path": "plugins/customer-voice" },
-    { "path": "plugins/skill-forge" }
+    { "path": "plugins/skill-forge" },
+    { "path": "plugins/github-profile" }
   ]
 }

@@ -31,6 +31,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "github-profile",
+      "source": "./plugins/github-profile",
+      "description": "Generate stunning GitHub Profile READMEs with dynamic content, GitHub Actions workflows, and SVG assets",
+      "version": "0.1.0"
+    },
+    {
       "name": "octoflow",
       "source": "./plugins/octoflow",
       "description": "Core Git workflow commands for commits and pull requests",
