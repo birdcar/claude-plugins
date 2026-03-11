@@ -28,3 +28,6 @@ docs/
 
 # Plugin local config (per-machine settings, never commit)
 *.local.md
+
+# Internal state tracked by customer-voice plugin
+plugins/customer-researcher/
