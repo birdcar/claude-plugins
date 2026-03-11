@@ -1,37 +1,69 @@
-# Claude Plugins
+# claude-plugins
 
-Personal Claude Code plugin marketplace.
+A personal Claude Code plugin marketplace. These are the plugins I've built to make Claude Code fit how I actually work — git workflows, customer communication, plugin scaffolding, and enforcing conventions I care about.
 
-## Installation
+The repo is a Bun workspace monorepo where each `plugins/` subdirectory is a self-contained plugin. A sync script generates the `marketplace.json` that Claude Code reads to install plugins.
 
-1. Register marketplace:
+## Using These Plugins
 
-   ```
-   /plugin marketplace add birdcar/claude-plugins
-   ```
+Register the marketplace, then install whatever you want:
 
-2. Install plugins:
-   ```
-   /plugin install essentials@birdcar
-   /plugin install creator@birdcar
-   ```
+```bash
+/plugin marketplace add birdcar/claude-plugins
+/plugin install octoflow@birdcar
+/plugin install dev-commands@birdcar
+```
+
+To update after I've pushed changes:
+
+```bash
+/plugin marketplace update birdcar-plugins
+/plugin update octoflow
+```
 
 ## Available Plugins
 
-| Plugin     | Description                          | Skills                           |
-| ---------- | ------------------------------------ | -------------------------------- |
-| essentials | Core Git workflow skills             | /commit, /pr                     |
-| creator    | Generate new skills from description | /create-skill                    |
-| meta       | Self-improvement and analysis        | /analyze-plugins, /improve-skill |
+### octoflow `v0.1.1`
+
+Git workflow commands: `/commit` and `/pr`.
+
+`/commit` does more than just stage and write a message. It analyzes whether your changes should be split into multiple logical commits, proposes an ordering (infrastructure first, surface changes last), and shows you the message before doing anything. It follows the seven rules of good commits and warns if you're about to commit what looks like a secret.
+
+`/pr` checks the current branch, compiles what's changed since main, generates a summary and test plan checklist, pushes if needed, then creates the PR via `gh pr create`. Returns the URL when done.
+
+### dev-commands `v0.1.0`
+
+Five language-agnostic slash commands for common development tasks: `/build`, `/test`, `/lint`, `/check`, and `/deps`. Each one detects the project's tooling from lockfiles and config files — so `/test` knows to run `bun test` in a Bun project, `pytest` in a Python project, or `cargo test` in a Rust project. `/check` chains all three validation steps (typecheck → lint → test) and stops on the first failure.
+
+### skill-forge `v0.1.0`
+
+Generate production-grade Claude Code plugins from a brain dump. `/forge-skill` takes a description — as rough or detailed as you like — and runs it through a pipeline of specialized agents (intake analyst, skill researcher, generator, validator, optimizer, scaffold writer) that turn it into a complete plugin with proper structure, optimized skill instructions, and passing type checks.
+
+There's also `/improve-skill` which takes an existing skill or command and iteratively improves it based on feedback, showing proposed changes before applying them.
+
+### creator `v0.1.0`
+
+Simpler alternative to skill-forge for scaffolding new plugins. `/create-skill` takes a natural language description, determines whether it should be a command or skill, checks for naming conflicts, generates the full directory structure, and runs typecheck and build before reporting success.
+
+### plugin-tools `v0.1.0`
+
+Tools for working with this repo itself. `/analyze-plugins` audits all plugins for completeness, consistency, and documentation quality — producing a prioritized list of improvements. `/improve-skill` (the plugin-tools version) iteratively refines an existing component based on feedback.
+
+### github-actions-generator `v0.1.0`
+
+Scaffold TypeScript GitHub Actions for Bun workspace monorepos. The `generate-action` skill handles the full lifecycle: `action.yml`, entrypoint, package.json, tsconfig, CI workflow, release workflow, Octokit patterns, error handling, and tests. It carries a set of reference templates so the generated output follows established patterns rather than guessing.
+
+### repo-structure `v0.1.0`
+
+Enforces a `~/Code/ORG/REPO` directory convention for cloned repos and new projects. Implemented as a `PreToolUse` hook on Bash commands — when you run `git clone`, `gh repo clone`, or an init command (`bun init`, `cargo new`, etc.) in the wrong location, it blocks the command and gives you the corrected version.
+
+### customer-voice `v0.7.0`
+
+Drafts customer responses in a specific voice. Takes an incoming customer message, optionally researches the relevant codebase and documentation, and produces a reply draft. This one is fairly personal — the voice and context are tuned for a specific person's communication style — but the structure is reusable if you want to adapt it.
 
 ## Development
 
-### Prerequisites
-
-- [Bun](https://bun.sh) v1.0+
-- Git
-
-### Setup
+Prerequisites: [Bun](https://bun.sh) v1.0+
 
 ```bash
 git clone https://github.com/birdcar/claude-plugins
@@ -39,42 +71,35 @@ cd claude-plugins
 bun install
 ```
 
-### Commands
+| Command                | Purpose                               |
+| ---------------------- | ------------------------------------- |
+| `bun run build`        | Compile TypeScript                    |
+| `bun run typecheck`    | Type check without emit               |
+| `bun run sync`         | Update marketplace.json from plugins/ |
+| `bun run format`       | Format with Prettier                  |
+| `bun run format:check` | Check formatting (CI)                 |
+| `bun run clean`        | Remove build artifacts                |
 
-```bash
-bun run build      # Build all plugins
-bun run typecheck  # Type check
-bun run sync       # Update marketplace metadata
-bun run format     # Format code
-bun run clean      # Remove build artifacts
-bun run bootstrap  # Set up local config for plugins that need it
-```
+CI requires type check, build, sync, and format check to all pass before merge.
 
-### Local Configuration
+## Adding a Plugin
 
-Some plugins require per-machine configuration (e.g., local filesystem paths) that shouldn't be committed to a public repo. These are stored in `*.local.md` files which are gitignored.
+The fastest path is `/forge-skill` or `/create-skill` if you have the plugins installed. Otherwise manually:
 
-Plugins that need local config will **automatically prompt on first use** and save the values for future sessions. No manual setup required.
+1. Create `plugins/{name}/` with `package.json`, `tsconfig.json`, `plugin.json`
+2. Add commands in `commands/{name}.md` or skills in `skills/{name}/SKILL.md`
+3. Add a reference to the root `tsconfig.json`
+4. Run `bun run sync`
 
-To set up all plugins at once (or to reconfigure), you can optionally run:
+After pushing changes, bump the version in `plugin.json` before running sync — without a version bump, `claude plugin update` won't detect that anything changed.
 
-```bash
-bun run bootstrap
-```
+## Local Configuration
 
-Plugins that use local config:
+Some plugins need machine-specific config that shouldn't be committed. These are stored in `*.local.md` files (gitignored) and plugins that need them will prompt on first use.
 
 | Plugin         | Config File     | Values                 |
 | -------------- | --------------- | ---------------------- |
 | customer-voice | config.local.md | `workos_monorepo_path` |
-
-### Adding a Plugin
-
-1. Create directory: `plugins/my-plugin/`
-2. Add `plugin.json`, `package.json`, `tsconfig.json`
-3. Create skills in `skills/` directory
-4. Add reference to root `tsconfig.json`
-5. Run `bun run sync` to register
 
 ## License
 
