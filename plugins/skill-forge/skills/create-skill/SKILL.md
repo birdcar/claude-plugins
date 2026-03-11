@@ -50,12 +50,12 @@ Use AskUserQuestion with the following options:
 >
 > 1. **Project skill** — `.claude/skills/` in the current working directory (available only in this project)
 > 2. **Global skill** — `~/.claude/skills/` (available in all projects)
-> 3. **Marketplace plugin** — `~/Code/birdcar/claude-plugins/plugins/` (published to personal marketplace)
+> 3. **Marketplace plugin** — published to a personal plugin marketplace repo
 
 Based on selection:
 
 - **Project** or **Global**: generate skill directory only (SKILL.md + `references/` subdirectory if needed)
-- **Marketplace**: generate full plugin scaffolding (plugin.json, package.json, tsconfig.json, all skill/agent/command/hook files)
+- **Marketplace**: use AskUserQuestion to ask for the absolute path to the marketplace repo root (e.g. `~/Code/me/claude-plugins`). Store this as `$MARKETPLACE_ROOT`. Then generate full plugin scaffolding (plugin.json, package.json, tsconfig.json, all skill/agent/command/hook files) under `$MARKETPLACE_ROOT/plugins/`
 
 ## Step 3 — Confidence Gate
 
@@ -147,16 +147,19 @@ Use TodoWrite to track progress through this step.
 
 **If target is Marketplace:**
 
-1. Spawn `skill-forge:scaffold-writer` agent (Haiku) with:
+1. Use AskUserQuestion to ask for the npm package scope (e.g. `@birdcar`, `@myorg`). Store as `$PACKAGE_SCOPE`.
+
+2. Spawn `skill-forge:scaffold-writer` agent (Haiku) with:
    - Plugin name
    - Description
    - Version `"0.1.0"`
    - List of commands, agents, and skills to register
-   - Target path under `~/Code/birdcar/claude-plugins/plugins/`
+   - Marketplace repo root: `$MARKETPLACE_ROOT`
+   - Package scope: `$PACKAGE_SCOPE`
 
    The scaffold-writer creates plugin.json, package.json, tsconfig.json, adds the tsconfig reference, and runs `bun run sync`.
 
-2. Spawn `skill-forge:skill-generator` agent (Opus) with:
+3. Spawn `skill-forge:skill-generator` agent (Opus) with:
    - Intake classification
    - Research findings (if any)
    - Confidence-gate answers
@@ -204,5 +207,5 @@ Summarize what was created:
 - List all files written with their absolute paths
 - Show the "getting started" invocation: the exact phrase or command to trigger the new skill
 - If trigger tests were generated, remind the user to review `trigger-tests.md`
-- If marketplace: remind to bump the version in plugin.json and run `bun run sync` before committing
-- If marketplace: remind that `claude plugin marketplace update birdcar-plugins` must be run before `claude plugin update` will detect the new version
+- If marketplace: remind to bump the version in plugin.json and run the marketplace's sync command before committing
+- If marketplace: remind that `claude plugin marketplace update <marketplace-name>` must be run before `claude plugin update` will detect the new version

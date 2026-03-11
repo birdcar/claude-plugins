@@ -31,7 +31,7 @@ skill-name/
 | `model`                    | string  | Override model for this skill                                                                              | (inherits)              | `sonnet`                                                                                   |
 | `argument-hint`            | string  | Autocomplete hint shown after `/name`                                                                      | (none)                  | `[file-path]`                                                                              |
 | `hooks`                    | object  | Skill-scoped lifecycle hooks                                                                               | (none)                  | See hooks docs                                                                             |
-| `metadata`                 | object  | Arbitrary key-value pairs                                                                                  | (none)                  | `author: "birdcar"`                                                                        |
+| `metadata`                 | object  | Arbitrary key-value pairs                                                                                  | (none)                  | `author: "your-name"`                                                                      |
 
 ---
 

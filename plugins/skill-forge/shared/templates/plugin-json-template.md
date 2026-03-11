@@ -42,7 +42,7 @@ Every plugin.json needs these siblings:
 
 ```json
 {
-  "name": "@birdcar/claude-plugin-{plugin-name}",
+  "name": "{package-scope}/claude-plugin-{plugin-name}",
   "version": "{same-version}",
   "private": true,
   "type": "module",
