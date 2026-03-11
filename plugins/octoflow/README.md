@@ -4,28 +4,62 @@ Git workflow commands for well-structured commits and pull requests.
 
 ## Why
 
-Good commits tell a story. Raw `git commit` makes it easy to create unfocused commits with vague messages. This plugin enforces a disciplined workflow: logical commit splitting, imperative messages following Chris Beams' seven rules, and structured PR descriptions that explain what changed and how to verify it.
+Raw `git commit` makes it easy to create unfocused commits — vague messages, unrelated changes bundled together, no explanation of why the change was needed. Over time these make `git log` useless and code archaeology painful.
 
-The hook ensures this workflow is always used — even when Claude tries to run `git commit` directly, it gets intercepted and redirected to `/commit`.
+This plugin installs two commands that enforce a disciplined workflow: `/commit` analyzes your changes and can split them into multiple logical commits with proper messages, and `/pr` generates structured PR descriptions with a summary and test plan checklist.
 
-## Usage
+A `PreToolUse` hook backs this up — if Claude tries to run `git commit` directly without a conventional commit message already in the command, it gets blocked and redirected to `/commit`.
 
-| Component              | Type    | Description                                                           |
-| ---------------------- | ------- | --------------------------------------------------------------------- |
-| `/commit`              | Command | Analyze changes, split into logical commits, generate proper messages |
-| `/pr`                  | Command | Create GitHub PRs with structured summary and test plan               |
-| `intercept-git-commit` | Hook    | Blocks raw `git commit` and redirects to `/commit`                    |
+## Installation
+
+```bash
+claude plugin install octoflow
+```
+
+Requires the `gh` CLI for `/pr`.
+
+## Commands
 
 ### `/commit`
 
-Analyzes staged and unstaged changes, determines if they should be split into multiple logical commits (e.g., bug fix + refactor = 2 commits), generates messages following conventional commit format, and asks for approval before committing.
+Runs `git status`, `git diff`, and `git diff --cached` to analyze all changes, then evaluates whether they should be split into multiple logical commits. A bug fix in one module and a refactor in another should be two commits, not one. A tightly coupled change where splitting would leave the repo in a broken state should stay together.
 
-Commits are ordered logically: infrastructure first, core changes second, surface changes last, cleanup at the end.
+When splitting is needed, `/commit` walks through staging and committing each logical unit in the right order: infrastructure first (deps, config, migrations), then core changes (models, business logic), then surface changes (API endpoints, UI), then cleanup.
+
+Messages follow [Chris Beams' seven rules](https://cbea.ms/git-commit/) and conventional commit format:
+
+```
+feat(auth): Add OAuth2 support for GitHub login
+
+Enables users to authenticate via GitHub OAuth2. Reduces friction
+for developers who already have GitHub accounts.
+
+Closes #234
+```
+
+The message is presented for approval before any commit is made.
 
 ### `/pr`
 
-Checks you're on a feature branch, analyzes all commits since diverging from main, generates a PR description with a summary and test plan checklist, then creates the PR via `gh pr create`.
+Analyzes all commits since diverging from main, generates a PR title and description, then creates the PR via `gh pr create`. If the branch hasn't been pushed to remote yet, it pushes first.
 
-### Hook: intercept-git-commit
+PR descriptions follow this structure:
 
-A `PreToolUse` hook on `Bash` commands matching `git commit`. Blocks the raw commit and instructs Claude to use `/commit` instead.
+```markdown
+## Summary
+
+- What changed and why, in 3-5 bullets
+
+## Test plan
+
+- [ ] Specific verification step
+- [ ] Another thing to check
+```
+
+The description is presented for approval before the PR is created. Returns the PR URL when done.
+
+## Hook behavior
+
+The `intercept-git-commit` hook watches `Bash` tool calls for `git commit` commands. If the command already contains a properly formatted conventional commit message (e.g., Claude is following `/commit`'s own instructions), it passes through. If not, it blocks the commit and instructs Claude to use `/commit` instead.
+
+This means the hook enforces the workflow without getting in the way of it.

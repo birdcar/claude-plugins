@@ -1,10 +1,12 @@
 # creator
 
-Generate new Claude Code plugin components from natural language descriptions.
+A single command that scaffolds new Claude Code plugin components from a natural language description.
 
-## Why
+## The problem it solves
 
-Scaffolding a new plugin or adding a skill/command involves creating multiple files with the right structure, naming conventions, and workspace configuration. This plugin automates that so you can go from idea to working component in one step.
+Adding a skill or command to this repo means creating 5-6 files in the right places, following naming conventions, updating `tsconfig.json`, running sync, and verifying typecheck passes. It's not hard, but it's tedious enough that the friction slows down adding new tools.
+
+`/create-skill` handles all of that from one sentence.
 
 ## Usage
 
@@ -12,20 +14,43 @@ Scaffolding a new plugin or adding a skill/command involves creating multiple fi
 /create-skill A command that formats JSON files with proper indentation
 ```
 
-The command will:
+The command parses your description, decides whether it fits better as a command (user-invoked via `/name`) or a skill (agent-triggered by context), generates kebab-case names, and scaffolds everything. It checks for naming conflicts with existing plugins first and will offer to add the component to an existing plugin if one fits.
 
-1. Parse your description to determine what kind of component to create (command vs skill)
-2. Generate kebab-case names for the plugin and component
-3. Check for naming conflicts with existing plugins
-4. Scaffold the full directory structure (package.json, tsconfig.json, plugin.json, src/index.ts, and the command/skill file)
-5. Add the new workspace to root tsconfig.json
-6. Run `bun run sync` to update marketplace.json
-7. Validate with `bun run typecheck && bun run build`
+Once files are written, it runs `bun run typecheck && bun run build` and fixes any issues before reporting success.
 
-If a suitable existing plugin already exists, it will offer to add the component there instead of creating a new plugin.
+## What gets created
 
-## Components
+For a new command:
 
-| Component       | Type    | Description                                                 |
-| --------------- | ------- | ----------------------------------------------------------- |
-| `/create-skill` | Command | Scaffold a new plugin or add a component to an existing one |
+```
+plugins/{plugin-name}/
+├── package.json
+├── tsconfig.json
+├── plugin.json
+├── src/index.ts
+└── commands/{command-name}.md
+```
+
+For a new skill:
+
+```
+plugins/{plugin-name}/
+├── package.json
+├── tsconfig.json
+├── plugin.json
+├── src/index.ts
+└── skills/{skill-name}/
+    └── SKILL.md
+```
+
+It also adds the new workspace reference to the root `tsconfig.json` and runs `bun run sync` to update `marketplace.json`.
+
+## Adding to an existing plugin
+
+If a plugin already exists that's a natural fit for the new component, the command will ask whether to add it there instead of creating a whole new plugin directory. In that case it only creates the command or skill file and updates `plugin.json` if needed.
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `/create-skill` | Scaffold a new plugin or add a component to an existing one |

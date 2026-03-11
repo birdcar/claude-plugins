@@ -1,32 +1,44 @@
 # github-actions-generator
 
-Scaffold and implement TypeScript GitHub Actions within Bun workspace monorepos.
+Scaffolds and implements TypeScript GitHub Actions in Bun workspace monorepos, from empty directory to tagged release.
 
-## Why
+Writing a new GitHub Action in a Bun monorepo means wiring together package.json with catalog references, tsconfig, action.yml, an entrypoint, tests, a per-action CI workflow with path filters, and release tagging. This plugin handles that entire lifecycle so you only need to write the action logic itself.
 
-Creating a GitHub Action in a Bun workspace involves a lot of boilerplate: package.json with catalog references, tsconfig, action.yml, entry point, tests, CI workflow, and release tagging. This skill handles the full lifecycle so you can focus on the action's logic.
+## Installation
 
-## Usage
+```bash
+claude plugin install github-actions-generator
+```
 
-The skill activates when you want to create or implement a GitHub Action. It walks you through the process interactively:
+## What it does
 
-1. **Scaffold** — Detects workspace structure, asks for action name/description, generates all files (package.json, tsconfig.json, action.yml, src/index.ts)
-2. **Implement** — Helps write the action logic using patterns for Octokit, error handling, and input/output management
-3. **Test** — Generates unit tests with bun:test, mocking @actions/core and @actions/github
-4. **Document** — Creates a README with usage examples, inputs/outputs tables, and real version tags
-5. **CI** — Generates per-action CI workflows with path filters
-6. **Release** — Guides through manual tagging or generates automated release workflows
+The `generate-action` skill walks through the full lifecycle interactively. Trigger it by describing what you want to build:
 
-## Components
+> "Create a GitHub Action that labels issues based on their title"
 
-| Component         | Type  | Description                                                |
-| ----------------- | ----- | ---------------------------------------------------------- |
-| `generate-action` | Skill | Full lifecycle GitHub Action generation and implementation |
+It will:
+
+1. Read your workspace's `package.json` to detect the Bun catalog, workspace layout, and existing action conventions
+2. Ask for the action name, description, and what GitHub resources it touches
+3. Generate `package.json` (using `catalog:` references), `tsconfig.json`, `action.yml`, and `src/index.ts`
+4. Run `bun install` and `bun run build` to verify the scaffold compiles cleanly
+5. Help implement the action logic using Octokit, then validate with build and lint
+6. Generate unit tests with `bun:test` covering happy path, edge cases, and API failures
+7. Write a README with real version tags (never `@latest`), inputs/outputs tables, and an example workflow
+8. Create `.github/workflows/test-{action-name}.yml` with path filters scoped to the action directory
+9. Guide through manual tagging or generate an automated release workflow
+
+## Requirements
+
+Your repo needs to be a Bun workspace with `@actions/core`, `@actions/github`, and `@octokit/rest` in the root catalog. If any of these are missing, the skill will walk you through adding them before proceeding.
 
 ## Conventions
 
-- Uses Bun Catalog for shared dependency versions
-- All dependencies reference `catalog:` in action package.json
-- kebab-case for action names, package names, and directories
-- bun:test for testing (not Jest)
-- Real version tags in docs (never `@latest` or `@main`)
+The skill follows these rules consistently, matching them to whatever patterns already exist in your repo:
+
+- `catalog:` for all shared dependency versions, never pinned duplicates
+- `kebab-case` for action names, package names, and directories
+- `bun:test` for testing, not Jest
+- Real version tags in generated docs (`{action-name}-v1.0.0`, not `@latest`)
+- Per-action CI workflows with path filters rather than a single monorepo-wide workflow
+- Ask before overwriting any existing file
