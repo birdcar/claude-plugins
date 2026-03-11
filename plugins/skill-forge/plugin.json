@@ -1,0 +1,14 @@
+{
+  "name": "skill-forge",
+  "version": "0.1.0",
+  "description": "Generate and optimize production-grade Claude Code skills from brain dumps",
+  "commands": ["./commands/"],
+  "agents": [
+    "./agents/intake-analyst.md",
+    "./agents/skill-researcher.md",
+    "./agents/skill-generator.md",
+    "./agents/skill-validator.md",
+    "./agents/skill-optimizer.md",
+    "./agents/scaffold-writer.md"
+  ]
+}
