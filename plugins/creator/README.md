@@ -51,6 +51,6 @@ If a plugin already exists that's a natural fit for the new component, the comma
 
 ## Commands
 
-| Command | Description |
-| --- | --- |
+| Command         | Description                                                 |
+| --------------- | ----------------------------------------------------------- |
 | `/create-skill` | Scaffold a new plugin or add a component to an existing one |

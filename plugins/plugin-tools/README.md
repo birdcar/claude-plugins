@@ -24,16 +24,20 @@ The report format is:
 ## Plugin Analysis Report
 
 ### Summary
+
 - Total plugins: N
 - Overall health: Good / Needs Attention / Critical
 
 ### Plugin Details
+
 #### {plugin-name}
+
 - Status: Complete / Incomplete
 - Issues: ...
 - Suggestions: ...
 
 ### Priority Improvements
+
 1. [High] ...
 2. [Medium] ...
 ```

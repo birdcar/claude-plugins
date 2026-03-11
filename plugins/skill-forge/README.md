@@ -55,14 +55,14 @@ You choose which dimensions to improve, then approve each individual change befo
 
 Six subagents handle specialized tasks so the main thread stays orchestration-focused:
 
-| Agent | Model | Role |
-|---|---|---|
-| `intake-analyst` | sonnet | Classifies brain dump into type, pattern, primitives, complexity |
-| `skill-researcher` | sonnet | Scans target location for conflicts and conventions |
-| `skill-generator` | opus | Writes SKILL.md, agents, commands, reference docs |
-| `skill-validator` | haiku | Structural checks, anti-pattern scan, trigger test generation |
-| `skill-optimizer` | sonnet | Scores existing skills across four quality dimensions |
-| `scaffold-writer` | haiku | Creates plugin.json, package.json, tsconfig.json boilerplate |
+| Agent              | Model  | Role                                                             |
+| ------------------ | ------ | ---------------------------------------------------------------- |
+| `intake-analyst`   | sonnet | Classifies brain dump into type, pattern, primitives, complexity |
+| `skill-researcher` | sonnet | Scans target location for conflicts and conventions              |
+| `skill-generator`  | opus   | Writes SKILL.md, agents, commands, reference docs                |
+| `skill-validator`  | haiku  | Structural checks, anti-pattern scan, trigger test generation    |
+| `skill-optimizer`  | sonnet | Scores existing skills across four quality dimensions            |
+| `scaffold-writer`  | haiku  | Creates plugin.json, package.json, tsconfig.json boilerplate     |
 
 ## Knowledge base
 
@@ -81,7 +81,7 @@ When creating a skill, you choose one of three targets:
 
 - **Project** — `.claude/skills/{name}/` — generates only the skill directory with SKILL.md
 - **Global** — `~/.claude/skills/{name}/` — same minimal output, available across all projects
-- **Marketplace** — `~/Code/birdcar/claude-plugins/plugins/{name}/` — full plugin scaffolding including plugin.json, package.json, tsconfig.json, and marketplace sync
+- **Marketplace** — `{your-marketplace-repo}/plugins/{name}/` — full plugin scaffolding including plugin.json, package.json, tsconfig.json, and marketplace sync. You'll be asked for the repo path and npm scope at runtime.
 
 ## Honest trade-offs
 

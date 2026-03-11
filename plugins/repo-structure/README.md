@@ -16,13 +16,13 @@ Parses GitHub HTTPS URLs, SSH URLs, and `gh` CLI shorthand. Strips `.git` suffix
 
 WorkOS repos get special-cased into subdirectories rather than landing directly under `~/Code/workos/`:
 
-| Pattern | Target |
-|---|---|
-| `workos-{lang}` (core SDK) | `~/Code/workos/sdk/{lang}` |
+| Pattern                     | Target                          |
+| --------------------------- | ------------------------------- |
+| `workos-{lang}` (core SDK)  | `~/Code/workos/sdk/{lang}`      |
 | `workos-{lang}-{framework}` | `~/Code/workos/sdk/{framework}` |
-| `authkit-{lang}` | `~/Code/workos/sdk/{lang}` |
-| `se-demo-{name}` | `~/Code/workos/demos/{name}` |
-| anything else | `~/Code/workos/{repo}` |
+| `authkit-{lang}`            | `~/Code/workos/sdk/{lang}`      |
+| `se-demo-{name}`            | `~/Code/workos/demos/{name}`    |
+| anything else               | `~/Code/workos/{repo}`          |
 
 ## Exceptions
 
