@@ -1,26 +1,9 @@
-You are intercepting a `git commit` command. Do NOT proceed with the raw git commit.
+Your `git commit` command was blocked by the octoflow hook.
 
-Instead, you MUST use the `/commit` skill to handle this commit properly. This ensures:
+## What to do
 
-1. **Logical commit splitting** - Changes are analyzed and split into separate, focused commits when appropriate
-2. **Proper commit messages** - Following Chris Beams' seven rules of great commits
-3. **User approval** - Commit messages are reviewed before execution
+Run `/commit` instead. It will handle staging, message generation, and committing for you.
 
-## Action Required
+If you were already executing `/commit` and this block fired, it means your `git commit` command was missing a conventional commit type prefix. Make sure your commit message starts with one of: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, or `revert` — followed by an optional scope in parentheses, then a colon. For example: `feat(auth): Add login flow`.
 
-BLOCK this git commit and instead run: `/commit`
-
-The commit skill will:
-
-- Analyze what's staged (or help stage changes)
-- Determine if changes should be split into multiple logical commits
-- Generate proper commit messages
-- Get user approval before committing
-
-## Why This Matters
-
-Raw `git commit` bypasses the workflow that ensures:
-
-- Each commit represents ONE logical change
-- Commits are ordered chronologically by when changes were conceptually made
-- Messages explain WHY, not just WHAT
+The hook allows `git commit` through when the command already contains a valid conventional commit type. Any format works (inline `-m`, heredoc, etc.) as long as the type prefix is present.

@@ -1,6 +1,6 @@
 {
   "name": "octoflow",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Core Git workflow commands for commits and pull requests",
   "commands": ["./commands/"]
 }

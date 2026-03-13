@@ -194,6 +194,27 @@ feat: added new feature.         # Not imperative, has period
 WIP                              # Meaningless
 ```
 
+## Executing the Commit
+
+When running the actual `git commit` command, the commit message MUST start with a conventional commit type prefix (e.g., `feat:`, `fix(scope):`) so the octoflow hook allows it through. Any format works — inline `-m "feat: ..."`, heredoc, etc. — as long as the type prefix appears in the command.
+
+Example using heredoc for multi-line messages:
+
+```bash
+git commit -m "$(cat <<'EOF'
+feat(auth): Add OAuth2 support for GitHub login
+
+Enables users to authenticate via GitHub OAuth2.
+EOF
+)"
+```
+
+Example for single-line messages:
+
+```bash
+git commit -m "fix: Prevent crash when config file is missing"
+```
+
 ## Important Rules
 
 - Never commit without explicit user approval of the message
