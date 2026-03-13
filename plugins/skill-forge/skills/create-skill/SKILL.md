@@ -50,11 +50,22 @@ Use AskUserQuestion with the following options:
 >
 > 1. **Project skill** — `.claude/skills/` in the current working directory (available only in this project)
 > 2. **Global skill** — `~/.claude/skills/` (available in all projects)
-> 3. **Marketplace plugin** — published to a personal plugin marketplace repo
+> 3. **Marketplace plugin** (Recommended) — published to a personal plugin marketplace repo
+
+Include this context in the description:
+
+> **Important limitations of project/global skills:**
+>
+> - No slash commands (`/command`) — commands only work in plugins
+> - No custom agents — agent definitions require plugin.json
+> - No hooks — hooks require `hooks/hooks.json` in a plugin directory
+> - No shared files across skills — plugins provide `${CLAUDE_PLUGIN_ROOT}` for shared resources
+>
+> If the intake analysis identified commands, agents, hooks, or shared references, marketplace is the only viable target.
 
 Based on selection:
 
-- **Project** or **Global**: generate skill directory only (SKILL.md + `references/` subdirectory if needed)
+- **Project** or **Global**: generate skill directory only (SKILL.md + `references/` subdirectory if needed). If the intake analysis requires commands, agents, or hooks, warn that these components will be omitted and recommend switching to marketplace.
 - **Marketplace**: use AskUserQuestion to ask for the absolute path to the marketplace repo root (e.g. `~/Code/me/claude-plugins`). Store this as `$MARKETPLACE_ROOT`. Then generate full plugin scaffolding (plugin.json, package.json, tsconfig.json, all skill/agent/command/hook files) under `$MARKETPLACE_ROOT/plugins/`
 
 ## Step 3 — Confidence Gate
@@ -114,6 +125,7 @@ Read relevant knowledge base docs as needed:
 - `${CLAUDE_PLUGIN_ROOT}/shared/agent-design.md` — agent definitions
 - `${CLAUDE_PLUGIN_ROOT}/shared/workflow-patterns.md` — workflow structure
 - `${CLAUDE_PLUGIN_ROOT}/shared/primitives-guide.md` — tool usage
+- `${CLAUDE_PLUGIN_ROOT}/shared/local-config-pattern.md` — if intake flagged config needs (credentials, paths, PII)
 
 Use AskUserQuestion to present the generation plan:
 

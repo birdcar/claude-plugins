@@ -183,26 +183,66 @@ type: "ts"                            # shorthand for file type
 
 ---
 
+## Scripts
+
+Scripts are the right primitive for deterministic, repeatable operations that would be unreliable or wasteful to perform with LLM reasoning. Place them in the skill's `scripts/` directory.
+
+**When to use scripts instead of inline instructions**:
+
+- **Deterministic transformations**: parsing, formatting, data extraction where the logic is fixed
+- **Validation checks**: linting, schema validation, structural checks with known rules
+- **Multi-step shell operations**: sequences of commands that must run in exact order
+- **Operations with external tools**: calling `jq`, `yq`, `python`, or other CLI tools
+- **Repeatable commands**: anything you'd run the same way every time (sync scripts, build verification, file generation from templates)
+- **Sourcing local configuration**: loading credentials, paths, or other sensitive values from `$XDG_CONFIG_HOME` without exposing full config files to LLM context (see `local-config-pattern.md`)
+
+**How to integrate scripts in skills**:
+
+```markdown
+## Step 3: Validate Output
+
+Run `bash ${CLAUDE_SKILL_DIR}/scripts/validate.sh <target-file>` and check its exit code.
+
+- Exit 0: proceed to next step
+- Non-zero: show the script's stderr output and ask the user how to proceed
+```
+
+**Key principles**:
+
+- Execute scripts, don't read them — only the output consumes context tokens
+- Scripts handle the "how" deterministically; the skill handles the "what" and "when" with LLM judgment
+- Include error handling: check exit codes, capture stderr, specify fallback behavior
+- Use `${CLAUDE_SKILL_DIR}/scripts/` for skill-scoped scripts, `${CLAUDE_PLUGIN_ROOT}/scripts/` for shared ones
+
+**Anti-patterns**:
+
+- Reading a script into context to "understand" it, then reimplementing its logic inline
+- Using LLM reasoning for fixed transformations that a script would do identically every time
+- Skipping error handling on script execution
+
+---
+
 ## Bash
 
 Use ONLY for operations without a dedicated tool.
 
 **Appropriate uses**:
 
-- Running scripts: `python scripts/validate.py`
+- Running scripts: `bash scripts/validate.sh`
 - Git operations: `git status`, `git log`
 - Package management: `bun install`
 - Build/test commands: `bun run test`
 
 **Anti-patterns**:
 
-| Don't                         | Do instead |
-| ----------------------------- | ---------- |
-| `Bash(cat file.txt)`          | Read       |
-| `Bash(grep pattern file)`     | Grep       |
-| `Bash(find . -name "*.ts")`   | Glob       |
-| `Bash(echo "text" > file)`    | Write      |
-| `Bash(sed 's/old/new/' file)` | Edit       |
+| Don't                         | Do instead                     |
+| ----------------------------- | ------------------------------ |
+| `Bash(cat file.txt)`          | Read                           |
+| `Bash(grep pattern file)`     | Grep                           |
+| `Bash(find . -name "*.ts")`   | Glob                           |
+| `Bash(echo "text" > file)`    | Write                          |
+| `Bash(sed 's/old/new/' file)` | Edit                           |
+| Inline multi-step shell logic | Script in `scripts/` directory |
 
 ---
 

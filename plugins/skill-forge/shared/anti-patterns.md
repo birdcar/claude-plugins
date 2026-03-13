@@ -140,7 +140,57 @@ description: Processes and organizes files by type. Use when the user asks
 
 ---
 
+### [CRITICAL] Sensitive data stored in repository
+
+**What**: API keys, tokens, credentials, machine-specific paths, or PII stored in files tracked by git — including under `${CLAUDE_PLUGIN_ROOT}`, `references/`, or anywhere in the repo.
+**Why it's bad**: Secrets in a repo are exposed to anyone with read access. Even in private repos, they end up in git history permanently. Storing them under `${CLAUDE_PLUGIN_ROOT}` is especially tempting but requires `.gitignore` hacks and is fragile.
+**Fix**: Use the local configuration pattern: store sensitive data in `$XDG_CONFIG_HOME/{skill-name}/` (typically `~/.config/{skill-name}/`) and source it via scripts that output only the specific values needed. See `${CLAUDE_PLUGIN_ROOT}/shared/local-config-pattern.md`.
+
+**Example**:
+
+```bad
+# references/credentials.md (tracked in git)
+COOLIFY_TOKEN=abc123
+CF_API_KEY=xyz789
+
+# Or .gitignore'd file under plugin root
+# ${CLAUDE_PLUGIN_ROOT}/local/secrets.env
+```
+
+```good
+# ~/.config/my-skill/credentials.env (chmod 600, not in any repo)
+COOLIFY_TOKEN=abc123
+CF_API_KEY=xyz789
+
+# scripts/get-token.sh sources from XDG_CONFIG_HOME, outputs only what's needed
+```
+
+---
+
 ## HIGH — Degrades Effectiveness
+
+### [HIGH] PII in committed or persisted content
+
+**What**: Real names, email addresses, usernames, or other personally identifiable information appear in skill files, reference docs, memory entries, or any content that gets committed to git.
+**Why it's bad**: PII in repos or memory persists indefinitely, is hard to scrub from git history, and may violate privacy expectations. Even in private repos, contributors and tools can access it.
+**Fix**: Anonymize all references to people using role-based handles (`@colleague`, `@manager`, `@oncall-lead`). Store real identifiers in local config (`~/.config/{skill-name}/config.env`) and source them through scripts that output only role-based keys. Memory entries should describe roles, never individuals.
+
+**Example**:
+
+```bad
+# In a reference doc or memory
+The deploy lead is jane.smith@company.com — ping her on Slack before pushing.
+```
+
+```good
+# In a reference doc
+The deploy lead (@deploy-lead) should be notified before pushing.
+
+# In ~/.config/my-skill/config.env (local, not committed)
+DEPLOY_LEAD_SLACK=jane.smith
+```
+
+---
 
 ### [HIGH] Vague description
 
@@ -403,6 +453,29 @@ Run: scripts\build.bat
 ```good
 Output goes to: dist/output/report.json
 Run: scripts/build.sh
+```
+
+---
+
+### [MEDIUM] Inline deterministic logic instead of scripts
+
+**What**: The skill instructs Claude to perform a fixed sequence of shell commands, data transformations, or validation checks inline — logic that produces the same result every time regardless of LLM reasoning.
+**Why it's bad**: LLM reasoning tokens are wasted on deterministic operations. Inline shell sequences are harder to test, debug, and version. They also risk subtle variation across invocations as the LLM paraphrases or reorders commands.
+**Fix**: Move fixed-logic operations to scripts in the skill's `scripts/` directory. The skill invokes the script via Bash and acts on its output. Reserve LLM reasoning for decisions, not mechanical execution.
+
+**Example**:
+
+```bad
+Run the following commands in order:
+1. `git diff --name-only HEAD~1`
+2. Pipe the output through `grep '\.ts$'`
+3. For each file, run `bun run lint --file <path>`
+4. Collect all errors into a report
+```
+
+```good
+Run `bash ${CLAUDE_SKILL_DIR}/scripts/lint-changed.sh` and present its output.
+If the script reports errors, ask the user which ones to fix.
 ```
 
 ---

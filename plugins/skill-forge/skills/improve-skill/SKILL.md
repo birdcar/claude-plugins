@@ -18,9 +18,12 @@ description: >-
 - Read shared knowledge base from `${CLAUDE_PLUGIN_ROOT}/shared/` for scoring criteria
 - Non-destructive: every individual change must be approved before applying
 
-## Step 1 — Locate Skill
+## Step 1 — Locate Skill & Gather Context
 
-Accept path from $ARGUMENTS or discover via search.
+Accept a skill path and an optional braindump from the command or conversation context.
+
+- **Path**: provided directly or discovered via search
+- **Braindump** (optional): the user's own improvement ideas, specific complaints, or desired changes
 
 If a path was provided, read the SKILL.md at that path.
 
@@ -42,9 +45,18 @@ After locating SKILL.md, also read:
 - `hooks/hooks.json` (if it exists)
 - All files under `references/` in the skill directory (if it exists)
 
+If a braindump was provided, hold it for Step 2 — the user's ideas are passed to the optimizer alongside the skill content so the analysis addresses both systematic quality issues and the user's specific concerns.
+
 ## Step 2 — Analysis & Scoring
 
 Spawn the `skill-forge:skill-optimizer` agent (Sonnet) with all collected skill content provided in the prompt.
+
+If the user provided a braindump, include it in the agent prompt under a `## User-Requested Improvements` section. The optimizer should:
+
+1. Score all four dimensions as normal (the braindump doesn't skip systematic analysis)
+2. Map each braindump item to the most relevant dimension
+3. Incorporate braindump items into its recommendations, prioritizing them when they align with findings
+4. Flag any braindump items that conflict with best practices, explaining the trade-off
 
 The agent scores four dimensions (0–25 each, total /100):
 
@@ -70,13 +82,13 @@ The agent scores four dimensions (0–25 each, total /100):
 
 ### Instruction Quality (0–25)
 
-| Range | Criteria                                                   |
-| ----- | ---------------------------------------------------------- |
-| 0–5   | Vague, abstract, no examples                               |
-| 6–10  | Some specifics, constraints buried                         |
-| 11–15 | Imperative form, numbered steps, missing examples          |
-| 16–20 | Specific, constraints in first 100 lines, has examples     |
-| 21–25 | Optimal — scripts for determinism, rationale over ALL CAPS |
+| Range | Criteria                                                                        |
+| ----- | ------------------------------------------------------------------------------- |
+| 0–5   | Vague, abstract, no examples                                                    |
+| 6–10  | Some specifics, constraints buried                                              |
+| 11–15 | Imperative form, numbered steps, missing examples                               |
+| 16–20 | Specific, constraints in first 100 lines, has examples                          |
+| 21–25 | Optimal — scripts for deterministic ops, rationale over ALL CAPS, error handled |
 
 ### Agent/Tool Optimization (0–25)
 
@@ -92,7 +104,7 @@ Wait for the agent to return the full scored analysis before proceeding.
 
 ## Step 3 — Recommendations
 
-Present the scorecard via AskUserQuestion. Show each dimension score and the most impactful improvement for that dimension.
+Present the scorecard via AskUserQuestion. Show each dimension score and the most impactful improvement for that dimension. If braindump items were provided, show how they map to dimensions.
 
 Ask the user which improvements to apply. Options:
 

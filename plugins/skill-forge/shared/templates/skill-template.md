@@ -87,4 +87,5 @@ description: >-
 - Include at least 2 examples
 - Move detailed reference material to `references/` directory
 - Move output templates to `templates/` directory
-- Reference scripts as execution targets, not reading material
+- Use `scripts/` for deterministic operations (validation, linting, data extraction, sync commands) — execute scripts via Bash, don't read them into context
+- Reference scripts as execution targets, not reading material: `Run bash ${CLAUDE_SKILL_DIR}/scripts/validate.sh`, not `Read scripts/validate.sh`

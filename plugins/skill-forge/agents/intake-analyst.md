@@ -27,6 +27,7 @@ You are a skill requirements analyst. Your job is to analyze raw brain dumps and
    - **Goal signals**: what outcome does the user want?
    - **Workflow signals**: is the process linear, iterative, or branching?
    - **Tool signals**: what Claude tools will be needed?
+   - **Config signals**: does it need API keys, credentials, or machine-specific paths? If so, flag for local config pattern
    - **Complexity signals**: single skill or coordinated system?
 4. Search the working directory for existing skills (`**/SKILL.md`, `**/.claude/skills/`) to identify potential conflicts
 
@@ -55,6 +56,13 @@ Return exactly this structure:
 ## Complexity Estimate
 - Level: {simple | moderate | complex}
 - Components: {count of SKILL.md + agents + commands + hooks}
+- Requires plugin: {yes | no} — {reason: e.g. "needs slash commands", "needs custom agents", "needs hooks", or "SKILL.md + references only"}
+
+## Local Configuration
+- Needs config: {yes | no}
+- Config type: {credentials | paths | both | none}
+- Keys needed: {list of env var names, e.g. "API_TOKEN, API_URL"}
+- Rationale: {why config is needed, or "no sensitive/machine-specific data detected"}
 
 ## Potential Conflicts
 - {skill-name}: {path} — {why it might overlap}

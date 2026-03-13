@@ -9,7 +9,17 @@ skill-name/
 ├── scripts/           # Optional. Executed, not loaded into context.
 ├── templates/         # Optional. Output templates.
 └── assets/            # Optional. Static files.
+
+# External (not in repo):
+~/.config/{skill-name}/
+├── credentials.env    # API keys, tokens (chmod 600)
+├── paths.env          # Machine-specific paths
+└── config.env         # User preferences
 ```
+
+- Sensitive or machine-specific data belongs in `$XDG_CONFIG_HOME/{skill-name}/`, not in the repo
+- Skills access local config through scripts that source env files and output specific values
+- See `local-config-pattern.md` for the full pattern
 
 - Folder name: kebab-case only
 - File MUST be `SKILL.md` — not `INSTRUCTIONS.md`, not `Skill.md`, not `README.md`
@@ -61,6 +71,7 @@ Rules:
 - One-level-deep rule: all reference files must be linked directly from `SKILL.md`. Files referenced from within `references/` (two levels deep) may only get partial reads
 - Large reference files have zero startup cost — put extensive docs in `references/` freely
 - Scripts: execute them, don't read them into context. Only output consumes tokens
+- Use `scripts/` for deterministic operations (validation, formatting, data extraction) — scripts produce consistent results without spending LLM reasoning tokens on fixed logic
 
 ---
 
@@ -106,6 +117,24 @@ Claude only sees the rendered result, not the original command.
 - Plugin skills are namespaced as `plugin-name:skill-name`
 - Nested `.claude/skills/` directories in monorepos are auto-discovered
 - The `--add-dir` flag enables live reloading without restarting
+
+### Capability Matrix by Location
+
+Not all features are available at every location. Plugins unlock the full feature set:
+
+| Feature                           | Project/Global Skill | Plugin Skill |
+| --------------------------------- | -------------------- | ------------ |
+| SKILL.md (auto-trigger)           | Yes                  | Yes          |
+| `references/` directory           | Yes                  | Yes          |
+| `scripts/` directory              | Yes                  | Yes          |
+| Slash commands (`/command`)       | No                   | Yes          |
+| Custom agent definitions          | No                   | Yes          |
+| `hooks/hooks.json`                | No                   | Yes          |
+| Shared files (`PLUGIN_ROOT`)      | No                   | Yes          |
+| Namespaced (avoids conflicts)     | No                   | Yes          |
+| Versioned updates via marketplace | No                   | Yes          |
+
+**Rule of thumb**: if the skill needs more than a SKILL.md and references, it belongs in a plugin.
 
 ---
 

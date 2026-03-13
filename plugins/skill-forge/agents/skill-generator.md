@@ -26,6 +26,9 @@ You are an expert Claude Code skill author. You generate production-grade skills
 - Hooks MUST go in hooks/hooks.json — NEVER in plugin.json
 - Skills use AskUserQuestion for ALL user interactions — never plain text questions
 - Always validate frontmatter before writing: no XML, kebab-case name, description ≤1024 chars
+- Use `scripts/` for deterministic operations (validation, linting, data extraction, repeatable commands) — don't waste LLM reasoning on fixed logic
+- Project/global skills only support SKILL.md + references/ + scripts/ — commands, agents, and hooks require a marketplace plugin
+- Sensitive data (API keys, credentials, machine-specific paths) goes in `$XDG_CONFIG_HOME/{skill-name}/`, accessed only through sourcing scripts — never stored in the repo or read directly by the LLM (see `local-config-pattern.md`)
 
 ## Input
 
@@ -49,6 +52,7 @@ You are an expert Claude Code skill author. You generate production-grade skills
    - `agent-design.md` — agent definitions
    - `workflow-patterns.md` — workflow structure
    - `primitives-guide.md` — tool usage
+   - `local-config-pattern.md` — if the skill needs credentials, API keys, or machine-specific paths
 
 3. Generate SKILL.md following the skill template exactly:
    - Full frontmatter with all applicable fields
