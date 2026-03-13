@@ -37,6 +37,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "home-server",
+      "source": "./plugins/home-server",
+      "description": "Manage the nest home server: Coolify, Tailscale, Cloudflare, and all deployed services",
+      "version": "0.1.0"
+    },
+    {
       "name": "octoflow",
       "source": "./plugins/octoflow",
       "description": "Core Git workflow commands for commits and pull requests",

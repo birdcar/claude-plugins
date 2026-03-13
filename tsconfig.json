@@ -9,6 +9,7 @@
     { "path": "plugins/repo-structure" },
     { "path": "plugins/customer-voice" },
     { "path": "plugins/skill-forge" },
-    { "path": "plugins/github-profile" }
+    { "path": "plugins/github-profile" },
+    { "path": "plugins/home-server" }
   ]
 }

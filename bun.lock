@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "claude-plugins",
@@ -15,7 +16,7 @@
     },
     "plugins/customer-voice": {
       "name": "@birdcar/claude-plugin-customer-voice",
-      "version": "0.1.0",
+      "version": "0.7.0",
     },
     "plugins/dev-commands": {
       "name": "@birdcar/dev-commands",
@@ -23,6 +24,14 @@
     },
     "plugins/github-actions-generator": {
       "name": "@birdcar/github-actions-generator",
+      "version": "0.1.0",
+    },
+    "plugins/github-profile": {
+      "name": "@birdcar/claude-plugin-github-profile",
+      "version": "0.1.0",
+    },
+    "plugins/home-server": {
+      "name": "@birdcar/claude-plugin-home-server",
       "version": "0.1.0",
     },
     "plugins/octoflow": {
@@ -37,17 +46,27 @@
       "name": "@birdcar/claude-plugin-repo-structure",
       "version": "0.1.0",
     },
+    "plugins/skill-forge": {
+      "name": "@birdcar/claude-plugin-skill-forge",
+      "version": "0.1.0",
+    },
   },
   "packages": {
     "@birdcar/claude-plugin-creator": ["@birdcar/claude-plugin-creator@workspace:plugins/creator"],
 
     "@birdcar/claude-plugin-customer-voice": ["@birdcar/claude-plugin-customer-voice@workspace:plugins/customer-voice"],
 
+    "@birdcar/claude-plugin-github-profile": ["@birdcar/claude-plugin-github-profile@workspace:plugins/github-profile"],
+
+    "@birdcar/claude-plugin-home-server": ["@birdcar/claude-plugin-home-server@workspace:plugins/home-server"],
+
     "@birdcar/claude-plugin-octoflow": ["@birdcar/claude-plugin-octoflow@workspace:plugins/octoflow"],
 
     "@birdcar/claude-plugin-plugin-tools": ["@birdcar/claude-plugin-plugin-tools@workspace:plugins/plugin-tools"],
 
     "@birdcar/claude-plugin-repo-structure": ["@birdcar/claude-plugin-repo-structure@workspace:plugins/repo-structure"],
+
+    "@birdcar/claude-plugin-skill-forge": ["@birdcar/claude-plugin-skill-forge@workspace:plugins/skill-forge"],
 
     "@birdcar/dev-commands": ["@birdcar/dev-commands@workspace:plugins/dev-commands"],
 
