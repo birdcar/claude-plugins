@@ -23,7 +23,7 @@ To update after I've pushed changes:
 
 ## Available Plugins
 
-### octoflow `v0.1.1`
+### octoflow `v0.2.0`
 
 Git workflow commands: `/commit` and `/pr`.
 
@@ -35,7 +35,7 @@ Git workflow commands: `/commit` and `/pr`.
 
 Five language-agnostic slash commands for common development tasks: `/build`, `/test`, `/lint`, `/check`, and `/deps`. Each one detects the project's tooling from lockfiles and config files — so `/test` knows to run `bun test` in a Bun project, `pytest` in a Python project, or `cargo test` in a Rust project. `/check` chains all three validation steps (typecheck → lint → test) and stops on the first failure.
 
-### skill-forge `v0.1.0`
+### skill-forge `v0.3.0`
 
 Generate production-grade Claude Code plugins from a brain dump. `/forge-skill` takes a description — as rough or detailed as you like — and runs it through a pipeline of specialized agents (intake analyst, skill researcher, generator, validator, optimizer, scaffold writer) that turn it into a complete plugin with proper structure, optimized skill instructions, and passing type checks.
 
@@ -60,6 +60,14 @@ Enforces a `~/Code/ORG/REPO` directory convention for cloned repos and new proje
 ### customer-voice `v0.7.0`
 
 Drafts customer responses in a specific voice. Takes an incoming customer message, optionally researches the relevant codebase and documentation, and produces a reply draft. This one is fairly personal — the voice and context are tuned for a specific person's communication style — but the structure is reusable if you want to adapt it.
+
+### github-profile `v0.1.0`
+
+Generates a complete GitHub Profile README from your actual GitHub data. `/generate-github-profile` walks through a guided workflow: gathers your preferences (sections, style, integrations), researches your real repos and languages via the GitHub API, then generates the README, GitHub Actions workflows for dynamic content (blog feeds, contribution snake, WakaTime, Spotify), and SVG assets with dark/light mode support. Four style templates (Professional, Creative, Minimal, Playful) and a 300-line cap to keep things scannable.
+
+### home-server `v0.2.1`
+
+Manages a personal Coolify-based home server through four specialized agents. Describe what you want — deploy a service, fix a cert, tune Jellyfin transcoding — and it classifies the task and dispatches to the right specialist (coolify-specialist, networking-specialist, app-tuner, or retrospect). Covers the full stack: Coolify deployments, Traefik routing, Tailscale networking, Cloudflare DNS, and 14 deployed services. The server config is specific but the architecture is reusable.
 
 ## Development
 
