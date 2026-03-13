@@ -24,12 +24,12 @@ Load as needed:
 
 ```bash
 # Source all credentials
-eval "$(grep -v '^#' ~/.config/nest/credentials.env | grep '=' | sed 's/^/export /')"
+eval "$(grep -v '^#' ~/.config/home-server/credentials.env | grep '=' | sed 's/^/export /')"
 ```
 
 ## Key References
 
-- `~/.config/nest/server-config.md` — service topology and config paths
+- `~/.config/home-server/server-config.md` — service topology and config paths
 - `~/.claude/projects/-home-birdcar/memory/media-server-setup.md` — detailed tuning notes, TRaSH guide settings
 
 ## Application Config Paths

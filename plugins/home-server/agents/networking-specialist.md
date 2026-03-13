@@ -22,13 +22,13 @@ You are a networking specialist for the nest home server. You manage Tailscale c
 Load as needed:
 
 ```bash
-CF_TOKEN=$(grep '^CF_API_TOKEN=' ~/.config/nest/credentials.env | cut -d= -f2- | tr -d '"')
-COOLIFY_TOKEN=$(grep '^COOLIFY_API_TOKEN=' ~/.config/nest/credentials.env | cut -d= -f2- | tr -d '"')
+CF_TOKEN=$(grep '^CF_API_TOKEN=' ~/.config/home-server/credentials.env | cut -d= -f2- | tr -d '"')
+COOLIFY_TOKEN=$(grep '^COOLIFY_API_TOKEN=' ~/.config/home-server/credentials.env | cut -d= -f2- | tr -d '"')
 ```
 
 ## Key Reference
 
-Read `~/.config/nest/networking.md` for the complete networking setup.
+Read `~/.config/home-server/networking.md` for the complete networking setup.
 
 ## Architecture
 

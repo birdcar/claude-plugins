@@ -16,7 +16,7 @@ description: >-
 
 ## Critical Rules
 
-- ALWAYS read credentials from `~/.config/nest/credentials.env` — NEVER hardcode API keys in commands or output
+- ALWAYS read credentials from `~/.config/home-server/credentials.env` — NEVER hardcode API keys in commands or output
 - ALWAYS prefer the Coolify API (`$COOLIFY_API_URL`) over direct Docker commands for service management
 - When deploying new services, ALWAYS try Coolify one-click templates first before custom docker-compose
 - One-click services MUST have "Connect to Predefined Network" enabled for Traefik routing — remind the user or set it via API
@@ -29,25 +29,25 @@ description: >-
 
 ## Credentials
 
-All credentials are stored at `~/.config/nest/credentials.env` (chmod 600). To load them:
+All credentials are stored at `~/.config/home-server/credentials.env` (chmod 600). To load them:
 
 ```bash
 # Read a single value
-grep '^COOLIFY_API_TOKEN=' ~/.config/nest/credentials.env | cut -d= -f2- | tr -d '"'
+grep '^COOLIFY_API_TOKEN=' ~/.config/home-server/credentials.env | cut -d= -f2- | tr -d '"'
 
 # Source all values (for multi-command operations)
-set -gx (grep -v '^#' ~/.config/nest/credentials.env | grep '=' | string split -m1 '=')
+set -gx (grep -v '^#' ~/.config/home-server/credentials.env | grep '=' | string split -m1 '=')
 ```
 
 If the credentials file is missing, use the `credential-manager` agent to recreate it from memory.
 
 ## Server Architecture
 
-Read `~/.config/nest/server-config.md` for the complete server topology, service UUIDs, container names, volume mounts, and network layout.
+Read `~/.config/home-server/server-config.md` for the complete server topology, service UUIDs, container names, volume mounts, and network layout.
 
-Read `~/.config/nest/coolify-patterns.md` for Coolify API patterns, common operations, and known gotchas.
+Read `~/.config/home-server/coolify-patterns.md` for Coolify API patterns, common operations, and known gotchas.
 
-Read `~/.config/nest/networking.md` for Tailscale, Cloudflare, and Traefik configuration details.
+Read `~/.config/home-server/networking.md` for Tailscale, Cloudflare, and Traefik configuration details.
 
 ## Workflow
 
@@ -68,7 +68,7 @@ Parse the user's natural language request and classify it:
 Before any API call, load the relevant credentials:
 
 ```bash
-COOLIFY_TOKEN=$(grep '^COOLIFY_API_TOKEN=' ~/.config/nest/credentials.env | cut -d= -f2- | tr -d '"')
+COOLIFY_TOKEN=$(grep '^COOLIFY_API_TOKEN=' ~/.config/home-server/credentials.env | cut -d= -f2- | tr -d '"')
 ```
 
 ### Step 3: Dispatch to Specialist
@@ -99,7 +99,7 @@ If this session revealed new information about the server (new services, changed
 
 1. `~/.claude/projects/-home-birdcar/memory/MEMORY.md` — for cross-session memory
 2. `~/.claude/projects/-home-birdcar/memory/media-server-setup.md` — for detailed server notes
-3. `~/.config/nest/server-config.md` — for skill-internal reference
+3. `~/.config/home-server/server-config.md` — for skill-internal reference
 
 ## Common Operations Quick Reference
 

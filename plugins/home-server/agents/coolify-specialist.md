@@ -22,7 +22,7 @@ You are a Coolify specialist for the nest home server. You manage service deploy
 ALWAYS load credentials before making API calls:
 
 ```bash
-COOLIFY_TOKEN=$(grep '^COOLIFY_API_TOKEN=' ~/.config/nest/credentials.env | cut -d= -f2- | tr -d '"')
+COOLIFY_TOKEN=$(grep '^COOLIFY_API_TOKEN=' ~/.config/home-server/credentials.env | cut -d= -f2- | tr -d '"')
 COOLIFY_API="http://100.108.157.126:8000/api/v1"
 ```
 
@@ -30,8 +30,8 @@ COOLIFY_API="http://100.108.157.126:8000/api/v1"
 
 Read these files for context:
 
-- `~/.config/nest/server-config.md` — service UUIDs, container names, ports
-- `~/.config/nest/coolify-patterns.md` — API patterns and known gotchas
+- `~/.config/home-server/server-config.md` — service UUIDs, container names, ports
+- `~/.config/home-server/coolify-patterns.md` — API patterns and known gotchas
 
 ## Rules
 
