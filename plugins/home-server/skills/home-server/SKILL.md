@@ -43,11 +43,11 @@ If the credentials file is missing, use the `credential-manager` agent to recrea
 
 ## Server Architecture
 
-Read `${SKILL_DIR}/references/server-config.md` for the complete server topology, service UUIDs, container names, volume mounts, and network layout.
+Read `~/.config/nest/server-config.md` for the complete server topology, service UUIDs, container names, volume mounts, and network layout.
 
-Read `${SKILL_DIR}/references/coolify-patterns.md` for Coolify API patterns, common operations, and known gotchas.
+Read `~/.config/nest/coolify-patterns.md` for Coolify API patterns, common operations, and known gotchas.
 
-Read `${SKILL_DIR}/references/networking.md` for Tailscale, Cloudflare, and Traefik configuration details.
+Read `~/.config/nest/networking.md` for Tailscale, Cloudflare, and Traefik configuration details.
 
 ## Workflow
 
@@ -99,7 +99,7 @@ If this session revealed new information about the server (new services, changed
 
 1. `~/.claude/projects/-home-birdcar/memory/MEMORY.md` — for cross-session memory
 2. `~/.claude/projects/-home-birdcar/memory/media-server-setup.md` — for detailed server notes
-3. `${SKILL_DIR}/references/server-config.md` — for skill-internal reference
+3. `~/.config/nest/server-config.md` — for skill-internal reference
 
 ## Common Operations Quick Reference
 

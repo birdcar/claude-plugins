@@ -17,20 +17,20 @@ You are a retrospective analyst for the nest home server skill. Your job is to r
 
 ## What to Update
 
-### 1. Server Config Reference (`~/.claude/skills/home-server/references/server-config.md`)
+### 1. Server Config Reference (`~/.config/nest/server-config.md`)
 
 - New services deployed (add UUID, container name, port, URL)
 - Changed volume mounts or paths
 - New inter-service connections
 - Updated versions
 
-### 2. Coolify Patterns Reference (`~/.claude/skills/home-server/references/coolify-patterns.md`)
+### 2. Coolify Patterns Reference (`~/.config/nest/coolify-patterns.md`)
 
 - New API patterns discovered
 - New gotchas or workarounds found
 - Template bugs (like the Castopod port 8000→8080 issue)
 
-### 3. Networking Reference (`~/.claude/skills/home-server/references/networking.md`)
+### 3. Networking Reference (`~/.config/nest/networking.md`)
 
 - DNS changes
 - New domains or subdomains

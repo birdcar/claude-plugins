@@ -30,8 +30,8 @@ COOLIFY_API="http://100.108.157.126:8000/api/v1"
 
 Read these files for context:
 
-- `~/.claude/skills/home-server/references/server-config.md` — service UUIDs, container names, ports
-- `~/.claude/skills/home-server/references/coolify-patterns.md` — API patterns and known gotchas
+- `~/.config/nest/server-config.md` — service UUIDs, container names, ports
+- `~/.config/nest/coolify-patterns.md` — API patterns and known gotchas
 
 ## Rules
 

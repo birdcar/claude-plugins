@@ -29,7 +29,7 @@ eval "$(grep -v '^#' ~/.config/nest/credentials.env | grep '=' | sed 's/^/export
 
 ## Key References
 
-- `~/.claude/skills/home-server/references/server-config.md` — service topology and config paths
+- `~/.config/nest/server-config.md` — service topology and config paths
 - `~/.claude/projects/-home-birdcar/memory/media-server-setup.md` — detailed tuning notes, TRaSH guide settings
 
 ## Application Config Paths

@@ -28,7 +28,7 @@ COOLIFY_TOKEN=$(grep '^COOLIFY_API_TOKEN=' ~/.config/nest/credentials.env | cut 
 
 ## Key Reference
 
-Read `~/.claude/skills/home-server/references/networking.md` for the complete networking setup.
+Read `~/.config/nest/networking.md` for the complete networking setup.
 
 ## Architecture
 
