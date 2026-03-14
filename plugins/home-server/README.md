@@ -27,7 +27,7 @@ When you ask the plugin to do something, it classifies your request and dispatch
 
 **networking-specialist** manages the full network path: Cloudflare DNS, Tailscale VPN, Traefik reverse proxy, and TLS certificates via DNS-01 challenge. Services are Tailscale-only by default -- public exposure requires explicit confirmation.
 
-**app-tuner** researches and applies app-specific optimizations. Jellyfin transcoding settings, *arr stack quality profiles (respecting Recyclarr ownership), media server tuning. It pulls from TRaSH Guides and official docs rather than guessing.
+**app-tuner** researches and applies app-specific optimizations. Jellyfin transcoding settings, \*arr stack quality profiles (respecting Recyclarr ownership), media server tuning. It pulls from TRaSH Guides and official docs rather than guessing.
 
 **retrospect** runs after sessions (via `/home-server-retrospect`) to review what was learned and update the plugin's reference files so knowledge accumulates over time.
 
@@ -49,10 +49,10 @@ Jellyfin, Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, SABnzbd, LazyLibrarian, Kavi
 
 The plugin loads credentials before every API call and refuses to hardcode tokens in commands. It prefers the Coolify API over direct Docker commands. It won't expose services publicly without asking first. After making changes, it verifies the service is running, HTTPS works, and the TLS cert is from Let's Encrypt (not Traefik's default self-signed cert).
 
-A few service-specific gotchas are encoded too: LazyLibrarian overwrites its config on startup so you have to stop it before editing, Glance config live-reloads without a restart, and Recyclarr owns quality profiles in the *arr stack so manual overrides get clobbered.
+A few service-specific gotchas are encoded too: LazyLibrarian overwrites its config on startup so you have to stop it before editing, Glance config live-reloads without a restart, and Recyclarr owns quality profiles in the \*arr stack so manual overrides get clobbered.
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
+| Command                   | Purpose                                                                 |
+| ------------------------- | ----------------------------------------------------------------------- |
 | `/home-server-retrospect` | Review the current session for new knowledge and update reference files |

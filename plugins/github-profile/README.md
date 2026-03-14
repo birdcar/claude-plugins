@@ -46,9 +46,9 @@ The README uses 150+ technology badges from shields.io and `<picture>` elements 
 
 ## Agents
 
-| Agent                | Model  | Role                                                    |
-| -------------------- | ------ | ------------------------------------------------------- |
-| `profile-researcher` | sonnet | Gathers real GitHub data via API and GraphQL            |
+| Agent                | Model  | Role                                                     |
+| -------------------- | ------ | -------------------------------------------------------- |
+| `profile-researcher` | sonnet | Gathers real GitHub data via API and GraphQL             |
 | `profile-generator`  | sonnet | Produces README, workflows, and SVG assets from research |
 
 ## Honest trade-offs
