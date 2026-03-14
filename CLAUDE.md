@@ -67,6 +67,20 @@ When making functional changes to a plugin (skills, agents, commands, hooks), **
 
 After bumping, run `bun run sync` (updates marketplace.json), commit both files, and push. Users must also `git pull` their local marketplace cache at `~/.claude/plugins/marketplaces/birdcar-plugins/` before `claude plugin update` will see the new version — or uninstall/reinstall the plugin.
 
+## Shipping a Plugin Change
+
+When changes are ready to ship, follow this pipeline in order:
+
+1. Bump version in the plugin's `plugin.json` (patch/minor/major per Versioning above)
+2. `bun run sync` to update marketplace.json
+3. `bun run typecheck && bun run build && bun run format` to verify and fix formatting
+4. Commit and push to main
+5. Wait for CI to pass (`gh run watch` or check GitHub Actions)
+6. Pull the local marketplace cache: `cd ~/.claude/plugins/marketplaces/birdcar-plugins && git pull`
+7. Run `claude plugin update <plugin-name>` for each changed plugin
+
+When asked to "ship", "deploy", or "push and update", run this full pipeline automatically. Do not skip steps or stop at push — the local marketplace pull and plugin update are part of shipping.
+
 ## CI Requirements
 
 Before merge, CI checks:
