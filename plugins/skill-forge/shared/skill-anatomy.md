@@ -5,6 +5,10 @@
 ```
 skill-name/
 ├── SKILL.md           # Required. Exact name, case-sensitive.
+├── docs/              # Optional. Design docs and accumulated learnings.
+│   ├── contract.md    # Design intent: problem, goals, scope, decisions.
+│   ├── spec.md        # Execution plan: components, architecture, phases.
+│   └── learnings.md   # Accumulated observations from retrospective runs.
 ├── references/        # Optional. Detailed docs loaded on demand.
 ├── scripts/           # Optional. Executed, not loaded into context.
 ├── templates/         # Optional. Output templates.
@@ -16,6 +20,18 @@ skill-name/
 ├── paths.env          # Machine-specific paths
 └── config.env         # User preferences
 ```
+
+### The docs/ Directory
+
+Skills created by skill-forge include a `docs/` directory with permanent design documentation:
+
+- **`contract.md`** — The "why": problem statement, goals, success criteria, scope boundaries, design decisions. Written during spec formation, before generation. Future improve runs reference this to understand original intent.
+- **`spec.md`** — The "how": component manifest, skill architecture, execution plan, retrospective configuration. The generator follows this mechanically during creation.
+- **`learnings.md`** — Accumulated observations from retrospective runs. Starts empty, grows over time. Records what worked, what didn't, and score history from improvement runs.
+
+These files are permanent and live alongside the skill. Users can add `docs/` to `.gitignore` if desired, but they are intended to be committed so future improve runs have full context.
+
+Complex skills (multi-agent, external systems, evolving domain) also get a dedicated retrospective agent and command that analyze sessions and update `learnings.md`.
 
 - Sensitive or machine-specific data belongs in `$XDG_CONFIG_HOME/{skill-name}/`, not in the repo
 - Skills access local config through scripts that source env files and output specific values

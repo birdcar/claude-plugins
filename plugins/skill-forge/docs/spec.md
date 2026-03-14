@@ -4,29 +4,29 @@
 
 ### New Files
 
-| File | Purpose |
-|---|---|
-| `agents/retrospective.md` | Skill-forge's own retrospective agent. Analyzes forge/improve runs, appends to learnings, proposes knowledge base updates after repeated patterns. Sonnet model. Tools: Read, Glob, Grep, Write, Edit. |
-| `shared/learnings.md` | Timestamped observations from retrospective runs. Accumulates patterns. When a pattern appears 3+ times, the retrospective proposes a concrete update to the relevant reference doc. |
-| `shared/templates/contract-template.md` | Template for contract.md documents generated in created skills. Sections: Problem Statement, Goals, Success Criteria, Scope Boundaries, Design Decisions. |
-| `shared/templates/spec-template.md` | Template for spec.md documents generated in created skills. Sections: Component Manifest, Skill Architecture, Per-Component Details, Execution Plan, Retrospective Configuration, Validation Strategy. |
+| File                                               | Purpose                                                                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agents/retrospective.md`                          | Skill-forge's own retrospective agent. Analyzes forge/improve runs, appends to learnings, proposes knowledge base updates after repeated patterns. Sonnet model. Tools: Read, Glob, Grep, Write, Edit.                                                                                                                                                                        |
+| `shared/learnings.md`                              | Timestamped observations from retrospective runs. Accumulates patterns. When a pattern appears 3+ times, the retrospective proposes a concrete update to the relevant reference doc.                                                                                                                                                                                          |
+| `shared/templates/contract-template.md`            | Template for contract.md documents generated in created skills. Sections: Problem Statement, Goals, Success Criteria, Scope Boundaries, Design Decisions.                                                                                                                                                                                                                     |
+| `shared/templates/spec-template.md`                | Template for spec.md documents generated in created skills. Sections: Component Manifest, Skill Architecture, Per-Component Details, Execution Plan, Retrospective Configuration, Validation Strategy.                                                                                                                                                                        |
 | `shared/templates/retrospective-agent-template.md` | Template for retrospective agents generated in complex skills. Mirrors skill-forge's own retrospective pattern: analyze session, append to learnings, propose knowledge base updates. Sections: Role, Input (learnings file path, session context), Process (analyze, classify, append, propose), Output Format, Constraints (never modify target code, only knowledge base). |
 
 ### Modified Files
 
-| File | Changes |
-|---|---|
-| `skills/create-skill/SKILL.md` | Pipeline restructured from 8 to 6 steps. Confidence gate replaced by spec formation loop. Generation plan approval removed. Name selection moved to step 2. Retrospective added as step 6. |
-| `skills/improve-skill/SKILL.md` | Three-way analysis when spec exists. Spec-first updates. Retroactive spec generation offer. Score history to learnings.md. Retrospective as final step. |
-| `agents/skill-generator.md` | Primary input becomes spec.md. Follows execution plan for ordering and parallelization. Reports deviations from spec. Still reads shared/ for writing quality guidance. |
-| `agents/intake-analyst.md` | Adds retrospective complexity classification to output: full (agent + command + learnings), lightweight (learnings only), or none. Based on: multi-agent, external systems, evolving domain, state management. |
-| `agents/skill-optimizer.md` | Reads spec alongside skill when spec exists. Three-way analysis (spec + skill + braindump). Updates spec before proposing skill changes. Offers retroactive spec generation when no spec found. |
-| `agents/skill-researcher.md` | Timing change only: runs during spec formation (before spec is written) instead of after confidence gate. Agent instructions unchanged. |
-| `agents/skill-validator.md` | Adds spec compliance checking: verifies generated artifacts match the spec's component manifest. Checks for files in the spec not created, or files created not in the spec. |
-| `shared/quality-checklist.md` | Adds spec compliance checks: did generated artifacts match the spec's component manifest? Are there files in the spec not created, or files created not in the spec? |
-| `shared/skill-anatomy.md` | Documents the `docs/` directory convention: contract.md (design intent), spec.md (execution plan), learnings.md (accumulated observations). Explains permanence and gitignore option. |
-| `shared/anti-patterns.md` | New anti-patterns: spec drift (skill diverges from spec without updating it), empty learnings files (created but never written to), retrospective agents that modify target code instead of knowledge base, specs that describe implementation details instead of design intent. |
-| `plugin.json` | Version bump 0.3.0 → 0.4.0. Register retrospective agent. |
+| File                            | Changes                                                                                                                                                                                                                                                                          |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `skills/create-skill/SKILL.md`  | Pipeline restructured from 8 to 6 steps. Confidence gate replaced by spec formation loop. Generation plan approval removed. Name selection moved to step 2. Retrospective added as step 6.                                                                                       |
+| `skills/improve-skill/SKILL.md` | Three-way analysis when spec exists. Spec-first updates. Retroactive spec generation offer. Score history to learnings.md. Retrospective as final step.                                                                                                                          |
+| `agents/skill-generator.md`     | Primary input becomes spec.md. Follows execution plan for ordering and parallelization. Reports deviations from spec. Still reads shared/ for writing quality guidance.                                                                                                          |
+| `agents/intake-analyst.md`      | Adds retrospective complexity classification to output: full (agent + command + learnings), lightweight (learnings only), or none. Based on: multi-agent, external systems, evolving domain, state management.                                                                   |
+| `agents/skill-optimizer.md`     | Reads spec alongside skill when spec exists. Three-way analysis (spec + skill + braindump). Updates spec before proposing skill changes. Offers retroactive spec generation when no spec found.                                                                                  |
+| `agents/skill-researcher.md`    | Timing change only: runs during spec formation (before spec is written) instead of after confidence gate. Agent instructions unchanged.                                                                                                                                          |
+| `agents/skill-validator.md`     | Adds spec compliance checking: verifies generated artifacts match the spec's component manifest. Checks for files in the spec not created, or files created not in the spec.                                                                                                     |
+| `shared/quality-checklist.md`   | Adds spec compliance checks: did generated artifacts match the spec's component manifest? Are there files in the spec not created, or files created not in the spec?                                                                                                             |
+| `shared/skill-anatomy.md`       | Documents the `docs/` directory convention: contract.md (design intent), spec.md (execution plan), learnings.md (accumulated observations). Explains permanence and gitignore option.                                                                                            |
+| `shared/anti-patterns.md`       | New anti-patterns: spec drift (skill diverges from spec without updating it), empty learnings files (created but never written to), retrospective agents that modify target code instead of knowledge base, specs that describe implementation details instead of design intent. |
+| `plugin.json`                   | Version bump 0.3.0 → 0.4.0. Register retrospective agent.                                                                                                                                                                                                                        |
 
 All files not listed in New or Modified are unchanged (scaffold-writer, command entry points, and shared reference docs for description-engineering, agent-design, workflow-patterns, primitives-guide, and local-config-pattern).
 
@@ -198,6 +198,7 @@ Step 6: Retrospective
 ### Generated Skill Output (What Forge Creates)
 
 For every skill:
+
 ```
 {skill-dir}/
   docs/
@@ -210,6 +211,7 @@ For every skill:
 ```
 
 For complex skills (complexity-gated):
+
 ```
 {skill-dir}/
   agents/
@@ -295,6 +297,7 @@ Phase 1 (templates + knowledge base)     Phase 3 (intake analyst)
 ## Retrospective Configuration
 
 Skill-forge itself gets the full retrospective treatment:
+
 - `agents/retrospective.md` — dedicated agent
 - `shared/learnings.md` — accumulation file
 - Automatic execution as final pipeline step (no command needed — it's built into the workflow, not user-triggered)
@@ -302,6 +305,7 @@ Skill-forge itself gets the full retrospective treatment:
 ## Validation Strategy
 
 Beyond standard structural checks:
+
 - Spec compliance: every file in the component manifest exists after generation
 - Pipeline coherence: the 6-step forge pipeline and 6-step improve pipeline are internally consistent (step references, agent names, input/output contracts)
 - Template completeness: contract, spec, and retrospective-agent templates contain all required sections

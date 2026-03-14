@@ -394,7 +394,39 @@ description: Generates database migration files for schema changes. Use when
 
 ---
 
+### [HIGH] Spec drift
+
+**What**: The skill's actual structure, behavior, or scope has diverged from what `docs/spec.md` describes, without the spec being updated.
+**Why it's bad**: The spec is the source of truth for design intent. When the skill drifts from the spec, future improve runs make decisions based on stale context — proposing changes that conflict with undocumented decisions, or missing the rationale behind current behavior.
+**Fix**: When modifying a skill, update `docs/spec.md` to reflect the change. The improve-skill pipeline does this automatically (spec-first updates), but manual edits bypass it.
+
+---
+
+### [HIGH] Empty learnings file
+
+**What**: A `docs/learnings.md` file exists but has never been written to beyond the initial header.
+**Why it's bad**: The learnings file is the retrospective's accumulation target. If it's always empty, either the retrospective isn't running or it's not finding anything worth capturing — both suggest the feedback loop is broken.
+**Fix**: Ensure the retrospective step runs after every forge and improve run. If the skill is simple enough that nothing is ever worth capturing, the learnings file should contain a note explaining that rather than being silently empty.
+
+---
+
+### [HIGH] Retrospective modifies target code
+
+**What**: A retrospective agent edits the skill's functional artifacts (SKILL.md, agents, commands, hooks) instead of only updating knowledge base files (docs/, references/, shared/).
+**Why it's bad**: The retrospective's job is to observe and persist knowledge, not to change behavior. Behavior changes should go through the improve pipeline with user approval. A retrospective that modifies functional code bypasses the approval gates and can introduce regressions silently.
+**Fix**: Restrict retrospective agents to writing docs/learnings.md and proposing (not applying) reference doc updates. Functional changes go through `/improve-skill`.
+
+---
+
 ## MEDIUM — Reduces Quality
+
+### [MEDIUM] Spec describes implementation instead of design intent
+
+**What**: The `docs/contract.md` file reads like an implementation guide (specific code patterns, function names, line-by-line instructions) rather than a design document (problem, goals, decisions, rationale).
+**Why it's bad**: Specs that describe implementation become stale immediately — the first refactor invalidates them. Design-intent specs stay relevant because they capture _why_, not _how_. Future improve runs need the rationale, not a snapshot of the code at creation time.
+**Fix**: Keep the contract focused on problem, goals, scope, and design decisions. Keep the spec focused on component manifest and architecture. Implementation details belong in the generated artifacts themselves.
+
+---
 
 ### [MEDIUM] Time-sensitive information
 

@@ -17,7 +17,8 @@ You are a skill quality validator. You check Claude Code skills against known st
 
 ## Input
 
-A path to a skill directory containing SKILL.md and optionally agents/, commands/, references/, hooks/.
+- A path to a skill directory containing SKILL.md and optionally agents/, commands/, references/, hooks/
+- Optionally, a path to the skill's `docs/spec.md` for spec compliance checking
 
 ## Process
 
@@ -52,8 +53,25 @@ Check each item and report pass/fail:
 | Agent model            | `model:` field set appropriately for task complexity         | LOW      |
 | Command allowed-tools  | Commands have appropriate tool restrictions                  | MEDIUM   |
 | Hooks location         | In hooks/hooks.json, not inline in plugin.json               | HIGH     |
+| Spec compliance        | Generated artifacts match spec's component manifest          | HIGH     |
+| Docs present           | docs/contract.md, spec.md, learnings.md exist                | MEDIUM   |
 
-### 3. Anti-Pattern Scan
+### 3. Spec Compliance (if spec.md provided)
+
+If a `docs/spec.md` path was provided, check:
+
+- Every file in the spec's Component Manifest exists on disk
+- No files were created that aren't in the manifest (report as deviations)
+- The retrospective configuration matches what was generated (full vs lightweight vs none)
+
+Report as:
+
+- PASS: All manifest files exist, no unexpected files
+- FAIL: List missing files and unexpected files
+
+If no spec.md was provided, skip this section entirely.
+
+### 4. Anti-Pattern Scan
 
 Read `${CLAUDE_PLUGIN_ROOT}/shared/anti-patterns.md` and check the skill against every item:
 
@@ -62,7 +80,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/anti-patterns.md` and check the skill against
 - Note MEDIUM severity matches as warnings
 - Skip LOW severity matches unless the prompt requests a full audit
 
-### 4. Trigger Test Generation
+### 5. Trigger Test Generation
 
 Read `${CLAUDE_PLUGIN_ROOT}/shared/trigger-test-template.md` for the output format.
 
@@ -109,7 +127,7 @@ Written to: {path}/trigger-tests.md
 
 ### Summary
 
-PASS: {n}/14 structural checks
+PASS: {n}/16 structural checks
 WARNINGS: {n} anti-patterns ({n} critical, {n} high, {n} medium)
 ACTION REQUIRED: {description of blocking issues, or "None — ready to ship"}
 ```

@@ -15,6 +15,7 @@ description: >-
 - ALWAYS use AskUserQuestion for decisions and approvals — never plain text questions
 - ALWAYS use Edit for applying changes — surgical modifications, never full rewrites
 - ALWAYS present before/after diffs via AskUserQuestion with preview before applying
+- ALWAYS update the spec before modifying skill artifacts when design intent has shifted
 - Read shared knowledge base from `${CLAUDE_PLUGIN_ROOT}/shared/` for scoring criteria
 - Non-destructive: every individual change must be approved before applying
 
@@ -45,66 +46,79 @@ After locating SKILL.md, also read:
 - `hooks/hooks.json` (if it exists)
 - All files under `references/` in the skill directory (if it exists)
 
+### Spec Context
+
+Determine the skill's root directory (the directory containing `skills/`, `agents/`, etc.). Check whether `{skill-root}/docs/` exists, and if so, read:
+
+- `{skill-root}/docs/contract.md` — design intent document
+- `{skill-root}/docs/spec.md` — execution plan document
+- `{skill-root}/docs/learnings.md` — accumulated observations
+
+Record whether a spec exists or not — this determines Step 2's behavior.
+
 If a braindump was provided, hold it for Step 2 — the user's ideas are passed to the optimizer alongside the skill content so the analysis addresses both systematic quality issues and the user's specific concerns.
 
 ## Step 2 — Analysis & Scoring
 
-Spawn the `skill-forge:skill-optimizer` agent (Sonnet) with all collected skill content provided in the prompt.
+### When a spec exists
 
-If the user provided a braindump, include it in the agent prompt under a `## User-Requested Improvements` section. The optimizer should:
+Spawn the `skill-forge:skill-optimizer` agent (Sonnet) with all collected skill content AND spec content provided in the prompt. Include spec files under a `## Spec Context` section containing the full text of contract.md and spec.md.
 
-1. Score all four dimensions as normal (the braindump doesn't skip systematic analysis)
-2. Map each braindump item to the most relevant dimension
-3. Incorporate braindump items into its recommendations, prioritizing them when they align with findings
-4. Flag any braindump items that conflict with best practices, explaining the trade-off
+If the user provided a braindump, include it under a `## User-Requested Improvements` section.
 
-The agent scores four dimensions (0–25 each, total /100):
+The optimizer performs a three-way analysis:
 
-### Description Quality (0–25)
+1. **Spec vs reality drift**: has the skill diverged from its spec? Are there components in the spec that don't exist, or components that exist but aren't in the spec?
+2. **Braindump vs spec alignment**: is the user's request consistent with the original design intent?
+3. **Braindump vs spec conflict**: does the user want something the spec explicitly excluded or scoped out?
 
-| Range | Criteria                                            |
-| ----- | --------------------------------------------------- |
-| 0–5   | Missing or vague, no trigger phrases                |
-| 6–10  | Present but generic, unclear activation             |
-| 11–15 | Specific with some triggers, missing negative cases |
-| 16–20 | Good triggers, third-person, includes negatives     |
-| 21–25 | Excellent — precise, tested, concise                |
+After the three-way analysis, the optimizer scores the standard four dimensions (0-25 each):
 
-### Structural Compliance (0–25)
+- Description Quality
+- Structural Compliance
+- Instruction Quality
+- Agent/Tool Optimization
 
-| Range | Criteria                                              |
-| ----- | ----------------------------------------------------- |
-| 0–5   | Wrong file name, no frontmatter, missing fields       |
-| 6–10  | Valid frontmatter, poor structure, >500 lines         |
-| 11–15 | Good structure, some content should be in references/ |
-| 16–20 | Progressive disclosure, front-loaded constraints      |
-| 21–25 | Optimal — lean SKILL.md, rich references/             |
+Each braindump item is mapped to the most relevant dimension. Braindump items that conflict with best practices are flagged with trade-off explanations.
 
-### Instruction Quality (0–25)
+### When no spec exists
 
-| Range | Criteria                                                                        |
-| ----- | ------------------------------------------------------------------------------- |
-| 0–5   | Vague, abstract, no examples                                                    |
-| 6–10  | Some specifics, constraints buried                                              |
-| 11–15 | Imperative form, numbered steps, missing examples                               |
-| 16–20 | Specific, constraints in first 100 lines, has examples                          |
-| 21–25 | Optimal — scripts for deterministic ops, rationale over ALL CAPS, error handled |
+Before running the optimizer, offer retroactive spec generation via AskUserQuestion:
 
-### Agent/Tool Optimization (0–25)
+- **Option A**: "Generate spec from current skill state"
+- **Option B**: "Skip, improve without spec"
 
-| Range | Criteria                                               |
-| ----- | ------------------------------------------------------ |
-| 0–5   | No restrictions, no agents, main thread only           |
-| 6–10  | Some allowed-tools but overly broad                    |
-| 11–15 | Right tools, models not optimized                      |
-| 16–20 | Right-sized models, least-privilege tools              |
-| 21–25 | Optimal — agent teams, minimal grants, AskUserQuestion |
+If the user selects **Option A**:
+
+1. Spawn the `skill-forge:skill-optimizer` agent with skill content and a directive to reverse-engineer a contract.md and spec.md from the current skill state
+2. The optimizer generates both documents using the templates in `${CLAUDE_PLUGIN_ROOT}/shared/templates/`
+3. Create `{skill-root}/docs/` if it doesn't exist
+4. Write the generated contract.md and spec.md to `{skill-root}/docs/`
+5. Create an empty learnings.md with a header explaining its purpose
+6. Present the generated spec to the user via AskUserQuestion for approval
+7. Once approved, proceed with the full three-way analysis as if a spec had existed
+
+If the user selects **Option B**:
+
+Spawn the `skill-forge:skill-optimizer` agent with skill content only (no spec context). The optimizer performs the standard scored analysis — four dimensions scored 0-25 each. This is the current behavior with no regression.
 
 Wait for the agent to return the full scored analysis before proceeding.
 
 ## Step 3 — Recommendations
 
 Present the scorecard via AskUserQuestion. Show each dimension score and the most impactful improvement for that dimension. If braindump items were provided, show how they map to dimensions.
+
+### When spec alignment findings exist
+
+Present spec alignment issues alongside the scorecard:
+
+- **Spec drift**: list each divergence between spec and current skill state
+- **Braindump conflicts**: list any user requests that conflict with the spec's scope boundaries
+- **Braindump alignment**: confirm which user requests are consistent with the spec
+
+If spec updates are needed (due to drift or intentional design changes), present the proposed spec changes FIRST, before skill improvements. The spec is the source of truth — it must be updated before downstream artifacts change.
+
+### User selection
 
 Ask the user which improvements to apply. Options:
 
@@ -113,6 +127,7 @@ Ask the user which improvements to apply. Options:
 - "Structure only"
 - "Instructions only"
 - "Agents/Tools only"
+- "Update spec only"
 - "I'm satisfied"
 
 If the user selects "I'm satisfied", stop here and summarize the scores.
@@ -120,6 +135,16 @@ If the user selects "I'm satisfied", stop here and summarize the scores.
 For each selected dimension, generate specific improvements with concrete before/after examples drawn from the agent's recommendations.
 
 ## Step 4 — Apply Changes
+
+### Spec-first updates
+
+If spec updates were approved (either from drift findings or design intent changes):
+
+1. Edit contract.md first — update problem statement, goals, scope boundaries, or design decisions as needed
+2. Edit spec.md second — update component manifest, architecture, or execution plan as needed
+3. Present each spec change via AskUserQuestion with before/after text before applying
+
+### Skill improvements
 
 For each improvement identified in the selected dimensions:
 
@@ -142,16 +167,30 @@ After all approved changes are applied:
 
 ```
 Dimension          Before  After  Change
-─────────────────  ──────  ─────  ──────
+-----------------  ------  -----  ------
 Description           12     22    +10
 Structure             15     21     +6
 Instructions          18     23     +5
 Agents/Tools           8     19    +11
-─────────────────  ──────  ─────  ──────
+-----------------  ------  -----  ------
 TOTAL                 53     85    +32
 ```
 
-4. If the skill is inside a marketplace plugin (a `package.json` exists in the plugin directory with `bun` scripts), run:
+4. Append a score history entry to `{skill-root}/docs/learnings.md`. Create the file if it does not exist.
+
+```markdown
+## YYYY-MM-DD — Improvement Run
+
+- **Trigger:** <braindump summary or "systematic improvement">
+- **Before:** Description X/25, Structure X/25, Instructions X/25, Agents X/25 (Total: X/100)
+- **After:** Description X/25, Structure X/25, Instructions X/25, Agents X/25 (Total: X/100)
+- **Changes applied:** <list>
+- **Changes skipped:** <list>
+```
+
+Use the actual date (from the system) and real scores. This creates an audit trail of improvement runs over time.
+
+5. If the skill is inside a marketplace plugin (a `package.json` exists in the plugin directory with `bun` scripts), run:
 
    ```bash
    bun run typecheck && bun run build
@@ -159,6 +198,29 @@ TOTAL                 53     85    +32
 
    Report the result.
 
-5. If the description field was changed, spawn the `skill-forge:skill-validator` agent (Haiku) with the skill directory path. The validator generates 20 trigger test queries and writes them to `trigger-tests.md` alongside the improved SKILL.md. Include the trigger test path in the report.
+6. If the description field was changed, spawn the `skill-forge:skill-validator` agent (Haiku) with the skill directory path. The validator generates 20 trigger test queries and writes them to `trigger-tests.md` alongside the improved SKILL.md. Include the trigger test path in the report.
 
-6. Present next steps: any remaining improvements the user skipped, any follow-up tasks (version bump, sync, etc.).
+## Step 6 — Retrospective
+
+After completing the improvement run, perform a retrospective to capture learnings for future runs.
+
+1. Spawn the `skill-forge:retrospective` agent (Sonnet) with the following input:
+   - Before and after scores for all four dimensions
+   - List of applied changes and skipped changes
+   - Braindump themes (if a braindump was provided)
+   - The skill name and path
+
+2. The retrospective agent analyzes:
+   - Which dimensions consistently score low across improvement runs?
+   - What do users ask to improve most frequently (braindump themes)?
+   - Are there common patterns suggesting generation is weak in a specific area?
+   - Did any skipped changes represent recurring issues?
+
+3. The agent appends timestamped observations to `${CLAUDE_PLUGIN_ROOT}/shared/learnings.md`
+
+4. If a pattern appears 3 or more times in the shared learnings, the agent proposes a concrete update to the relevant reference doc (e.g., `description-engineering.md`, `skill-anatomy.md`, `anti-patterns.md`). Present the proposed update via AskUserQuestion — the user must approve before any reference doc is modified.
+
+5. Present next steps to the user:
+   - Any remaining improvements that were skipped
+   - Follow-up tasks (version bump, sync, etc.)
+   - Suggested future improvement areas based on retrospective findings

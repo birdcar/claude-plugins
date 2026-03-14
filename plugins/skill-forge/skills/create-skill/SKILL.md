@@ -15,7 +15,8 @@ description: >-
 - ALWAYS use AskUserQuestion for decisions — never ask in plain text
 - ALWAYS read shared knowledge base from `${CLAUDE_PLUGIN_ROOT}/shared/` before generating
 - ALWAYS follow templates from `${CLAUDE_PLUGIN_ROOT}/shared/templates/`
-- Generated SKILL.md files must be ≤500 lines with progressive disclosure
+- ALWAYS write contract.md, spec.md, and learnings.md to {skill-dir}/docs/ before generating skill artifacts
+- Generated SKILL.md files must be <=500 lines with progressive disclosure
 - Descriptions must be third-person with trigger phrases and negative cases
 - Agent model assignments must be right-sized:
   - opus: complex generation, multi-step reasoning
@@ -39,10 +40,11 @@ The agent returns a structured classification containing:
 - Agent needs (count, roles, model assignments)
 - Complexity estimate
 - Similar/conflicting existing skills
+- Retrospective recommendation: `full` | `lightweight` | `none`
 
 Store this classification — it drives all subsequent steps.
 
-## Step 2 — Target Selection
+## Step 2 — Target + Name Selection
 
 Use AskUserQuestion with the following options:
 
@@ -66,11 +68,30 @@ Include this context in the description:
 Based on selection:
 
 - **Project** or **Global**: generate skill directory only (SKILL.md + `references/` subdirectory if needed). If the intake analysis requires commands, agents, or hooks, warn that these components will be omitted and recommend switching to marketplace.
-- **Marketplace**: use AskUserQuestion to ask for the absolute path to the marketplace repo root (e.g. `~/Code/me/claude-plugins`). Store this as `$MARKETPLACE_ROOT`. Then generate full plugin scaffolding (plugin.json, package.json, tsconfig.json, all skill/agent/command/hook files) under `$MARKETPLACE_ROOT/plugins/`
+- **Marketplace**: use AskUserQuestion to ask for the absolute path to the marketplace repo root (e.g. `~/Code/me/claude-plugins`). Store this as `$MARKETPLACE_ROOT`.
 
-## Step 3 — Confidence Gate
+After target selection, present the skill name via AskUserQuestion:
 
-Score the current understanding across 5 dimensions (0–20 each):
+> **Proposed skill name:** `{kebab-case-name-from-intake}`
+>
+> This name determines the skill directory path and all internal references.
+>
+> 1. Confirm this name
+> 2. Use a different name (provide your preferred name)
+
+Derive the skill name from the intake classification (converted to kebab-case). The user confirms or adjusts.
+
+Establish the skill directory path now:
+
+- **Project**: `{cwd}/.claude/skills/{skill-name}/`
+- **Global**: `~/.claude/skills/{skill-name}/`
+- **Marketplace**: `{$MARKETPLACE_ROOT}/plugins/{skill-name}/`
+
+Store this as `$SKILL_DIR` — the spec and all artifacts write here.
+
+## Step 3 — Spec Formation Loop
+
+Score the current understanding across 5 dimensions (0-20 each):
 
 | Dimension            | What it measures                           |
 | -------------------- | ------------------------------------------ |
@@ -80,82 +101,83 @@ Score the current understanding across 5 dimensions (0–20 each):
 | Output Specification | Is the expected output well-defined?       |
 | Scope Boundaries     | Are in-scope and out-of-scope cases clear? |
 
-**Threshold: ≥90 / 100 to proceed.**
+**Threshold: >=90 / 100 to proceed.**
 
 If below threshold:
 
 1. Identify which dimensions are under-scored
-2. Use AskUserQuestion to ask 2–4 targeted clarifying questions per round
+2. Use AskUserQuestion to ask 2-4 targeted clarifying questions per round
 3. Re-score after each round
-4. Loop until ≥90
+4. Loop until >=90
 
-Do not proceed to generation until the threshold is met.
+### Codebase Research (during this loop)
 
-## Step 4 — Codebase Research
-
-If the target location already contains skills or related code:
-
-Spawn the `skill-forge:skill-researcher` agent (Sonnet), passing:
+If the target location already contains skills or related code, spawn the `skill-forge:skill-researcher` agent (Sonnet) during this loop, passing:
 
 - The target installation path
 - The intake classification from Step 1
 
-The agent examines:
+Run the researcher while gathering clarifications so its findings inform the spec. If the target is empty or greenfield, skip the researcher.
 
-- Existing SKILL.md files for naming and structural conventions
-- Potential conflicts with the proposed skill name or trigger phrases
-- Code patterns worth referencing in the new skill's instructions
-- Related agent and command files
+### Spec Generation (when >=90)
 
-If the target is empty or greenfield (new directory), skip this step.
+Read templates from `${CLAUDE_PLUGIN_ROOT}/shared/templates/`:
 
-## Step 5 — Generation Plan
+- `contract-template.md`
+- `spec-template.md`
 
-Read the following templates before generating:
+Read relevant knowledge base docs from `${CLAUDE_PLUGIN_ROOT}/shared/`:
 
-- `${CLAUDE_PLUGIN_ROOT}/shared/templates/skill-template.md`
-- `${CLAUDE_PLUGIN_ROOT}/shared/templates/agent-template.md`
-- `${CLAUDE_PLUGIN_ROOT}/shared/templates/command-template.md`
+- `skill-anatomy.md` — structure rules
+- `description-engineering.md` — description writing
+- `anti-patterns.md` — what to avoid
+- `agent-design.md` — agent definitions
+- `workflow-patterns.md` — workflow structure
+- `primitives-guide.md` — tool usage
+- `local-config-pattern.md` — if intake flagged config needs
 
-Read relevant knowledge base docs as needed:
+Write the following files to `{$SKILL_DIR}/docs/`:
 
-- `${CLAUDE_PLUGIN_ROOT}/shared/skill-anatomy.md` — structure rules
-- `${CLAUDE_PLUGIN_ROOT}/shared/description-engineering.md` — description writing
-- `${CLAUDE_PLUGIN_ROOT}/shared/anti-patterns.md` — what to avoid
-- `${CLAUDE_PLUGIN_ROOT}/shared/agent-design.md` — agent definitions
-- `${CLAUDE_PLUGIN_ROOT}/shared/workflow-patterns.md` — workflow structure
-- `${CLAUDE_PLUGIN_ROOT}/shared/primitives-guide.md` — tool usage
-- `${CLAUDE_PLUGIN_ROOT}/shared/local-config-pattern.md` — if intake flagged config needs (credentials, paths, PII)
+1. **contract.md** — Design intent: problem statement, goals, success criteria, scope boundaries, design decisions. Follow `contract-template.md`.
 
-Use AskUserQuestion to present the generation plan:
+2. **spec.md** — Execution plan containing:
+   - Component manifest (every file to create with purpose and estimated size)
+   - Skill architecture (workflow pattern, agent interactions, data flow)
+   - Per-component details (for each file: sections, key decisions, dependencies)
+   - Execution plan with phases and parallelization strategy
+   - Retrospective configuration (based on intake analyst's recommendation: full/lightweight/none)
+   - Validation strategy (structural checks, anti-pattern targets, build verification)
 
-> Here's what I'll generate:
+   Follow `spec-template.md`.
+
+3. **learnings.md** — Start with a header explaining its purpose. The file begins empty and accumulates observations over time from retrospective runs.
+
+### Spec Approval
+
+Present the spec for approval via AskUserQuestion:
+
+> **Spec is ready for review.**
 >
-> **Skill name:** `{proposed-name}`
-> **Description:** `{proposed-description}`
+> The contract and spec have been written to `{$SKILL_DIR}/docs/`.
+> Review the spec's component manifest and execution plan.
 >
-> **Components:**
->
-> - SKILL.md ({estimated line count} lines)
-> - {list of agents with models}
-> - {command .md if applicable}
-> - {hooks/hooks.json if applicable}
->
-> **Workflow:** {1-sentence summary}
->
-> Approve or adjust?
->
-> 1. Approved — generate it
-> 2. Adjust description
-> 3. Change workflow
-> 4. Add/remove components
-> 5. Start over
+> 1. **Approved** — proceed to generation
+> 2. **Needs changes** — I'll edit the documents and re-present
+> 3. **Missing scope** — the spec doesn't cover something important
+> 4. **Start over** — discard and restart from intake
 
-Loop on adjustments until the user approves.
+Handle responses:
 
-## Step 6 — Scaffolding & Writing
+- **Approved**: proceed to Step 4.
+- **Needs changes**: use the Edit tool to update contract.md and/or spec.md based on user feedback. Re-present for approval. Loop until approved.
+- **Missing scope**: ask targeted questions via AskUserQuestion, update the spec, re-present.
+- **Start over**: discard the docs directory and return to Step 1.
 
-Use TodoWrite to track progress through this step.
+This single approval replaces both the old confidence gate exit and the old generation plan approval.
+
+## Step 4 — Execute Spec
+
+Read the approved `{$SKILL_DIR}/docs/spec.md` — this is the primary input for generation.
 
 **If target is Marketplace:**
 
@@ -165,35 +187,38 @@ Use TodoWrite to track progress through this step.
    - Plugin name
    - Description
    - Version `"0.1.0"`
-   - List of commands, agents, and skills to register
+   - Scaffolding details from the spec's component manifest
    - Marketplace repo root: `$MARKETPLACE_ROOT`
    - Package scope: `$PACKAGE_SCOPE`
 
    The scaffold-writer creates plugin.json, package.json, tsconfig.json, adds the tsconfig reference, and runs `bun run sync`.
 
 3. Spawn `skill-forge:skill-generator` agent (Opus) with:
-   - Intake classification
-   - Research findings (if any)
-   - Confidence-gate answers
-   - Approved generation plan
-   - Target path
+   - The approved spec.md as PRIMARY input
+   - Target path: `$SKILL_DIR`
 
-   The skill-generator writes SKILL.md, agent .md files, command .md (if applicable), reference docs, and hooks/hooks.json (if applicable).
+   The generator reads shared/ reference docs for writing quality but follows the spec for WHAT to create. It executes the spec's execution plan for ordering and parallelization, and reports any deviations from the spec.
+
+4. If the spec's retrospective configuration is `full`: generate a retrospective agent using `${CLAUDE_PLUGIN_ROOT}/shared/templates/retrospective-agent-template.md`, and a retrospective command if marketplace.
 
 **If target is Project or Global:**
 
 1. Create the skill directory at the target path
-2. Spawn `skill-forge:skill-generator` agent (Opus) with the same inputs as above
+2. Spawn `skill-forge:skill-generator` agent (Opus) with the same spec-based inputs as above
 
-## Step 7 — Validation
+## Step 5 — Validate
 
-After all files are written, spawn the `skill-forge:skill-validator` agent (Haiku) via the Agent tool, passing the path to the newly created skill directory.
+Spawn the `skill-forge:skill-validator` agent (Haiku) via the Agent tool, passing:
+
+- The path to the newly created skill directory
+- The path to `{$SKILL_DIR}/docs/spec.md`
 
 The validator performs:
 
 1. **Structural checks** — frontmatter validity, naming, line count, progressive disclosure, tool restrictions
 2. **Anti-pattern scan** — checks against `${CLAUDE_PLUGIN_ROOT}/shared/anti-patterns.md`
-3. **Trigger test generation** — writes 20 test queries to `trigger-tests.md` alongside the SKILL.md
+3. **Spec compliance check** — verify generated artifacts match the spec's component manifest. Flag files in the spec not created, or files created not in the spec.
+4. **Trigger test generation** — write 20 test queries to `trigger-tests.md` alongside the SKILL.md
 
 **If marketplace target**, also run:
 
@@ -209,10 +234,26 @@ Present the validator's report via AskUserQuestion:
 
 Options:
 
-1. "Looks good — finish" — proceed to delivery
+1. "Looks good — finish" — proceed to retrospective and delivery
 2. "Fix the flagged issues" — address failures and re-validate
 
-## Step 8 — Delivery
+## Step 6 — Retrospective & Delivery
+
+### Retrospective
+
+Spawn the `skill-forge:retrospective` agent (Sonnet) with:
+
+- The approved spec (contract.md + spec.md)
+- The validator report from Step 5
+- Any user modifications made during the run (edits to spec, manual fixes after validation)
+
+The agent:
+
+1. Analyzes the run: Did intake classification match what was built? Did the validator catch things the spec should have prevented? Did the user manually change anything post-generation?
+2. Appends timestamped observations to `${CLAUDE_PLUGIN_ROOT}/shared/learnings.md`
+3. If a pattern appears 3+ times in learnings: proposes a concrete update to the relevant reference doc via AskUserQuestion (user approves before any modification)
+
+### Delivery
 
 Summarize what was created:
 

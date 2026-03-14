@@ -16,8 +16,19 @@
 | 12  | Agent model            | `model:` field set, right-sized for task               | LOW      | Yes                          |
 | 13  | Command allowed-tools  | Appropriate tool restrictions                          | MEDIUM   | No                           |
 | 14  | Hooks location         | hooks/hooks.json, not inline in plugin.json            | HIGH     | Yes                          |
+| 15  | Spec compliance        | Generated artifacts match spec's component manifest    | HIGH     | No                           |
+| 16  | Docs present           | docs/contract.md, spec.md, learnings.md exist          | MEDIUM   | Yes (generate from current)  |
 
 ## Pass criteria: All CRITICAL checks pass, no more than 2 HIGH failures.
+
+### Spec Compliance Check
+
+When a `docs/spec.md` exists, verify:
+
+- Every file in the component manifest was created
+- No files were created that aren't in the manifest (report as deviations)
+- The execution plan's phases were followed in order
+- Retrospective configuration matches the intake analyst's recommendation
 
 # Trigger Test Protocol
 

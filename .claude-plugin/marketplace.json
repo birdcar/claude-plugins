@@ -64,7 +64,7 @@
       "name": "skill-forge",
       "source": "./plugins/skill-forge",
       "description": "Generate and optimize production-grade Claude Code skills from brain dumps",
-      "version": "0.3.0"
+      "version": "0.4.0"
     }
   ]
 }
