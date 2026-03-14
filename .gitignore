@@ -23,8 +23,8 @@ Thumbs.db
 .env.local
 .env.*.local
 
-# Local docs
-docs/
+# Local docs (brainstorming specs, not plugin docs)
+/docs/
 
 # Plugin local config (per-machine settings, never commit)
 *.local.md
