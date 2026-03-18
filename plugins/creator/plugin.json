@@ -1,6 +1,0 @@
-{
-  "name": "creator",
-  "version": "0.1.0",
-  "description": "Commands for generating new Claude Code components from natural language",
-  "commands": ["./commands/"]
-}

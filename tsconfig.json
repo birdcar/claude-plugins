@@ -3,8 +3,6 @@
   "references": [
     { "path": "plugins/dev-commands" },
     { "path": "plugins/octoflow" },
-    { "path": "plugins/creator" },
-    { "path": "plugins/plugin-tools" },
     { "path": "plugins/github-actions-generator" },
     { "path": "plugins/repo-structure" },
     { "path": "plugins/customer-voice" },

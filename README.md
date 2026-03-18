@@ -41,14 +41,6 @@ Generate production-grade Claude Code plugins from a brain dump. `/forge-skill` 
 
 There's also `/improve-skill` which takes an existing skill or command and iteratively improves it based on feedback, showing proposed changes before applying them.
 
-### creator `v0.1.0`
-
-Simpler alternative to skill-forge for scaffolding new plugins. `/create-skill` takes a natural language description, determines whether it should be a command or skill, checks for naming conflicts, generates the full directory structure, and runs typecheck and build before reporting success.
-
-### plugin-tools `v0.1.0`
-
-Tools for working with this repo itself. `/analyze-plugins` audits all plugins for completeness, consistency, and documentation quality — producing a prioritized list of improvements. `/improve-skill` (the plugin-tools version) iteratively refines an existing component based on feedback.
-
 ### github-actions-generator `v0.1.0`
 
 Scaffold TypeScript GitHub Actions for Bun workspace monorepos. The `generate-action` skill handles the full lifecycle: `action.yml`, entrypoint, package.json, tsconfig, CI workflow, release workflow, Octokit patterns, error handling, and tests. It carries a set of reference templates so the generated output follows established patterns rather than guessing.
@@ -92,7 +84,7 @@ CI requires type check, build, sync, and format check to all pass before merge.
 
 ## Adding a Plugin
 
-The fastest path is `/forge-skill` or `/create-skill` if you have the plugins installed. Otherwise manually:
+The fastest path is `/forge-skill` if you have the skill-forge plugin installed. Otherwise manually:
 
 1. Create `plugins/{name}/` with `package.json`, `tsconfig.json`, `plugin.json`
 2. Add commands in `commands/{name}.md` or skills in `skills/{name}/SKILL.md`

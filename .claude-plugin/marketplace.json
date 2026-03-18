@@ -7,12 +7,6 @@
   "description": "Personal Claude Code plugin marketplace",
   "plugins": [
     {
-      "name": "creator",
-      "source": "./plugins/creator",
-      "description": "Commands for generating new Claude Code components from natural language",
-      "version": "0.1.0"
-    },
-    {
       "name": "customer-voice",
       "source": "./plugins/customer-voice",
       "description": "Draft customer responses in Nick's voice with optional codebase and docs research",
@@ -47,12 +41,6 @@
       "source": "./plugins/octoflow",
       "description": "Core Git workflow commands for commits and pull requests",
       "version": "0.2.0"
-    },
-    {
-      "name": "plugin-tools",
-      "source": "./plugins/plugin-tools",
-      "description": "Commands for analyzing and enhancing Claude Code plugins",
-      "version": "0.1.0"
     },
     {
       "name": "repo-structure",

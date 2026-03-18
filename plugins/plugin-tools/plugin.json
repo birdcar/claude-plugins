@@ -1,6 +1,0 @@
-{
-  "name": "plugin-tools",
-  "version": "0.1.0",
-  "description": "Commands for analyzing and enhancing Claude Code plugins",
-  "commands": ["./commands/"]
-}
