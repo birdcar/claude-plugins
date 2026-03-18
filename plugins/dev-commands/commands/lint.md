@@ -4,26 +4,43 @@ description: Run linter and fix issues
 allowed-tools: [Bash, Read, Glob, Edit]
 ---
 
-Run the project's linter and optionally fix issues.
+Run the project's linter with auto-fix enabled.
 
 ## Detection
 
-Check for linting tools:
+Identify the linter by checking config files and `package.json` devDependencies:
 
-1. `package.json` - eslint, biome, prettier, oxlint
-2. `pyproject.toml` - ruff, black, flake8
-3. `Cargo.toml` - clippy
-4. `.golangci.yml` - golangci-lint
+**JavaScript/TypeScript** (check in this order, use first match):
+1. `biome.json` or `biome.jsonc` → Biome
+2. `.oxlintrc.json` or oxlint in devDependencies → oxlint
+3. `.eslintrc.*` or `eslint.config.*` → ESLint
+4. `.prettierrc*` or prettier in devDependencies → Prettier
+
+**Python**:
+- `ruff.toml` or `[tool.ruff]` in `pyproject.toml` → Ruff
+- `[tool.black]` in `pyproject.toml` → Black
+
+**Rust**: `cargo clippy` (always available)
+
+**Go**: `.golangci.yml` → golangci-lint, else `go vet`
+
+**Deno**: `deno.json` → `deno lint`
 
 ## Execution
 
-Run the linter:
+Run the linter with auto-fix:
 
+- **Biome**: `bunx biome check --write .` (or `npx` based on lockfile)
+- **oxlint**: `bunx oxlint --fix`
 - **ESLint**: `npx eslint . --fix`
-- **Biome**: `npx biome check --write`
 - **Prettier**: `npx prettier --write .`
 - **Ruff**: `ruff check --fix . && ruff format .`
-- **Clippy**: `cargo clippy --fix`
-- **Go**: `golangci-lint run --fix`
+- **Black**: `black .`
+- **Clippy**: `cargo clippy --fix --allow-dirty`
+- **golangci-lint**: `golangci-lint run --fix`
+- **go vet**: `go vet ./...` (no auto-fix)
+- **Deno**: `deno lint`
+
+If `$ARGUMENTS` contains a path, lint only that path instead of `.`.
 
 Report any issues that couldn't be auto-fixed.

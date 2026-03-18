@@ -16,7 +16,7 @@
       "name": "dev-commands",
       "source": "./plugins/dev-commands",
       "description": "Slash commands for common development workflows",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     {
       "name": "github-actions-generator",
