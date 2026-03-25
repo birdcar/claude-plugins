@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "claude-plugins",
@@ -9,10 +8,6 @@
         "prettier": "^3.4.0",
         "typescript": "^5.7.0",
       },
-    },
-    "plugins/creator": {
-      "name": "@birdcar/claude-plugin-creator",
-      "version": "0.1.0",
     },
     "plugins/customer-voice": {
       "name": "@birdcar/claude-plugin-customer-voice",
@@ -38,10 +33,6 @@
       "name": "@birdcar/claude-plugin-octoflow",
       "version": "0.1.0",
     },
-    "plugins/plugin-tools": {
-      "name": "@birdcar/claude-plugin-plugin-tools",
-      "version": "0.1.0",
-    },
     "plugins/repo-structure": {
       "name": "@birdcar/claude-plugin-repo-structure",
       "version": "0.1.0",
@@ -52,8 +43,6 @@
     },
   },
   "packages": {
-    "@birdcar/claude-plugin-creator": ["@birdcar/claude-plugin-creator@workspace:plugins/creator"],
-
     "@birdcar/claude-plugin-customer-voice": ["@birdcar/claude-plugin-customer-voice@workspace:plugins/customer-voice"],
 
     "@birdcar/claude-plugin-github-profile": ["@birdcar/claude-plugin-github-profile@workspace:plugins/github-profile"],
@@ -61,8 +50,6 @@
     "@birdcar/claude-plugin-home-server": ["@birdcar/claude-plugin-home-server@workspace:plugins/home-server"],
 
     "@birdcar/claude-plugin-octoflow": ["@birdcar/claude-plugin-octoflow@workspace:plugins/octoflow"],
-
-    "@birdcar/claude-plugin-plugin-tools": ["@birdcar/claude-plugin-plugin-tools@workspace:plugins/plugin-tools"],
 
     "@birdcar/claude-plugin-repo-structure": ["@birdcar/claude-plugin-repo-structure@workspace:plugins/repo-structure"],
 
