@@ -10,20 +10,28 @@ Train or update bat-kol voice profiles through a guided interview with optional 
 ## Process
 
 1. Parse arguments from `$ARGUMENTS`:
-   - `--register <name>`: train a specific register
-   - `--channel <name>`: train a specific channel
-   - `--style`: train the global writing style
-   - No arguments: ask what to train via AskUserQuestion
+   - `--register <name>`: scope = register, name = provided value
+   - `--channel <name>`: scope = channel, name = provided value
+   - `--style`: scope = style
+   - No arguments: proceed to step 2
 
-2. Spawn the `bat-kol:voice-trainer` agent with:
-   - The training scope (register, channel, style, or all)
-   - The specific name if provided
-   - The resolve-config.sh path: `${CLAUDE_SKILL_DIR}/scripts/resolve-config.sh`
-   - Note: `${CLAUDE_SKILL_DIR}` here refers to `${CLAUDE_PLUGIN_ROOT}/skills/bat-kol`
+2. **If no arguments were provided**, use AskUserQuestion to ask the user what to train. This MUST happen in the command context, not in the agent — present these options:
+   - "Train a voice register" — tone, formality, vocabulary for a specific register
+   - "Train a channel" — format rules and conventions for a specific channel
+   - "Set up global writing style" — choose and configure a writing style framework
+   - "Full setup (style + all registers)" — complete initial voice training
 
-3. The voice-trainer agent handles the entire interactive flow — wait for it to complete.
+3. **If the user chose register or channel training without specifying a name**, use AskUserQuestion again to ask which one. For registers, offer: professional, internal, personal, social, or custom. For channels, offer the built-in list (slack, email, bluesky, github) plus "Add a new custom channel".
 
-4. Summarize what was created or updated for the user.
+4. Spawn the `bat-kol:voice-trainer` agent with:
+   - The resolved training scope (register, channel, style, or full)
+   - The specific name (if register or channel)
+   - The resolve-config.sh path: `${CLAUDE_PLUGIN_ROOT}/skills/bat-kol/scripts/resolve-config.sh`
+   - Explicit instruction: "The user has already chosen what to train. Do NOT re-ask for training scope — proceed directly with the interview for the specified scope."
+
+5. The voice-trainer agent handles the interview, sample analysis, and API scraping — wait for it to complete.
+
+6. Summarize what was created or updated for the user.
 
 ## Examples
 

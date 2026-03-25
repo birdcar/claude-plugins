@@ -1,7 +1,7 @@
 {
   "name": "bat-kol",
   "description": "Contextual voice writer that drafts messages in your authentic voice for any communication channel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "agents": [
     "./agents/config-resolver.md",
     "./agents/voice-trainer.md",
