@@ -7,6 +7,12 @@
   "description": "Personal Claude Code plugin marketplace",
   "plugins": [
     {
+      "name": "bat-kol",
+      "source": "./plugins/bat-kol",
+      "description": "Contextual voice writer that drafts messages in your authentic voice for any communication channel",
+      "version": "0.1.0"
+    },
+    {
       "name": "customer-voice",
       "source": "./plugins/customer-voice",
       "description": "Draft customer responses in Nick's voice with optional codebase and docs research",

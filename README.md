@@ -53,6 +53,14 @@ Enforces a `~/Code/ORG/REPO` directory convention for cloned repos and new proje
 
 Drafts customer responses in a specific voice. Takes an incoming customer message, optionally researches the relevant codebase and documentation, and produces a reply draft. This one is fairly personal — the voice and context are tuned for a specific person's communication style — but the structure is reusable if you want to adapt it.
 
+### bat-kol `v0.1.0`
+
+Contextual voice writer — drafts messages in your authentic voice for Slack, email, Bluesky, GitHub, and custom channels.
+
+`/write-for <channel> [topic]` produces a draft in the right format and register for that channel. `/train-voice` walks through a guided interview, accepts writing samples, and can scrape communication history from channel APIs to build a voice profile. `/add-channel` creates custom channel definitions with their own format rules and default voice register.
+
+Voice and channel are independent dimensions: channel handles formatting (mrkdwn for Slack, char limits for Bluesky, HTML for email), register handles tone (professional, internal, personal, social). Config cascades from project `.bat-kol/` down to global `$XDG_CONFIG_HOME/bat-kol/`, so voice profiles can vary per repo. bat-kol drafts only — no direct sending.
+
 ### github-profile `v0.1.0`
 
 Generates a complete GitHub Profile README from your actual GitHub data. `/generate-github-profile` walks through a guided workflow: gathers your preferences (sections, style, integrations), researches your real repos and languages via the GitHub API, then generates the README, GitHub Actions workflows for dynamic content (blog feeds, contribution snake, WakaTime, Spotify), and SVG assets with dark/light mode support. Four style templates (Professional, Creative, Minimal, Playful) and a 300-line cap to keep things scannable.

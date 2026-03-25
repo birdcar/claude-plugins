@@ -1,0 +1,15 @@
+{
+  "name": "bat-kol",
+  "description": "Contextual voice writer that drafts messages in your authentic voice for any communication channel",
+  "version": "0.1.0",
+  "agents": [
+    "./agents/config-resolver.md",
+    "./agents/voice-trainer.md",
+    "./agents/slack-drafter.md",
+    "./agents/email-drafter.md",
+    "./agents/bluesky-drafter.md",
+    "./agents/github-drafter.md",
+    "./agents/generic-drafter.md"
+  ],
+  "commands": ["./commands/"]
+}
