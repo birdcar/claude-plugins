@@ -170,100 +170,53 @@ Mark each interview task as completed as you finish it.
 
 This step MUST run in the command context because MCP tools are not available to subagents. Mark the scraping task as in_progress.
 
-First, resolve the config root to know where to write files:
+First, resolve the config root:
 
 ```bash
 CONFIG_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/bat-kol"
 mkdir -p "$CONFIG_ROOT/samples"
 ```
 
-### GitHub Scraping
+For each scraping source the user opted into, run the appropriate scraper. Track which sources succeeded and which failed.
 
-Use `gh api --paginate` for full history. Write all output to `{config_root}/samples/github-raw.md`.
+### GitHub — run the script
 
-```bash
-USERNAME=$(gh api /user --jq '.login')
-```
-
-**PR bodies** (authored, all pages):
+Run the scraping script via Bash and check its output:
 
 ```bash
-gh api --paginate "search/issues?q=author:${USERNAME}+type:pr&sort=updated&per_page=100" --jq '.items[] | "### PR: \(.title)\n\(.body // "no body")\n---"'
+bash ${CLAUDE_SKILL_DIR}/scripts/scrape-github.sh "$CONFIG_ROOT/samples/github-raw.md"
 ```
 
-**Issue bodies** (authored, all pages):
+The script handles pagination, error handling, and writes directly to the output file. Check the exit code — if non-zero, report the error but continue with other sources.
+
+### Bluesky — run the script
 
 ```bash
-gh api --paginate "search/issues?q=author:${USERNAME}+type:issue&sort=updated&per_page=100" --jq '.items[] | "### Issue: \(.title)\n\(.body // "no body")\n---"'
+bash ${CLAUDE_SKILL_DIR}/scripts/scrape-bluesky.sh "{handle}" "$CONFIG_ROOT/samples/bluesky-raw.md"
 ```
 
-**PR review comments** (across repos the user has reviewed):
+Replace `{handle}` with the user's handle from the interview.
 
-```bash
-gh api --paginate "search/issues?q=reviewed-by:${USERNAME}+type:pr&sort=updated&per_page=50" --jq '.items[] | .pull_request.url' | while read -r pr_url; do
-  gh api "${pr_url}/comments" --jq '.[] | select(.user.login=="'"${USERNAME}"'") | "### Review comment\n\(.body)\n---"'
-done
-```
+### Slack — use MCP tools directly (main context only)
 
-**Issue comments** (where user has commented):
+Use the Slack MCP tools directly — they are only available in this command context, NOT in subagents:
 
-```bash
-gh api --paginate "search/issues?q=commenter:${USERNAME}+type:issue&sort=updated&per_page=50" --jq '.items[] | "\(.repository_url)/issues/\(.number)"' | while read -r issue_url; do
-  gh api "${issue_url}/comments" --jq '.[] | select(.user.login=="'"${USERNAME}"'") | "### Issue comment\n\(.body)\n---"'
-done
-```
+1. Use `mcp__claude_ai_Slack__slack_search_public_and_private` to search for messages from the user in the channels they specified
+2. For each channel, use `mcp__claude_ai_Slack__slack_read_channel` to fetch message history
 
-Write all output to `{config_root}/samples/github-raw.md` using the Write tool. If any `gh api` call fails, log the error but continue with the remaining calls. At the end, note how many items were scraped per category.
+Collect all messages authored by the user. Write the results to `$CONFIG_ROOT/samples/slack-raw.md` using the Write tool.
 
-### Bluesky Scraping
+If Slack MCP tools are not available (not in `allowed-tools` or not configured), inform the user and suggest exporting Slack messages as text files to use as writing samples instead.
 
-```bash
-curl -s "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor={handle}&limit=100" | jq -r '.feed[].post.record.text'
-```
+### Email — use Glean MCP directly (main context only)
 
-If more than 100 posts exist, paginate using the `cursor` field:
+Use `mcp__claude_ai_Glean__gmail_search` to search for the user's recent sent emails. Write results to `$CONFIG_ROOT/samples/email-raw.md` using the Write tool.
 
-```bash
-CURSOR=$(curl -s "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor={handle}&limit=100" | jq -r '.cursor')
-# Continue fetching with &cursor=$CURSOR until cursor is null
-```
+If Glean MCP tools are not available, inform the user and suggest exporting emails as text files to use as writing samples instead.
 
-Write to `{config_root}/samples/bluesky-raw.md`.
+### After scraping
 
-### Slack Scraping (via MCP — main context only)
-
-Use the Slack MCP tools directly (these are available in command context):
-
-1. `mcp__claude_ai_Slack__slack_search_public_and_private` — search for messages from the user in specified channels
-2. `mcp__claude_ai_Slack__slack_read_channel` — read recent messages from channels the user specified
-
-For each channel the user named:
-
-- Fetch the last 200+ messages
-- Filter to messages authored by the user
-- Write to `{config_root}/samples/slack-raw.md`
-
-If Slack MCP is not available (tools not configured), inform the user and suggest providing Slack message exports as sample files instead.
-
-### Email Scraping (via Glean — main context only)
-
-Use Glean MCP tools:
-
-1. `mcp__claude_ai_Glean__gmail_search` — search for sent emails
-
-Search for the user's recent sent emails. Write to `{config_root}/samples/email-raw.md`.
-
-If Glean MCP is not available, inform the user and suggest providing email exports as sample files instead.
-
-### Error Handling
-
-For each scraping source:
-
-- If the tool/API fails, log the error and continue with remaining sources
-- Report what succeeded and what failed at the end of scraping
-- Never block the entire training flow because one source failed
-
-Mark the scraping task as completed (note which sources succeeded/failed in the task description).
+Report what succeeded and what failed. List each output file written and its size. Mark the scraping task as completed with a note of the results.
 
 ## Step 4: Write Config Files
 

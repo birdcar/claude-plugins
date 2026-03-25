@@ -5,10 +5,11 @@ description: >-
   (Slack, email, Bluesky, GitHub, custom). Combines writing style frameworks,
   voice registers, and channel format rules via cascading config resolution.
   Use when the user asks to "draft an email", "respond in slack", "write a
-  bluesky post", "draft a PR description", "write a commit message", "compose
-  a message for", or "summarize this for" a communication channel.
+  bluesky post", "draft a PR description", "compose a message for",
+  "summarize this for", "send a message", "reply to this", or "write a
+  LinkedIn post" for a communication channel.
   Do NOT use for general writing tasks (code, documentation, READMEs),
-  customer support replies, or real-time message monitoring.
+  customer support replies, git commit messages, or real-time monitoring.
 ---
 
 # bat-kol
