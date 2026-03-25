@@ -7,7 +7,7 @@ Personal Claude Code plugin marketplace using Bun workspaces and TypeScript.
 - **Add plugin**: Create in `plugins/`, run `bun run sync`
 - **Build**: `bun run build`
 - **Format**: `bun run format`
-- **Before commit**: `bun run typecheck && bun run format:check`
+- **Before commit**: `bun install && bun run typecheck && bun run format:check`
 
 ## Structure
 
@@ -73,11 +73,14 @@ When changes are ready to ship, follow this pipeline in order:
 
 1. Bump version in the plugin's `plugin.json` (patch/minor/major per Versioning above)
 2. `bun run sync` to update marketplace.json
-3. `bun run typecheck && bun run build && bun run format` to verify and fix formatting
-4. Commit and push to main
-5. Wait for CI to pass (`gh run watch` or check GitHub Actions)
-6. Pull the local marketplace cache: `cd ~/.claude/plugins/marketplaces/birdcar-plugins && git pull`
-7. Run `claude plugin update <plugin-name>` for each changed plugin
+3. `bun install` to ensure lockfile is up to date (CI uses `--frozen-lockfile` and will fail on drift)
+4. `bun run format` to fix formatting, then `bun run format:check` to verify (catches Prettier issues before CI does)
+5. `bun run typecheck && bun run build` to verify types and build
+6. If `bun install` changed `bun.lock` or `bun run format` changed files, stage those too
+7. Commit and push to main
+8. Wait for CI to pass (`gh run watch` or check GitHub Actions)
+9. Pull the local marketplace cache: `cd ~/.claude/plugins/marketplaces/birdcar-plugins && git pull`
+10. Run `claude plugin update <plugin-name>@birdcar-plugins` for each changed plugin
 
 When asked to "ship", "deploy", or "push and update", run this full pipeline automatically. Do not skip steps or stop at push — the local marketplace pull and plugin update are part of shipping.
 
