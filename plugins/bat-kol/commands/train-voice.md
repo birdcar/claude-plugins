@@ -123,11 +123,13 @@ If yes: ask for file paths via AskUserQuestion.
 - "Scrape my Bluesky posts (public API)"
 - "Scrape my Slack messages (via Slack MCP)"
 - "Scrape my email history (via Glean)"
+- "Scrape my LinkedIn posts (via Glean or data export)"
 - "Skip API scraping"
 
-If GitHub selected, ask for their GitHub username via AskUserQuestion (or detect with `gh api /user --jq '.login'`).
+If GitHub selected, detect username with `gh api /user --jq '.login'` via Bash.
 If Bluesky selected, ask for their handle via AskUserQuestion.
 If Slack selected, ask which channels to scrape via AskUserQuestion.
+If LinkedIn selected, use AskUserQuestion: "How should we get your LinkedIn data?" with options: "Search via Glean" / "I have a LinkedIn data export file" / "I'll paste some posts".
 
 Record all answers.
 
@@ -197,26 +199,50 @@ bash ${CLAUDE_SKILL_DIR}/scripts/scrape-bluesky.sh "{handle}" "$CONFIG_ROOT/samp
 
 Replace `{handle}` with the user's handle from the interview.
 
-### Slack — use MCP tools directly (main context only)
+### Slack — MCP tools piped through formatter script
 
-Use the Slack MCP tools directly — they are only available in this command context, NOT in subagents:
+Use Slack MCP tools directly (only available in command context, NOT in subagents):
 
 1. Use `mcp__claude_ai_Slack__slack_search_public_and_private` to search for messages from the user in the channels they specified
 2. For each channel, use `mcp__claude_ai_Slack__slack_read_channel` to fetch message history
+3. Collect all messages authored by the user into a single string, one message per line
+4. Pipe the collected messages through the formatter script:
 
-Collect all messages authored by the user. Write the results to `$CONFIG_ROOT/samples/slack-raw.md` using the Write tool.
+```bash
+echo "$SLACK_MESSAGES" | bash ${CLAUDE_SKILL_DIR}/scripts/format-slack.sh "$CONFIG_ROOT/samples/slack-raw.md"
+```
 
-If Slack MCP tools are not available (not in `allowed-tools` or not configured), inform the user and suggest exporting Slack messages as text files to use as writing samples instead.
+If Slack MCP tools are not available (not configured), inform the user and suggest exporting Slack messages as text files to use as writing samples instead.
 
-### Email — use Glean MCP directly (main context only)
+### Email — Glean MCP piped through formatter script
 
-Use `mcp__claude_ai_Glean__gmail_search` to search for the user's recent sent emails. Write results to `$CONFIG_ROOT/samples/email-raw.md` using the Write tool.
+1. Use `mcp__claude_ai_Glean__gmail_search` to search for the user's recent sent emails
+2. Collect email bodies into a string, separated by `---` delimiters
+3. Pipe through the formatter:
+
+```bash
+echo "$EMAIL_BODIES" | bash ${CLAUDE_SKILL_DIR}/scripts/format-email.sh "$CONFIG_ROOT/samples/email-raw.md"
+```
 
 If Glean MCP tools are not available, inform the user and suggest exporting emails as text files to use as writing samples instead.
 
+### LinkedIn — Glean MCP or data export, piped through formatter script
+
+**If using Glean**: Use `mcp__claude_ai_Glean__search` to search for the user's LinkedIn posts and comments. Collect post content, separate with `---` delimiters, and pipe through:
+
+```bash
+echo "$LINKEDIN_POSTS" | bash ${CLAUDE_SKILL_DIR}/scripts/format-linkedin.sh "$CONFIG_ROOT/samples/linkedin-raw.md"
+```
+
+**If using a data export**: The user provides a file path to their LinkedIn data export (from Settings > Get a copy of your data > Posts). Read the file, extract post text, and pipe through the formatter.
+
+**If pasting**: The user pastes representative posts. Collect them, separate with `---`, and pipe through the formatter.
+
+If no LinkedIn source is available, skip and note it for future scraping.
+
 ### After scraping
 
-Report what succeeded and what failed. List each output file written and its size. Mark the scraping task as completed with a note of the results.
+Report what succeeded and what failed. List each output file written and its size (run `wc -l` on each). Mark the scraping task as completed with a note of the results.
 
 ## Step 4: Write Config Files
 
