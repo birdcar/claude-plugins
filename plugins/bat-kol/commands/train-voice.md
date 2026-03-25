@@ -1,7 +1,7 @@
 ---
 name: train-voice
 description: Guided voice training for bat-kol registers, channels, and writing style
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Slack__slack_read_channel, mcp__claude_ai_Glean__search, mcp__claude_ai_Glean__gmail_search
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Slack__slack_read_channel, mcp__claude_ai_Glean__search, mcp__claude_ai_Glean__gmail_search, mcp__claude_ai_Glean__meeting_lookup, mcp__claude_ai_Granola__*
 argument-hint: [--register <name> | --channel <name> | --style]
 ---
 
@@ -124,12 +124,16 @@ If yes: ask for file paths via AskUserQuestion.
 - "Scrape my Slack messages (via Slack MCP)"
 - "Scrape my email history (via Glean)"
 - "Scrape my LinkedIn posts (via Glean or data export)"
+- "Scrape my Gong call transcripts (via Glean)" — great for professional/internal voice
+- "Scrape my meeting notes (via Granola MCP)" — captures spoken voice patterns
+- "Import a transcript file (video/audio recording)" — any .txt/.srt/.vtt transcript
 - "Skip API scraping"
 
 If GitHub selected, detect username with `gh api /user --jq '.login'` via Bash.
 If Bluesky selected, ask for their handle via AskUserQuestion.
 If Slack selected, ask which channels to scrape via AskUserQuestion.
 If LinkedIn selected, use AskUserQuestion: "How should we get your LinkedIn data?" with options: "Search via Glean" / "I have a LinkedIn data export file" / "I'll paste some posts".
+If transcript import selected, ask for the file path via AskUserQuestion.
 
 Record all answers.
 
@@ -239,6 +243,55 @@ echo "$LINKEDIN_POSTS" | bash ${CLAUDE_SKILL_DIR}/scripts/format-linkedin.sh "$C
 **If pasting**: The user pastes representative posts. Collect them, separate with `---`, and pipe through the formatter.
 
 If no LinkedIn source is available, skip and note it for future scraping.
+
+### Gong Call Transcripts — Glean MCP piped through meetings formatter
+
+Gong transcripts capture how the user actually speaks in professional settings — meetings, demos, sales calls. This is especially valuable for professional and internal registers because it reveals spoken rhythm, filler words, and how they explain technical concepts conversationally.
+
+1. Use `mcp__claude_ai_Glean__search` to search for Gong recordings featuring the user (search for their name + "gong")
+2. Use `mcp__claude_ai_Glean__meeting_lookup` to find recent meetings
+3. For each result with transcript content, extract the user's speaking portions
+4. Separate transcript segments with `---` delimiters
+5. Pipe through the formatter:
+
+```bash
+echo "$GONG_TRANSCRIPTS" | bash ${CLAUDE_SKILL_DIR}/scripts/format-meetings.sh "$CONFIG_ROOT/samples/gong-raw.md" "Gong Call Transcripts"
+```
+
+If Glean doesn't index Gong or no results found, inform the user and skip.
+
+### Granola Meeting Notes — MCP piped through meetings formatter
+
+Granola captures meeting notes and context. If Granola MCP is available:
+
+1. Use Granola MCP tools to fetch recent meeting notes
+2. Extract the user's contributions (their comments, decisions, action items)
+3. Separate segments with `---` delimiters
+4. Pipe through the formatter:
+
+```bash
+echo "$GRANOLA_NOTES" | bash ${CLAUDE_SKILL_DIR}/scripts/format-meetings.sh "$CONFIG_ROOT/samples/granola-raw.md" "Granola Meeting Notes"
+```
+
+If Granola MCP is not available, inform the user and skip.
+
+### Transcript Import — local file through meetings formatter
+
+For video/audio transcripts (.txt, .srt, .vtt files):
+
+1. Read the file at the path the user provided
+2. If .srt or .vtt format, strip timestamps and formatting to extract just the spoken text
+3. Pipe the cleaned text through the formatter:
+
+```bash
+cat "{transcript_path}" | bash ${CLAUDE_SKILL_DIR}/scripts/format-meetings.sh "$CONFIG_ROOT/samples/transcript-raw.md" "Video/Audio Transcript"
+```
+
+For .srt files, strip timestamps first:
+
+```bash
+grep -v '^[0-9]' "{transcript_path}" | grep -v '^$' | grep -v '^\-\->' | bash ${CLAUDE_SKILL_DIR}/scripts/format-meetings.sh "$CONFIG_ROOT/samples/transcript-raw.md" "Video/Audio Transcript"
+```
 
 ### After scraping
 

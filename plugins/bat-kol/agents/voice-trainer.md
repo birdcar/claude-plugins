@@ -40,7 +40,7 @@ You receive:
 - **interview answers**: structured text with all user responses
 - **resolve-config.sh path**: script to find/create config directory
 - **sample file paths** (optional): user-provided files to analyze for voice patterns
-- **scraped data file paths** (optional): paths to pre-scraped raw data files in `{config_root}/samples/` (e.g., github-raw.md, slack-raw.md, bluesky-raw.md, email-raw.md)
+- **scraped data file paths** (optional): paths to pre-scraped raw data files in `{config_root}/samples/` (e.g., github-raw.md, slack-raw.md, bluesky-raw.md, email-raw.md, linkedin-raw.md, gong-raw.md, granola-raw.md, transcript-raw.md)
 
 ## Process
 
@@ -94,6 +94,10 @@ For each raw data file provided (e.g., `github-raw.md`, `slack-raw.md`, `bluesky
    - **Slack messages**: Casual tone, thread behavior, emoji usage, message length
    - **Email**: Formality, greeting/closing patterns, paragraph structure
    - **Bluesky**: Public voice, topic selection, thread behavior, character economy
+   - **LinkedIn**: Professional public voice, thought leadership style, post vs comment tone
+   - **Gong transcripts**: Spoken professional voice, how they explain concepts, filler patterns, meeting rhythm
+   - **Granola notes**: Meeting contributions, decision-making language, action item style
+   - **Video/audio transcripts**: Spoken patterns that inform written voice — filler words, rhythm, emphasis
 3. Extract patterns across all sources:
    - Average sentence length and variance per source type
    - Common openers and closers (exact phrases)
@@ -103,6 +107,7 @@ For each raw data file provided (e.g., `github-raw.md`, `slack-raw.md`, `bluesky
    - Personality tells (humor, sarcasm, self-deprecation, directness)
    - Punctuation habits (em dashes, semicolons, ellipses, parentheticals)
    - How voice shifts between source types (more formal in PRs vs casual in Slack)
+   - For meeting transcripts (Gong, Granola, video/audio): note that spoken patterns don't transfer 1:1 to writing. Extract the user's vocabulary, explanatory style, and personality — but discount filler words ("um", "like", "you know") and spoken-only constructions. The value of transcripts is revealing how the user thinks and explains, not how they literally speak.
 4. Write the analysis to `{config_root}/samples/{source}-analysis.md` for each source
 
 Mark the analysis task as completed.
