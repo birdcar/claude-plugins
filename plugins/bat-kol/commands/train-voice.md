@@ -7,54 +7,153 @@ argument-hint: [--register <name> | --channel <name> | --style]
 
 Train or update bat-kol voice profiles through a guided interview with optional sample analysis and API scraping.
 
-## Process
+## Critical Rules
 
-1. Parse arguments from `$ARGUMENTS`:
-   - `--register <name>`: scope = register, name = provided value
-   - `--channel <name>`: scope = channel, name = provided value
-   - `--style`: scope = style
-   - No arguments: proceed to step 2
+- ALL user interactions MUST use AskUserQuestion — never ask questions in plain text output
+- Do NOT spawn an agent for the interview — handle all AskUserQuestion calls directly in this command
+- Only spawn the `bat-kol:voice-trainer` agent AFTER collecting all interview answers, to write config files and optionally scrape APIs
 
-2. **If no arguments were provided**, use AskUserQuestion to ask the user what to train. This MUST happen in the command context, not in the agent — present these options:
-   - "Train a voice register" — tone, formality, vocabulary for a specific register
-   - "Train a channel" — format rules and conventions for a specific channel
-   - "Set up global writing style" — choose and configure a writing style framework
-   - "Full setup (style + all registers)" — complete initial voice training
+## Step 1: Parse Arguments and Determine Scope
 
-3. **If the user chose register or channel training without specifying a name**, use AskUserQuestion again to ask which one. For registers, offer: professional, internal, personal, social, or custom. For channels, offer the built-in list (slack, email, bluesky, github) plus "Add a new custom channel".
+Parse `$ARGUMENTS`:
 
-4. Spawn the `bat-kol:voice-trainer` agent with:
-   - The resolved training scope (register, channel, style, or full)
-   - The specific name (if register or channel)
-   - The resolve-config.sh path: `${CLAUDE_PLUGIN_ROOT}/skills/bat-kol/scripts/resolve-config.sh`
-   - Explicit instruction: "The user has already chosen what to train. Do NOT re-ask for training scope — proceed directly with the interview for the specified scope."
+- `--register <name>`: scope = register, name = provided value
+- `--channel <name>`: scope = channel, name = provided value
+- `--style`: scope = style
+- No arguments: use AskUserQuestion immediately:
 
-5. The voice-trainer agent handles the interview, sample analysis, and API scraping — wait for it to complete.
+If no arguments, use AskUserQuestion with these options:
 
-6. Summarize what was created or updated for the user.
+- "Train a voice register" — tone, formality, vocabulary for a specific register
+- "Train a channel" — format rules and conventions for a specific channel
+- "Set up global writing style" — choose and configure a writing style framework
+- "Full setup (style + all registers)" — complete initial voice training
 
-## Examples
+## Step 2: Run the Interview (inline — do NOT delegate)
 
-```
-/train-voice --register professional
-```
+Based on the scope, follow the appropriate interview section below. Each section uses AskUserQuestion for EVERY question.
 
-Trains the professional register through guided interview.
+### Style Interview
 
-```
-/train-voice --style
-```
+Read `${CLAUDE_PLUGIN_ROOT}/skills/bat-kol/references/style-frameworks.md` for context.
 
-Sets up or updates the global writing style framework.
+**Q1 — Writing framework**: AskUserQuestion with options:
 
-```
-/train-voice
-```
+- "Strunk & White — clarity, brevity, active voice, no unnecessary words"
+- "Stanley Fish — sentence-level craft, subordination, periodic sentences"
+- "George Orwell — plain English, concrete imagery, no pretentious diction"
+- "Plain Language — accessibility, short sentences, common words"
 
-Asks what to train, then proceeds with the full flow.
+**Q2 — Sentence structure**: AskUserQuestion with options:
 
-## Important Rules
+- "Short and direct — punchy, declarative"
+- "Varied — mix of short and long, rhythm matters"
+- "Complex — subordinate clauses, periodic structure"
 
-- All voice config files are written to the user's config directory, not to the repo
-- Do not overwrite existing profiles without user confirmation
-- The voice-trainer agent handles all AskUserQuestion interactions during training
+**Q3 — Word choice**: AskUserQuestion with options:
+
+- "Plain — everyday words, no jargon unless necessary"
+- "Technical — domain terms are fine, precision over simplicity"
+- "Elevated — literary vocabulary, deliberate word selection"
+
+Record all answers. Proceed to Step 3.
+
+### Register Interview
+
+If no register name was provided, use AskUserQuestion:
+
+- "Professional" — client-facing, careful, polished
+- "Internal" — team-facing, direct, efficient
+- "Personal" — informal, authentic, relaxed
+- "Social" — public-facing, conversational, engaging
+
+Then for the selected register, ask each question via AskUserQuestion:
+
+**Q1 — Tone**: AskUserQuestion:
+
+- "Formal and measured"
+- "Warm but professional"
+- "Direct and casual"
+- "Playful and conversational"
+
+**Q2 — Formality**: AskUserQuestion:
+
+- "1 — Very casual (hey team, quick thing)"
+- "2 — Relaxed (Hi all, wanted to share)"
+- "3 — Balanced (Hello, I'd like to discuss)"
+- "4 — Formal (Dear colleague, I am writing to)"
+
+**Q3 — Sentence style**: AskUserQuestion:
+
+- "Short and punchy — get to the point"
+- "Flowing — connective, builds momentum"
+- "Mixed — varies by emphasis"
+
+**Q4 — Personality markers**: AskUserQuestion (multiSelect: true):
+
+- "Emoji occasionally"
+- "Exclamation points for emphasis"
+- "Humor when appropriate"
+- "Hedging language (I think, perhaps, might)"
+
+**Q5 — Writing samples**: AskUserQuestion:
+
+- "Yes, I have writing samples to analyze"
+- "No, the interview is enough"
+
+If yes: ask for file paths via AskUserQuestion.
+
+**Q6 — API scraping**: AskUserQuestion (multiSelect: true):
+
+- "Scrape my GitHub history (via gh CLI)"
+- "Scrape my Bluesky posts (public API)"
+- "Scrape my Slack messages (if MCP available)"
+- "Skip API scraping"
+
+Record all answers. Proceed to Step 3.
+
+### Channel Interview
+
+If no channel name was provided, use AskUserQuestion:
+
+- "Slack"
+- "Email"
+- "Bluesky"
+- "GitHub"
+
+Read `${CLAUDE_PLUGIN_ROOT}/skills/bat-kol/references/channel-formats.md` for built-in defaults.
+
+**Q1 — Default register**: AskUserQuestion:
+
+- "Professional"
+- "Internal"
+- "Personal"
+- "Social"
+
+**Q2 — Any customizations?**: AskUserQuestion:
+
+- "Use defaults for this channel"
+- "Customize format rules" — follow up with specific questions about length, markup, structure
+
+Record all answers. Proceed to Step 3.
+
+### Full Setup
+
+Run the Style Interview first, then the Register Interview for each of: professional, internal, personal, social (in that order). Between registers, briefly confirm with AskUserQuestion: "Continue to the next register ({name})?" with "Yes, continue" and "Stop here for now".
+
+## Step 3: Write Config Files
+
+Now spawn the `bat-kol:voice-trainer` agent with ALL collected interview answers. Pass:
+
+- The scope and name
+- Every answer from the interview (as structured text)
+- The resolve-config.sh path: `${CLAUDE_PLUGIN_ROOT}/skills/bat-kol/scripts/resolve-config.sh`
+- If sample files were provided: their paths
+- If API scraping was opted in: which sources
+- Explicit instruction: "The interview is complete. Write the config files based on the provided answers. If sample analysis or API scraping was requested, do that first and incorporate findings into the config files."
+
+Wait for the agent to complete.
+
+## Step 4: Confirm
+
+Summarize what was created or updated — list each file path written.
