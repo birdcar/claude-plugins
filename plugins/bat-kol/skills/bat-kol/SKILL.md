@@ -97,13 +97,26 @@ Pass to the drafter:
 
 ### Step 5: Present and Iterate
 
-Present the draft to the user via AskUserQuestion:
+Check whether the channel config has a `## Delivery` section with a configured method. Build the AskUserQuestion options accordingly.
 
-- **"Copy to clipboard"**: Write the draft to a temp file via Bash (`TMPFILE=$(mktemp) && cat > "$TMPFILE" <<'DRAFT_EOF'\n{draft}\nDRAFT_EOF`), then run `pbcopy < "$TMPFILE" && rm "$TMPFILE"`. This avoids shell escaping issues with quotes or special characters in the draft.
+**Base options (always present):**
+
+- **"Copy to clipboard"**: Write the draft to a temp file via Bash, then `pbcopy < "$TMPFILE" && rm "$TMPFILE"`.
 - **"Edit further"**: Ask what to change (tone, length, content, format), then re-spawn the drafter with revision instructions appended to the prompt
 - **"Regenerate"**: Re-spawn the drafter with the same inputs for a fresh take
 
-Continue the edit/regenerate loop until the user is satisfied or copies the draft.
+**Delivery option (only if channel has delivery configured):**
+
+- **"Send directly"**: Execute the delivery command from the channel config.
+  1. Write the draft to a temp file
+  2. If `confirmation: always`, show the full draft via AskUserQuestion first: "About to send this via {method}. Confirm?" with "Send" / "Edit first" / "Cancel"
+  3. Replace `{draft}` in the command template with the temp file path
+  4. For `method: script` or `method: cli`: run via Bash
+  5. For `method: mcp`: call the specified MCP tool with the draft as the message parameter
+  6. For `method: clipboard-and-open`: run `pbcopy < "$TMPFILE"` then the open command
+  7. Report success or failure. Clean up the temp file.
+
+Continue the edit/regenerate loop until the user is satisfied, copies, or sends.
 
 ## Channel Format Reference
 

@@ -37,14 +37,13 @@ Writing for different platforms and audiences requires constant mental context-s
 
 ### Out of Scope
 
-- Direct message sending (no Slack API posting, no email sending) — bat-kol drafts, user delivers
 - Real-time channel monitoring or inbox management — that's ghostwriter's domain
 - Voice cloning from other people's writing — only the user's own voice
 - Customer support ticket handling — customer-reply handles that separately
 
 ### Future Considerations
 
-- MCP-based direct sending (post to Slack, send email) when user opts in
+- ~~MCP-based direct sending~~ — implemented in v0.8.0 via channel delivery config
 - Voice evolution tracking (how voice profiles change over training sessions)
 - Multi-user support (team voice profiles)
 - Channel-specific templates (PR template, email signature)
@@ -59,5 +58,5 @@ Writing for different platforms and audiences requires constant mental context-s
 | Training approach               | Interview + samples + API scraping           | Interview captures intent, samples capture patterns, API scraping captures actual historical voice. Most thorough.                                |
 | customer-reply coexistence      | Keep both, separate scope                    | Other users depend on customer-reply. User will deprecate locally after bat-kol is ready.                                                         |
 | Custom channels                 | `/train-voice` + `/add-channel`              | `/train-voice` can add channels as part of training flow. `/add-channel` is a dedicated shortcut for just channel setup.                          |
-| Draft delivery                  | AskUserQuestion with options                 | Copy to clipboard, edit further, or regenerate. Most flexible without assuming delivery mechanism.                                                |
+| Draft delivery                  | AskUserQuestion with options + opt-in send   | Copy to clipboard, edit, regenerate, or send directly (if channel has delivery configured). Delivery always requires confirmation.                |
 | Writing style layer             | Global + register override                   | One global framework by default. Any register can specify its own framework to override.                                                          |

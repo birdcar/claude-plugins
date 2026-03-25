@@ -89,3 +89,55 @@ Default formatting rules for each built-in channel. These serve as fallback refe
 - **Conventions**: Follow the register's voice rules without channel-specific formatting
 - **Default register**: `professional`
 - Used for any custom channel that doesn't have a dedicated drafter agent
+
+## Delivery Configuration (optional, all channels)
+
+Channels can optionally configure a delivery mechanism so bat-kol can send drafts directly instead of only copying to clipboard. Delivery is always opt-in and requires at least one user confirmation.
+
+### Delivery methods
+
+| Method               | How it works                                        | Example                                     |
+| -------------------- | --------------------------------------------------- | ------------------------------------------- |
+| `script`             | Runs a shell script with the draft file as argument | `bash ~/scripts/post-to-discord.sh {draft}` |
+| `cli`                | Runs a CLI command with the draft                   | `gh pr create --body-file {draft}`          |
+| `mcp`                | Calls an MCP tool with the draft as message content | `mcp__claude_ai_Slack__slack_post_message`  |
+| `clipboard-and-open` | Copies to clipboard and opens the target app        | `pbcopy < {draft} && open -a "Discord"`     |
+| `none`               | Draft only, no delivery (default)                   | —                                           |
+
+### Command template placeholders
+
+- `{draft}` — path to a temp file containing the draft text
+- `{channel}` — the channel name
+- `{subject}` — email subject line (email channel only)
+
+### Confirmation modes
+
+- `always` — show the full draft and ask "Send this?" before delivery (recommended)
+- `after-approval` — the user already approved the draft in the AskUserQuestion step; send without a second confirmation
+- `ask` — offer "confirm before sending" or "send now" each time
+
+### Example delivery configs in channel files
+
+```markdown
+## Delivery
+
+- method: mcp
+- command: mcp**claude_ai_Slack**slack_post_message
+- confirmation: always
+```
+
+```markdown
+## Delivery
+
+- method: cli
+- command: gh pr create --title "{subject}" --body-file {draft}
+- confirmation: always
+```
+
+```markdown
+## Delivery
+
+- method: clipboard-and-open
+- command: pbcopy < {draft} && open "https://bsky.app"
+- confirmation: after-approval
+```
