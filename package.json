@@ -5,7 +5,6 @@
     "plugins/*"
   ],
   "scripts": {
-    "prepare": "lefthook install",
     "build": "tsc --build",
     "typecheck": "tsc --build --noEmit",
     "clean": "rm -rf plugins/*/dist plugins/*/*.tsbuildinfo",
@@ -15,7 +14,6 @@
     "bootstrap": "bun scripts/bootstrap.ts"
   },
   "devDependencies": {
-    "lefthook": "^1.10.10",
     "typescript": "^5.7.0",
     "prettier": "^3.4.0"
   }
