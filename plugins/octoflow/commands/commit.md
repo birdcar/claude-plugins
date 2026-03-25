@@ -1,23 +1,96 @@
 ---
 name: commit
-description: Create a git commit with a well-crafted message
-allowed-tools: [Bash, Read, Glob, Grep]
+description: Creates git commits with conventional commit messages (type(scope): subject + why-focused body). Analyzes changes, proposes logical splits, and requires approval before executing. Do NOT use for pushing, creating PRs, or amending published commits.
+allowed-tools: [Bash, Read, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate]
 ---
 
-Generate well-crafted commit messages and create Git commits following best practices.
+Generate well-crafted commit messages and create Git commits following Chris Beam's seven rules.
+
+## Hard Rules
+
+- Require explicit user approval via AskUserQuestion before every `git commit` — committing is irreversible and the user may need to review staging.
+- Every `git commit` command must include a conventional type prefix (e.g., `feat:`, `fix(scope):`) — the octoflow hook blocks commits without one.
+- Never add a Co-Authored-By trailer unless the user explicitly requests it.
+- Warn before staging files that look like secrets (.env, \*.pem, id_rsa, credentials, tokens, keys).
+- Do not write a body that restates the diff — the diff is already visible and a body that describes what changed adds zero information. If you cannot articulate the why, ask the user.
+- When motivation is unclear, use AskUserQuestion rather than defaulting to a description of what changed — a body that says "refactored X" is indistinguishable from no body at all.
+- Match the existing commit style in the repository when possible.
 
 ## Process
 
+### Phase 1: Analyze Changes
+
 1. Run `git status` to check for staged and unstaged changes
 2. Run `git diff` (unstaged) and `git diff --cached` (staged) to analyze ALL changes
-3. **Evaluate if changes should be split** into multiple logical commits (see Splitting Commits below)
-4. If splitting: guide user through staging and committing each logical unit separately
-5. Run `git log --oneline -10` to understand the repository's commit message style
-6. Generate a commit message following the rules below
-7. Present the message to user for approval or editing
-8. Execute the commit with the approved message
-9. Repeat for remaining logical units if splitting
-10. Show the final result
+3. Run `git log --oneline -10` to understand the repository's commit message style
+
+### Phase 2: Plan Commit Strategy
+
+4. **Evaluate if changes should be split** into multiple logical commits (see Splitting Commits below)
+5. If splitting is warranted, use **AskUserQuestion** to present the proposed split as options:
+   - Option per proposed grouping (e.g. "Commit 1: auth refactor, Commit 2: payment fix")
+   - Option to keep as single commit
+   - User can select "Other" to describe a different split
+6. **If there are 2 or more planned commits**, create a Task for each one using TaskCreate. This is critical for multi-commit workflows — they often happen at the end of a session when context is low and Tasks survive compaction. Include in each task the files to stage, draft subject line, and motivation (if known). For a single commit, skip Task creation.
+7. For each planned commit, draft a subject line and body following the rules below
+
+### Phase 3: Draft Messages and Determine Motivation
+
+8. For each commit, determine the **motivation** (the _why_) by examining these sources in order:
+   - **Session context** — the conversation history is your richest source of _why_. What did the user ask for? What problem were they solving? What decisions were made and why? If context has been compacted, check the session summary.
+   - **Task descriptions** — if work was tracked via Tasks during the session, they often capture intent
+   - **PR descriptions, issue references, or TODO comments** in the diff
+   - **The broader codebase context** — why this approach was chosen over alternatives
+9. **If the motivation is still unclear** — you MUST use **AskUserQuestion** to ask the user why the change was made. Do not guess or fall back to describing _what_ changed. Example question: "What motivated this change?" or "Why was this approach chosen?"
+10. Draft each commit message with the subject and a body that explains the _why_
+11. **Update each commit's Task** with the final draft message (TaskUpdate), if Tasks were created
+
+### Phase 4: Approve Each Message
+
+12. Use **AskUserQuestion** to present each draft commit message for approval. Use the `preview` field to show the full formatted message. Options:
+    - "Approve" — use as-is
+    - "Edit subject" — user provides new subject via Other
+    - "Edit body" — user provides new body via Other
+    - "Skip this commit" — exclude from the batch
+
+### Phase 5: Final Review (multi-commit only)
+
+13. If multiple commits were approved, use **AskUserQuestion** for a final review:
+    - "Commit all as shown" — proceed in order
+    - "Combine some commits" — user describes which to merge
+    - "Reorder commits" — user describes new order
+    - "Start over" — go back to Phase 3
+
+### Phase 6: Execute
+
+14. For each approved commit:
+    - Stage the relevant files (`git add <specific-files>` or `git add -p`)
+    - Run `git commit` with the approved message (see Executing the Commit below for format)
+    - **Mark the commit's Task as completed** (TaskUpdate with status `completed`), if Tasks were created
+15. Show the final result (`git log --oneline` for the new commits)
+
+## Executing the Commit
+
+Every `git commit` command must start with a conventional commit type prefix so the octoflow hook allows it through. Any format works — inline `-m "feat: ..."`, heredoc, etc. — as long as the type prefix appears in the command.
+
+Example using heredoc for multi-line messages:
+
+```bash
+git commit -m "$(cat <<'EOF'
+feat(auth): Add OAuth2 support for GitHub login
+
+GitHub is the primary VCS for 90% of our users. Supporting
+OAuth2 login eliminates the separate account creation step
+that was causing 40% drop-off during onboarding.
+EOF
+)"
+```
+
+Example for single-line messages:
+
+```bash
+git commit -m "fix: Prevent crash when config file is missing"
+```
 
 ## Splitting Commits
 
@@ -70,12 +143,14 @@ Keep changes together when:
 
 ## The Seven Rules of Great Commits
 
+Based on [Chris Beam's definitive guide](https://cbea.ms/git-commit/).
+
 ### 1. Separate Subject from Body with a Blank Line
 
 ```
 type(scope): subject line here
 
-Body starts after blank line. Explains the why, not the what.
+Body starts after blank line. Explains the WHY, never the what.
 ```
 
 ### 2. Limit Subject to 50 Characters
@@ -106,24 +181,48 @@ Write commands, not descriptions of what happened:
 
 - Manually wrap body text at 72 characters
 - Allows room for Git's indentation in various tools
-- Most editors can be configured to do this automatically
 
-### 7. Use Body to Explain What and Why, Not How
+### 7. Use Body to Explain WHY, Never the What
 
-- The code diff shows how
-- The body explains:
-  - Why was this change necessary?
-  - What problem does it solve?
-  - What side effects or consequences exist?
+This is the most important rule and the one most often violated.
+
+- The **diff** shows _what_ changed and _how_ — never restate it in the body
+- The **body** must answer: **Why was this change necessary?**
+- Think of the body as a note to a future developer reading `git log` — they can see the code, but they can't see your reasoning
+
+**The body must contain motivation, not description.** Ask yourself:
+
+- What problem existed before this commit?
+- Why was this particular approach chosen?
+- What alternatives were considered and rejected?
+- What non-obvious consequences does this change have?
+
+**Good body** (explains why):
+
+```
+The app crashed on first run because no config file existed.
+A default config eliminates the first-run failure without
+requiring manual setup.
+```
+
+**Bad body** (restates the diff):
+
+```
+Added a check for the config file. If it doesn't exist,
+creates a new one with default values. Updated the init
+function to call createDefaultConfig().
+```
+
+**When the body adds nothing beyond the subject, omit it entirely.** A clear subject like `fix: Remove unused CSS import` needs no body.
 
 ## Commit Message Format
 
 ```
 type(scope): imperative subject under 50 chars
 
-Optional body wrapped at 72 characters. Focus on explaining
-WHY this change was made, not what was changed (the diff shows
-that). Include context that future developers will need.
+The motivation for this change: what problem existed, why it
+needed solving, and why this approach was chosen. Wrapped at
+72 characters. Never restate what the diff already shows.
 
 Optional footers like:
 Fixes #123
@@ -165,8 +264,9 @@ in docs/migration-v2.md.
 ```
 feat(auth): Add OAuth2 support for GitHub login
 
-Enables users to authenticate via GitHub OAuth2. This reduces
-friction for developers who already have GitHub accounts.
+GitHub is the primary VCS for 90% of our users. Supporting
+OAuth2 login eliminates the separate account creation step
+that was causing 40% drop-off during onboarding.
 
 Closes #234
 ```
@@ -174,15 +274,19 @@ Closes #234
 ```
 fix: Prevent crash when config file is missing
 
-The app crashed on first run because it expected a config file.
-Now creates a default config if none exists.
+The app crashed on first run because it expected a config
+file that doesn't exist yet. Creating a default config
+eliminates the first-run failure without requiring manual
+setup from the user.
 ```
 
 ```
 refactor: Extract validation logic into separate module
 
-Validation was duplicated across 4 controllers. Centralizing it
-reduces maintenance burden and ensures consistent behavior.
+Validation was duplicated across 4 controllers, causing
+bugs when rules were updated in one place but not others.
+Centralizing ensures consistency and makes policy changes
+atomic.
 ```
 
 ### Bad Commit Messages
@@ -194,35 +298,18 @@ feat: added new feature.         # Not imperative, has period
 WIP                              # Meaningless
 ```
 
-## Executing the Commit
+### Bad Bodies (describe the what, not the why)
 
-When running the actual `git commit` command, the commit message MUST start with a conventional commit type prefix (e.g., `feat:`, `fix(scope):`) so the octoflow hook allows it through. Any format works — inline `-m "feat: ..."`, heredoc, etc. — as long as the type prefix appears in the command.
-
-Example using heredoc for multi-line messages:
-
-```bash
-git commit -m "$(cat <<'EOF'
+```
 feat(auth): Add OAuth2 support for GitHub login
 
-Enables users to authenticate via GitHub OAuth2.
-EOF
-)"
+Added a new OAuth2 client configuration. Updated the auth
+controller to handle GitHub callbacks. Added a new route
+for /auth/github. Updated the user model to store GitHub
+tokens.
 ```
 
-Example for single-line messages:
-
-```bash
-git commit -m "fix: Prevent crash when config file is missing"
-```
-
-## Important Rules
-
-- Never commit without explicit user approval of the message
-- Never add a Co-Authored-By line unless the user explicitly requests it
-- Warn user if staging files that look like secrets (.env, credentials, tokens, keys, \*.pem, id_rsa)
-- Match the existing commit style in the repository when possible
-- For multi-file changes, follow the Splitting Commits section to create logical, focused commits
-- If the diff is large, summarize the key changes in the body
+This body just restates the diff. It tells you nothing about _why_ GitHub OAuth was added or what problem it solves.
 
 ## Edge Cases
 
@@ -247,3 +334,7 @@ If there are many changed files, follow the Splitting Commits section above to b
 ### Generated Files
 
 Warn if committing generated files (node_modules, dist/, build/, \*.min.js) that are typically gitignored.
+
+### Trivial Changes
+
+For truly mechanical changes (formatting, import sorting, dependency bumps), a subject-only message with no body is fine. The _why_ is self-evident.
