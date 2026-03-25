@@ -40,6 +40,7 @@ If `$ARGUMENTS` is provided, pass it through to the build command (e.g., `/build
 ## Error Handling
 
 If the build fails:
+
 - Show the first error clearly
 - For TypeScript errors, suggest the fix
 - For missing dependencies, suggest running `/deps` first
