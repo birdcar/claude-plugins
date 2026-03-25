@@ -10,7 +10,7 @@
       "name": "bat-kol",
       "source": "./plugins/bat-kol",
       "description": "Contextual voice writer that drafts messages in your authentic voice for any communication channel",
-      "version": "0.2.0"
+      "version": "0.3.0"
     },
     {
       "name": "customer-voice",
