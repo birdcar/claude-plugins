@@ -1,7 +1,7 @@
 ---
 name: train-voice
 description: Guided voice training for bat-kol registers, channels, and writing style
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, mcp__claude_ai_Slack__slack_search_public_and_private, mcp__claude_ai_Slack__slack_read_channel, mcp__claude_ai_Glean__search, mcp__claude_ai_Glean__gmail_search
 argument-hint: [--register <name> | --channel <name> | --style]
 ---
 
@@ -11,7 +11,8 @@ Train or update bat-kol voice profiles through a guided interview with optional 
 
 - ALL user interactions MUST use AskUserQuestion — never ask questions in plain text output
 - Do NOT spawn an agent for the interview — handle all AskUserQuestion calls directly in this command
-- Only spawn the `bat-kol:voice-trainer` agent AFTER collecting all interview answers, to write config files and optionally scrape APIs
+- Do NOT delegate scraping to agents — MCP tools (Slack, Glean) are only available in the main context, not in subagents. ALL scraping must happen in this command.
+- Only spawn the `bat-kol:voice-trainer` agent AFTER collecting all interview answers AND completing all scraping. Pass file paths to scraped data, not the data itself.
 - Use TaskCreate at the start to track each training step — this survives context compaction
 
 ## Step 1: Parse Arguments, Determine Scope, and Create Tasks
@@ -37,9 +38,10 @@ For full setup:
 - TaskCreate: "Complete style interview"
 - TaskCreate: "Complete register interviews (professional, internal, personal, social)"
 - TaskCreate: "Complete channel setup (slack, email, bluesky, github)"
+- TaskCreate: "Scrape communication history" (if opted in)
 - TaskCreate: "Write config files via voice-trainer agent"
 
-For single scope: create one task for the interview and one for writing.
+For single scope: create one task for the interview, one for scraping (if applicable), and one for writing.
 
 ## Step 2: Run the Interview (inline — do NOT delegate)
 
@@ -119,8 +121,13 @@ If yes: ask for file paths via AskUserQuestion.
 
 - "Scrape my GitHub history (PRs, issues, comments via gh CLI)"
 - "Scrape my Bluesky posts (public API)"
-- "Scrape my Slack messages (if MCP available)"
+- "Scrape my Slack messages (via Slack MCP)"
+- "Scrape my email history (via Glean)"
 - "Skip API scraping"
+
+If GitHub selected, ask for their GitHub username via AskUserQuestion (or detect with `gh api /user --jq '.login'`).
+If Bluesky selected, ask for their handle via AskUserQuestion.
+If Slack selected, ask which channels to scrape via AskUserQuestion.
 
 Record all answers.
 
@@ -159,21 +166,120 @@ Run in this order:
 
 Mark each interview task as completed as you finish it.
 
-## Step 3: Write Config Files
+## Step 3: Scrape Communication History (inline — do NOT delegate)
+
+This step MUST run in the command context because MCP tools are not available to subagents. Mark the scraping task as in_progress.
+
+First, resolve the config root to know where to write files:
+
+```bash
+CONFIG_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/bat-kol"
+mkdir -p "$CONFIG_ROOT/samples"
+```
+
+### GitHub Scraping
+
+Use `gh api --paginate` for full history. Write all output to `{config_root}/samples/github-raw.md`.
+
+```bash
+USERNAME=$(gh api /user --jq '.login')
+```
+
+**PR bodies** (authored, all pages):
+
+```bash
+gh api --paginate "search/issues?q=author:${USERNAME}+type:pr&sort=updated&per_page=100" --jq '.items[] | "### PR: \(.title)\n\(.body // "no body")\n---"'
+```
+
+**Issue bodies** (authored, all pages):
+
+```bash
+gh api --paginate "search/issues?q=author:${USERNAME}+type:issue&sort=updated&per_page=100" --jq '.items[] | "### Issue: \(.title)\n\(.body // "no body")\n---"'
+```
+
+**PR review comments** (across repos the user has reviewed):
+
+```bash
+gh api --paginate "search/issues?q=reviewed-by:${USERNAME}+type:pr&sort=updated&per_page=50" --jq '.items[] | .pull_request.url' | while read -r pr_url; do
+  gh api "${pr_url}/comments" --jq '.[] | select(.user.login=="'"${USERNAME}"'") | "### Review comment\n\(.body)\n---"'
+done
+```
+
+**Issue comments** (where user has commented):
+
+```bash
+gh api --paginate "search/issues?q=commenter:${USERNAME}+type:issue&sort=updated&per_page=50" --jq '.items[] | "\(.repository_url)/issues/\(.number)"' | while read -r issue_url; do
+  gh api "${issue_url}/comments" --jq '.[] | select(.user.login=="'"${USERNAME}"'") | "### Issue comment\n\(.body)\n---"'
+done
+```
+
+Write all output to `{config_root}/samples/github-raw.md` using the Write tool. If any `gh api` call fails, log the error but continue with the remaining calls. At the end, note how many items were scraped per category.
+
+### Bluesky Scraping
+
+```bash
+curl -s "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor={handle}&limit=100" | jq -r '.feed[].post.record.text'
+```
+
+If more than 100 posts exist, paginate using the `cursor` field:
+
+```bash
+CURSOR=$(curl -s "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor={handle}&limit=100" | jq -r '.cursor')
+# Continue fetching with &cursor=$CURSOR until cursor is null
+```
+
+Write to `{config_root}/samples/bluesky-raw.md`.
+
+### Slack Scraping (via MCP — main context only)
+
+Use the Slack MCP tools directly (these are available in command context):
+
+1. `mcp__claude_ai_Slack__slack_search_public_and_private` — search for messages from the user in specified channels
+2. `mcp__claude_ai_Slack__slack_read_channel` — read recent messages from channels the user specified
+
+For each channel the user named:
+
+- Fetch the last 200+ messages
+- Filter to messages authored by the user
+- Write to `{config_root}/samples/slack-raw.md`
+
+If Slack MCP is not available (tools not configured), inform the user and suggest providing Slack message exports as sample files instead.
+
+### Email Scraping (via Glean — main context only)
+
+Use Glean MCP tools:
+
+1. `mcp__claude_ai_Glean__gmail_search` — search for sent emails
+
+Search for the user's recent sent emails. Write to `{config_root}/samples/email-raw.md`.
+
+If Glean MCP is not available, inform the user and suggest providing email exports as sample files instead.
+
+### Error Handling
+
+For each scraping source:
+
+- If the tool/API fails, log the error and continue with remaining sources
+- Report what succeeded and what failed at the end of scraping
+- Never block the entire training flow because one source failed
+
+Mark the scraping task as completed (note which sources succeeded/failed in the task description).
+
+## Step 4: Write Config Files
 
 Mark the writing task as in_progress.
 
-Spawn the `bat-kol:voice-trainer` agent with ALL collected interview answers. Pass:
+Spawn the `bat-kol:voice-trainer` agent with:
 
 - The scope and name
 - Every answer from the interview (as structured text)
 - The resolve-config.sh path: `${CLAUDE_PLUGIN_ROOT}/skills/bat-kol/scripts/resolve-config.sh`
 - If sample files were provided: their paths
-- If API scraping was opted in: which sources (and any handles/usernames provided)
-- Explicit instruction: "The interview is complete. Write the config files based on the provided answers. If sample analysis or API scraping was requested, do that first and incorporate findings. Write scraped data to files in the samples/ directory."
+- Paths to ALL scraped raw data files in `{config_root}/samples/` (the agent reads these for analysis)
+- Explicit instruction: "The interview and scraping are complete. All raw scraped data is in the files listed. Analyze the raw data files, then write config files incorporating both interview answers and scraping analysis. Do NOT attempt to scrape APIs yourself — all data is already in files."
 
 Wait for the agent to complete. Mark the writing task as completed.
 
-## Step 4: Confirm
+## Step 5: Confirm
 
-Summarize what was created or updated — list each file path written. Remind the user they can run `/retrain-voice` later to upgrade existing configs with new features without redoing the full interview.
+Summarize what was created or updated — list each file path written. Include scraping stats (how many items per source). Remind the user they can run `/retrain-voice` later to upgrade existing configs with new features without redoing the full interview.

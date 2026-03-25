@@ -109,26 +109,62 @@ elif [[ -n "$REGISTER" && "$PROJECT_OVERRIDE" == "true" && -d "$GLOBAL_CONFIG/sa
 fi
 
 # List available registers and channels for discovery
-AVAILABLE_REGISTERS="[]"
-AVAILABLE_CHANNELS="[]"
+# Uses jq if available, falls back to manual JSON construction
+list_md_files_as_json() {
+  local dir="$1"
+  if [[ ! -d "$dir" ]]; then
+    echo "[]"
+    return
+  fi
+  local names
+  names=$(find "$dir" -name '*.md' -exec basename {} .md \; 2>/dev/null | sort)
+  if [[ -z "$names" ]]; then
+    echo "[]"
+    return
+  fi
+  if command -v jq &>/dev/null; then
+    echo "$names" | jq -R . | jq -s .
+  else
+    # Manual JSON array construction without jq
+    local json="["
+    local first=true
+    while IFS= read -r name; do
+      if [[ "$first" == "true" ]]; then
+        first=false
+      else
+        json+=","
+      fi
+      json+="\"$name\""
+    done <<< "$names"
+    json+="]"
+    echo "$json"
+  fi
+}
 
-if [[ -d "$CONFIG_ROOT/registers" ]]; then
-  AVAILABLE_REGISTERS=$(find "$CONFIG_ROOT/registers" -name '*.md' -exec basename {} .md \; 2>/dev/null | sort | jq -R . | jq -s .)
-fi
+merge_json_arrays() {
+  local arr1="$1" arr2="$2"
+  if command -v jq &>/dev/null; then
+    echo "$arr1 $arr2" | jq -s 'add | unique'
+  else
+    # Simple merge: strip brackets, combine, re-wrap, deduplicate
+    local combined
+    combined=$(echo "${arr1:1:${#arr1}-2},${arr2:1:${#arr2}-2}" | tr ',' '\n' | sort -u | tr '\n' ',' | sed 's/,$//')
+    echo "[$combined]"
+  fi
+}
 
-if [[ -d "$CONFIG_ROOT/channels" ]]; then
-  AVAILABLE_CHANNELS=$(find "$CONFIG_ROOT/channels" -name '*.md' -exec basename {} .md \; 2>/dev/null | sort | jq -R . | jq -s .)
-fi
+AVAILABLE_REGISTERS=$(list_md_files_as_json "$CONFIG_ROOT/registers")
+AVAILABLE_CHANNELS=$(list_md_files_as_json "$CONFIG_ROOT/channels")
 
 # Also check global config for additional registers/channels if using project override
 if [[ "$PROJECT_OVERRIDE" == "true" && -d "$GLOBAL_CONFIG" ]]; then
   if [[ -d "$GLOBAL_CONFIG/registers" ]]; then
-    GLOBAL_REGISTERS=$(find "$GLOBAL_CONFIG/registers" -name '*.md' -exec basename {} .md \; 2>/dev/null | sort | jq -R . | jq -s .)
-    AVAILABLE_REGISTERS=$(echo "$AVAILABLE_REGISTERS $GLOBAL_REGISTERS" | jq -s 'add | unique')
+    GLOBAL_REGISTERS=$(list_md_files_as_json "$GLOBAL_CONFIG/registers")
+    AVAILABLE_REGISTERS=$(merge_json_arrays "$AVAILABLE_REGISTERS" "$GLOBAL_REGISTERS")
   fi
   if [[ -d "$GLOBAL_CONFIG/channels" ]]; then
-    GLOBAL_CHANNELS=$(find "$GLOBAL_CONFIG/channels" -name '*.md' -exec basename {} .md \; 2>/dev/null | sort | jq -R . | jq -s .)
-    AVAILABLE_CHANNELS=$(echo "$AVAILABLE_CHANNELS $GLOBAL_CHANNELS" | jq -s 'add | unique')
+    GLOBAL_CHANNELS=$(list_md_files_as_json "$GLOBAL_CONFIG/channels")
+    AVAILABLE_CHANNELS=$(merge_json_arrays "$AVAILABLE_CHANNELS" "$GLOBAL_CHANNELS")
   fi
 fi
 

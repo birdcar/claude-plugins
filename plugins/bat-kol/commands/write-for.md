@@ -1,7 +1,7 @@
 ---
 name: write-for
 description: Draft a message for a specific channel with optional topic
-allowed-tools: Read, Glob, Grep, Bash, Agent, AskUserQuestion
+allowed-tools: Read, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate
 argument-hint: <channel> [topic]
 ---
 
@@ -36,7 +36,7 @@ Draft content for a specific communication channel. If a topic is provided, draf
    - For GitHub: also detect content type from context (pr, issue, commit, review, comment)
 
 7. Present the draft to the user via AskUserQuestion with options:
-   - "Copy to clipboard" — run `echo {draft} | pbcopy` via Bash
+   - "Copy to clipboard" — write draft to a temp file, then `pbcopy < "$TMPFILE" && rm "$TMPFILE"` to avoid shell escaping issues
    - "Edit further" — ask what to change, then re-draft
    - "Regenerate" — spawn the drafter again with the same inputs
 

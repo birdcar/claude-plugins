@@ -44,4 +44,4 @@ Sets up LinkedIn post formatting and conventions.
 - Write channel files only to the user's config directory, not the repo
 - Create parent directories if needed (`mkdir -p`)
 - Do not overwrite existing channels without confirmation
-- Keep channel config files concise — under 50 lines of rules
+- Channel config files are format-focused (not voice-focused), so keep them concise — under 50 lines of format rules. Voice depth lives in register files, not channel files.

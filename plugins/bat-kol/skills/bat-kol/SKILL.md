@@ -57,7 +57,8 @@ The config-resolver runs the cascading resolution script and reads the resolved 
 
 If config resolution fails (no config found), present the user with setup instructions:
 
-- Run `/train-voice` to set up voice profiles
+- Run `/train-voice` to set up voice profiles from scratch
+- Run `/retrain-voice` to upgrade existing older configs to the current schema
 - Or create config manually at `~/.config/bat-kol/`
 
 See `${CLAUDE_SKILL_DIR}/references/voice-resolution.md` for the full resolution algorithm.
@@ -97,7 +98,7 @@ Pass to the drafter:
 
 Present the draft to the user via AskUserQuestion:
 
-- **"Copy to clipboard"**: Run `printf '%s' "{draft}" | pbcopy` via Bash, confirm it was copied
+- **"Copy to clipboard"**: Write the draft to a temp file via Bash (`TMPFILE=$(mktemp) && cat > "$TMPFILE" <<'DRAFT_EOF'\n{draft}\nDRAFT_EOF`), then run `pbcopy < "$TMPFILE" && rm "$TMPFILE"`. This avoids shell escaping issues with quotes or special characters in the draft.
 - **"Edit further"**: Ask what to change (tone, length, content, format), then re-spawn the drafter with revision instructions appended to the prompt
 - **"Regenerate"**: Re-spawn the drafter with the same inputs for a fresh take
 

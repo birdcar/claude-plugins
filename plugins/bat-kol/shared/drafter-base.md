@@ -46,7 +46,7 @@ Every draft must have "soul" — the opposite of technically-clean-but-soulless 
 
 ### Self-audit
 
-After drafting, silently re-read the output and ask: "What makes this obviously AI-generated?" Fix anything that answers that question before returning the draft.
+After drafting, re-read the output and ask: "What makes this obviously AI-generated?" Fix anything that answers that question before returning the draft.
 
 ## Voice Profile Application
 
