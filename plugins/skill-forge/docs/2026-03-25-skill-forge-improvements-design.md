@@ -23,6 +23,7 @@ Four uv-scripted Python files. Each embeds its dependencies via `# /// script` h
 #### `scripts/quick_validate.py`
 
 Fast structural validation without spawning an agent. Checks:
+
 - Frontmatter exists and has required fields (name, description)
 - Description ≤1024 chars
 - SKILL.md ≤500 lines
@@ -41,6 +42,7 @@ Generates 20 trigger test queries from a skill's description and SKILL.md conten
 
 **Input:** `--skill-path <path>` and `--model <model-id>` (default: claude-sonnet-4-6)
 **Output:** JSON file at `{skill-dir}/docs/trigger-eval.json`:
+
 ```json
 {
   "skill_name": "my-skill",
@@ -53,6 +55,7 @@ Generates 20 trigger test queries from a skill's description and SKILL.md conten
 ```
 
 Categories follow the existing `trigger-test-template.md` distribution:
+
 - Should trigger (10): 3 exact, 3 paraphrased, 2 edge case, 2 embedded
 - Should not trigger (10): 3 adjacent domain, 3 general programming, 2 keyword overlap, 2 other-skill targets
 
@@ -64,6 +67,7 @@ Automated description optimization loop.
 
 **Input:** `--skill-path <path>` `--eval-set <trigger-eval.json>` `--model <model-id>` `--max-iterations 5` `--verbose`
 **Process:**
+
 1. Split eval set 60/40 train/test
 2. Run each query 3x via `claude -p` — check if skill triggers by examining output
 3. Score: trigger accuracy on train set
@@ -73,6 +77,7 @@ Automated description optimization loop.
 7. Repeat up to `--max-iterations`
 
 **Output:** JSON at `{skill-dir}/docs/optimization-result.json`:
+
 ```json
 {
   "skill_name": "my-skill",
@@ -82,7 +87,7 @@ Automated description optimization loop.
       "iteration": 0,
       "description": "original description...",
       "train_score": 0.75,
-      "test_score": 0.70
+      "test_score": 0.7
     }
   ],
   "best_iteration": 2,
@@ -97,6 +102,7 @@ Summarizes iteration history across improve runs for a skill.
 
 **Input:** `--history-path <path-to-history.json>`
 **Output:** Human-readable summary to stdout + optional `--json` flag for machine-readable output. Includes:
+
 - Total iterations, date range
 - Score trends per dimension (improving/stable/declining)
 - Most frequently applied vs skipped recommendation categories
@@ -137,7 +143,7 @@ Summarizes iteration history across improve runs for a skill.
       },
       "description_changed": true,
       "trigger_test_results": {
-        "should_trigger_accuracy": 0.90,
+        "should_trigger_accuracy": 0.9,
         "should_not_trigger_accuracy": 0.95
       }
     }
@@ -157,6 +163,7 @@ New command: `/optimize-description [skill-path]`
 
 **File:** `commands/optimize-description.md`
 **Flow:**
+
 1. Resolve skill path (same logic as improve-skill)
 2. Run `quick_validate.py` — abort on CRITICAL failures
 3. Run `generate_trigger_queries.py` — present queries to user for review/edit via AskUserQuestion
@@ -168,6 +175,7 @@ New command: `/optimize-description [skill-path]`
 ### 4. Eval Loop (Future — Spec Only)
 
 Not implemented in this iteration. A separate spec will cover:
+
 - Parallel with-skill vs without-skill execution testing
 - Grader, comparator, analyzer agents
 - Benchmark aggregation
@@ -176,22 +184,22 @@ Not implemented in this iteration. A separate spec will cover:
 
 ## Files to Create
 
-| File | Purpose |
-|------|---------|
-| `scripts/quick_validate.py` | Fast structural validation |
-| `scripts/generate_trigger_queries.py` | Generate trigger test queries |
-| `scripts/optimize_description.py` | Description optimization loop |
-| `scripts/aggregate_history.py` | History summarization |
-| `shared/history-schema.md` | history.json schema reference |
-| `commands/optimize-description.md` | Slash command for optimization |
+| File                                  | Purpose                        |
+| ------------------------------------- | ------------------------------ |
+| `scripts/quick_validate.py`           | Fast structural validation     |
+| `scripts/generate_trigger_queries.py` | Generate trigger test queries  |
+| `scripts/optimize_description.py`     | Description optimization loop  |
+| `scripts/aggregate_history.py`        | History summarization          |
+| `shared/history-schema.md`            | history.json schema reference  |
+| `commands/optimize-description.md`    | Slash command for optimization |
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `skills/improve-skill/SKILL.md` | Add history.json write in Step 5 |
-| `agents/skill-optimizer.md` | Read history.json for trend analysis |
-| `plugin.json` | Version bump to 0.5.0 |
+| File                            | Change                               |
+| ------------------------------- | ------------------------------------ |
+| `skills/improve-skill/SKILL.md` | Add history.json write in Step 5     |
+| `agents/skill-optimizer.md`     | Read history.json for trend analysis |
+| `plugin.json`                   | Version bump to 0.5.0                |
 
 ## Non-Goals
 

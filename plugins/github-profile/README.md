@@ -11,8 +11,7 @@ This plugin walks through that entire process in one session. It researches your
 ## Installation
 
 ```bash
-/plugin marketplace add birdcar/claude-plugins
-/plugin install github-profile@birdcar
+claude plugin install github-profile@birdcar-plugins
 ```
 
 Requires the `gh` CLI for repository creation and data gathering.
@@ -23,34 +22,24 @@ Requires the `gh` CLI for repository creation and data gathering.
 /generate-github-profile <username>
 ```
 
-The command runs through five phases:
+The command runs through five phases: context gathering (professional focus, which sections you want, style preference), research (a subagent fetches your real profile data via the GitHub API and GraphQL), generation (a second subagent produces the README, any Actions workflows, and optional SVG assets), an add-on menu for anything you want to layer on after the initial pass, and repo setup (creates or clones your `username/username` repo, deploys the files, and walks you through any secrets the Actions need).
 
-1. **Context gathering** — asks about your professional focus, tech stack, which sections you want (About Me, Stats, Tech Stack, Projects, Blog, Spotify, WakaTime, Snake), and your preferred style
-2. **Research** — a subagent fetches your real profile data, top repos, pinned repos via GraphQL, and language distribution
-3. **Generation** — a second subagent produces the README (capped at 300 lines), any Actions workflows, and optional SVG assets
-4. **Add-ons** — offers additional sections if you want to layer more on
-5. **Repo setup** — creates or clones your `username/username` repo, deploys the files, and walks you through any secrets the Actions need
+You can also trigger it naturally — say "generate a GitHub profile README for myusername" and the skill picks it up.
 
-## Style templates
+## Sections you can include
 
-You pick one of four styles during context gathering:
+About Me, GitHub Stats Cards, Tech Stack badges, Featured Projects, Blog Posts Feed (RSS), Spotify Now Playing, WakaTime Coding Stats, and Contribution Snake Animation. You pick during the context gathering phase. Dynamic sections (blog, Spotify, WakaTime, snake) get corresponding GitHub Actions workflows that keep content current.
 
-- **Professional** — waving header, muted grays and blues, `flat-square` badges, minimal animation
-- **Creative** — cylinder/slice headers, bold gradients, `for-the-badge` badges, typing SVG
-- **Minimal** — no header or a soft one, monochrome palette, `flat` badges, no animation
-- **Playful** — venom/cylinder headers, bright and rainbow colors, `plastic` badges, multiple animations
+## Style options
+
+Four styles are available: Professional (waving header, muted grays and blues, `flat-square` badges, minimal animation), Creative (cylinder/slice headers, bold gradients, `for-the-badge` badges, typing SVG), Minimal (no header or a soft one, monochrome, `flat` badges, no animation), and Playful (venom/cylinder headers, bright and rainbow colors, `plastic` badges, multiple animations).
 
 ## What gets generated
 
-The README uses 150+ technology badges from shields.io and `<picture>` elements for dark/light mode where applicable. Dynamic content is powered by GitHub Actions workflows — the plugin includes templates for blog RSS feeds, contribution snake animation, WakaTime coding stats, Spotify now-playing, and GitHub activity feeds. All secrets are templated (no hardcoded API keys).
+The README uses shields.io badges and `<picture>` elements for dark/light mode where applicable. Dynamic content is powered by GitHub Actions — templates are included for blog RSS feeds, contribution snake, WakaTime stats, Spotify now-playing, and GitHub activity feeds. All secrets are templated as `${{ secrets.SECRET_NAME }}` — no hardcoded API keys.
 
-## Agents
-
-| Agent                | Model  | Role                                                     |
-| -------------------- | ------ | -------------------------------------------------------- |
-| `profile-researcher` | sonnet | Gathers real GitHub data via API and GraphQL             |
-| `profile-generator`  | sonnet | Produces README, workflows, and SVG assets from research |
+Two subagents handle the work: `profile-researcher` (sonnet) gathers real GitHub data via API and GraphQL, then `profile-generator` (sonnet) produces the README, workflows, and assets from those findings.
 
 ## Honest trade-offs
 
-The research phase adds time but exists for a reason — profile READMEs built on fabricated data look worse than no README at all. The 300-line cap on the generated README keeps things scannable, but if you select all eight sections with a large tech stack, some content will be condensed to fit.
+The research phase adds time but exists for a reason — profile READMEs built on fabricated data look worse than no README at all. The generated README is capped at 300 lines to keep it scannable; if you select all eight sections with a large tech stack, some content will be condensed to fit.

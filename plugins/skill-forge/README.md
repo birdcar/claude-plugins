@@ -9,7 +9,7 @@ Writing a good SKILL.md from scratch is deceptively tedious. The description nee
 ## Installation
 
 ```bash
-claude plugin install skill-forge
+claude plugin install skill-forge@birdcar-plugins
 ```
 
 ## Commands
@@ -51,18 +51,50 @@ The workflow scores four dimensions (0–25 each):
 
 You choose which dimensions to improve, then approve each individual change before it's applied. The final report shows a before/after scorecard. If the description was modified, new trigger tests are generated automatically.
 
+### `/optimize-description [path]`
+
+Optimizes a skill's description for trigger accuracy through automated testing. Unlike the quality audit in `/improve-skill`, this command focuses entirely on the description field — generating eval queries, running them, and iterating until trigger accuracy improves.
+
+```
+/optimize-description ~/.claude/skills/my-skill/SKILL.md
+```
+
+Requires `claude` CLI and `uv`. The optimization loop runs up to five iterations, presenting a before/after score comparison and letting you choose which version to apply.
+
+### `/eval-skill [path]`
+
+Execution-based evaluation of a skill. Runs real prompts with and without the skill installed (or between two versions), grades outputs against assertions, and opens a browser-based viewer to review results. This measures actual output quality, not structural compliance.
+
+```
+/eval-skill my-skill
+/eval-skill ~/.claude/skills/review-pr/SKILL.md
+```
+
+Two modes:
+
+- **Create mode** — compares having the skill installed vs. not having it, to confirm the skill actually improves outputs
+- **Improve mode** — compares an old version against a new version; accepts a file path or a git ref for the old version
+
+The pipeline: parallel execution runs → blind A/B comparison → assertion grading → aggregate benchmark → browser viewer → optional iteration. All runs launch in parallel. The comparator is blind — it doesn't know which config produced which output.
+
+Requires `uv`.
+
 ## Agents
 
-Six subagents handle specialized tasks so the main thread stays orchestration-focused:
+Ten subagents handle specialized tasks so the main thread stays orchestration-focused:
 
-| Agent              | Model  | Role                                                             |
-| ------------------ | ------ | ---------------------------------------------------------------- |
-| `intake-analyst`   | sonnet | Classifies brain dump into type, pattern, primitives, complexity |
-| `skill-researcher` | sonnet | Scans target location for conflicts and conventions              |
-| `skill-generator`  | opus   | Writes SKILL.md, agents, commands, reference docs                |
-| `skill-validator`  | haiku  | Structural checks, anti-pattern scan, trigger test generation    |
-| `skill-optimizer`  | sonnet | Scores existing skills across four quality dimensions            |
-| `scaffold-writer`  | haiku  | Creates plugin.json, package.json, tsconfig.json boilerplate     |
+| Agent              | Model  | Role                                                              |
+| ------------------ | ------ | ----------------------------------------------------------------- |
+| `intake-analyst`   | sonnet | Classifies brain dump into type, pattern, primitives, complexity  |
+| `skill-researcher` | sonnet | Scans target location for conflicts and conventions               |
+| `skill-generator`  | opus   | Writes SKILL.md, agents, commands, reference docs                 |
+| `skill-validator`  | haiku  | Structural checks, anti-pattern scan, trigger test generation     |
+| `skill-optimizer`  | sonnet | Scores existing skills across four quality dimensions             |
+| `scaffold-writer`  | haiku  | Creates plugin.json, package.json, tsconfig.json boilerplate      |
+| `grader`           | sonnet | Grades assertion pass/fail from execution transcripts             |
+| `comparator`       | sonnet | Blind A/B quality comparison of two execution outputs             |
+| `analyzer`         | sonnet | Post-hoc analysis and benchmark pattern detection                 |
+| `retrospective`    | sonnet | Captures patterns from forge/improve runs into the knowledge base |
 
 ## Knowledge base
 
@@ -74,6 +106,7 @@ The `shared/` directory contains reference docs that agents read during generati
 - `agent-design.md` — when to use agents vs. inline instructions, model selection guidance
 - `workflow-patterns.md` — the five canonical workflow patterns and when each applies
 - `primitives-guide.md` — tool usage patterns
+- `eval-schemas.md` — JSON schemas for grading.json, comparison.json, and related eval artifacts
 
 ## Target locations
 
@@ -88,3 +121,5 @@ When creating a skill, you choose one of three targets:
 The confidence gate adds a round-trip or two for ambiguous requests — that's intentional. A vague brain dump produces a vague skill, and the gate exists to catch that before generation. If you already have a precise spec, it clears in one pass.
 
 Opus handles generation, which is slower and costs more than the validation and scaffolding steps. For simple command-only skills, that cost is often overkill, but the description quality and instruction specificity are meaningfully better than sonnet output for this task.
+
+`/eval-skill` runs multiple parallel Claude API calls per prompt — two execution runs plus grading and comparison agents. For 3 test prompts, expect 8–10 API calls total before the browser viewer opens. It's thorough but not cheap.

@@ -1,14 +1,12 @@
 # home-server
 
-A Claude Code plugin that manages a personal Coolify-based home server through four specialized agents. Deploy services, configure networking, tune applications, and troubleshoot issues without leaving your terminal.
+A Claude Code plugin for managing a personal home server running Coolify, Traefik, Tailscale, and Cloudflare DNS. It encodes operational knowledge into four specialists so you don't have to context-switch between API docs, gotcha lists, and network topology every time you want to deploy a service or fix a cert.
 
-## What problem it solves
+## The problem
 
-Managing a home server means juggling the Coolify API, Traefik routing, Tailscale networking, Cloudflare DNS, and a dozen deployed services each with their own configuration quirks. That's a lot of context to hold in your head: which API endpoints need base64 encoding, which services overwrite their own config on startup, whether a cert failure is a network issue or a Traefik label typo.
+Managing a home server means remembering a lot of things simultaneously: which Coolify API fields need base64 encoding, how Traefik picks up service routing (FQDN is a separate table, not just a label), which services overwrite their own config on startup, and whether a cert failure is a network issue or a label typo. None of that is hard, but it's tedious to re-derive every session.
 
-This plugin encodes all of that operational knowledge into four agents that know how the server works. You describe what you want in plain language, and it classifies the task, dispatches to the right specialist, and validates the result.
-
-The server config is mine (specific service UUIDs, mount paths, domain names), but the architecture -- Coolify + Traefik + Tailscale + Cloudflare with agent-based task routing -- is reusable if you're building something similar.
+So I encoded it into agents that already know how this server works.
 
 ## Installation
 
@@ -17,42 +15,45 @@ The server config is mine (specific service UUIDs, mount paths, domain names), b
 /plugin install home-server@birdcar
 ```
 
-You'll also need a `~/.config/home-server/credentials.env` file (chmod 600) with your Coolify API token, Cloudflare API token, and Tailscale auth key.
+You'll also need `~/.config/home-server/credentials.env` (chmod 600) with your `COOLIFY_API_TOKEN`, `COOLIFY_API_URL`, `CF_API_TOKEN`, and `TS_AUTH_KEY`. The plugin reads credentials from that file before every API call and refuses to accept hardcoded tokens.
 
 ## How it works
 
-When you ask the plugin to do something, it classifies your request and dispatches to one of four agents:
+When you describe what you want, the plugin classifies the intent and either handles it directly or dispatches to a specialist agent:
 
-**coolify-specialist** handles deployments and service configuration through the Coolify REST API. It knows to try one-click templates before custom docker-compose, to base64-encode `docker_compose_raw` on PATCH requests, and to connect services to the predefined network for Traefik routing.
+**coolify-specialist** handles service deployments and configuration through the Coolify REST API. It knows to try one-click templates before custom docker-compose, to base64-encode `docker_compose_raw` on PATCH requests, to enable "Connect to Predefined Network" for Traefik routing, and to set the FQDN on the `service_applications` table separately from the compose config.
 
-**networking-specialist** manages the full network path: Cloudflare DNS, Tailscale VPN, Traefik reverse proxy, and TLS certificates via DNS-01 challenge. Services are Tailscale-only by default -- public exposure requires explicit confirmation.
+**networking-specialist** manages the full network path: Cloudflare DNS records, Tailscale VPN, Traefik reverse proxy, and TLS via DNS-01 challenge. Services default to Tailscale-only -- public exposure requires explicit confirmation.
 
-**app-tuner** researches and applies app-specific optimizations. Jellyfin transcoding settings, \*arr stack quality profiles (respecting Recyclarr ownership), media server tuning. It pulls from TRaSH Guides and official docs rather than guessing.
+**app-tuner** researches and applies app-specific optimizations, pulling from TRaSH Guides and official docs. Useful for Jellyfin transcoding settings, Sonarr/Radarr quality profiles (respecting Recyclarr ownership), and similar tuning that requires reading external documentation rather than just calling an API.
 
-**retrospect** runs after sessions (via `/home-server-retrospect`) to review what was learned and update the plugin's reference files so knowledge accumulates over time.
+**retrospect** reviews sessions for new knowledge and updates the plugin's reference files so that configs, gotchas, and service UUIDs accumulate across conversations rather than getting re-discovered each time.
 
-Simple tasks like status checks or Glance dashboard edits are handled directly without spawning an agent.
+Simple tasks (status checks, Glance dashboard edits) are handled directly without spawning an agent.
 
-## Deployed services
+## Infrastructure assumptions
 
-Jellyfin, Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, SABnzbd, LazyLibrarian, Kavita, Audiobookshelf, Castopod, Home Assistant, Glance, n8n.
+This plugin is built around a specific server setup:
 
-## Infrastructure details
+- Coolify API at an internal Tailscale IP, never publicly exposed
+- Config persistence at `/srv/docker/{service}/` on NVMe
+- Media volume at `/mnt/mediastore/` structured for hardlink compatibility
+- Environment defaults: `PUID=1000`, `PGID=1000`, `TZ=America/Chicago`
+- Reference docs at `~/.config/home-server/` (server-config.md, coolify-patterns.md, networking.md)
 
-- Coolify API at an internal Tailscale IP (never exposed publicly)
-- Config persistence: `/srv/docker/{service}/` on NVMe
-- Media volume: `/mnt/mediastore/` structured for hardlink compatibility
-- Environment standards: `PUID=1000`, `PGID=1000`, `TZ=America/Chicago`
-- Reference docs live at `~/.config/home-server/` (server-config.md, coolify-patterns.md, networking.md)
+The agent architecture -- classify intent, dispatch to specialist, validate result -- is the reusable part if you're building something similar for your own setup.
 
-## Guardrails worth knowing about
+## Gotchas encoded in the plugin
 
-The plugin loads credentials before every API call and refuses to hardcode tokens in commands. It prefers the Coolify API over direct Docker commands. It won't expose services publicly without asking first. After making changes, it verifies the service is running, HTTPS works, and the TLS cert is from Let's Encrypt (not Traefik's default self-signed cert).
+A few service-specific behaviors that would otherwise need re-learning:
 
-A few service-specific gotchas are encoded too: LazyLibrarian overwrites its config on startup so you have to stop it before editing, Glance config live-reloads without a restart, and Recyclarr owns quality profiles in the \*arr stack so manual overrides get clobbered.
+- LazyLibrarian overwrites its config on startup, so stop the container before editing
+- Glance config live-reloads without a restart
+- Recyclarr owns quality profiles in the \*arr stack -- manual overrides get clobbered on the next sync
+- After any infrastructure change, the plugin verifies HTTPS works and the cert is Let's Encrypt, not Traefik's default self-signed cert
 
 ## Commands
 
-| Command                   | Purpose                                                                 |
+| Command                   | What it does                                                            |
 | ------------------------- | ----------------------------------------------------------------------- |
 | `/home-server-retrospect` | Review the current session for new knowledge and update reference files |

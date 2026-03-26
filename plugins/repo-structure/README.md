@@ -1,8 +1,15 @@
 # repo-structure
 
-Enforces the `~/Code/ORG/REPO` directory convention for cloned repos and new projects.
+Enforces the `~/Code/ORG/REPO` directory convention for cloned repos and new projects. Implemented entirely as `PreToolUse` hooks — no skills or commands, just automatic interception.
 
-Without a consistent layout, repos accumulate on the Desktop, in Downloads, or directly in `~`. This plugin intercepts `PreToolUse` Bash hooks — so you don't have to remember any commands. If Claude tries to clone or scaffold in the wrong place, the hook blocks it and hands back the corrected command.
+Without a consistent layout, repos accumulate on the Desktop, in Downloads, or directly in `~`. This plugin intercepts Bash commands before they run, so you don't have to remember the convention or police it manually. If Claude tries to clone or scaffold in the wrong place, the hook blocks the command and returns the corrected version with `mkdir -p` included.
+
+## Install
+
+```bash
+/plugin marketplace add birdcar/claude-plugins
+/plugin install repo-structure@birdcar-plugins
+```
 
 ## What it enforces
 
@@ -34,9 +41,9 @@ These paths always pass through:
 
 ## Implementation notes
 
-Clone validation runs as a shell script (`hooks/validate-clone.sh`) so it can do fast regex extraction without spinning up a Node process. Scaffolding validation runs as a prompt hook since the path inference logic benefits from Claude's context awareness (e.g., knowing the CWD when no explicit path is given).
+Clone validation runs as a shell script (`hooks/validate-clone.sh`) to do fast regex extraction without spinning up a Node process. Scaffolding validation runs as a prompt hook since the path inference logic benefits from Claude's context awareness — for example, knowing the CWD when no explicit path is given.
 
-When a command is blocked, the hook returns a corrected version with `mkdir -p` included so the target directory tree gets created automatically.
+When a command is blocked, the hook returns a corrected version with `mkdir -p` so the target directory tree is created automatically.
 
 ## Limitations
 

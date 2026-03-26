@@ -1,49 +1,38 @@
+> **Deprecated.** This plugin has been superseded by the `ghostwriter` plugin. It is no longer maintained. Install `ghostwriter` instead.
+
+---
+
 # customer-voice
 
-Researches customer questions across the WorkOS codebase and docs, then drafts a response in Nick's voice.
+Drafts pre-sales customer responses in a consistent voice, backed by parallel research across a local codebase and public docs.
 
-## The problem
+## What it does
 
-Pre-sales SE responses are only as good as two things: technical accuracy and voice consistency. Getting both right on every reply is slower than it should be. The research is tedious (codebase, docs, SDKs, all separate), and drafting in a consistent voice while staying technically precise takes real concentration. This plugin handles the research pipeline automatically and applies voice constraints from the first word rather than as a post-draft checklist.
+Given a customer message, the plugin runs research across the WorkOS monorepo, public docs at workos.com/docs, relevant SDK repos, and the WorkOS blog. Research runs in parallel via sub-agents so findings survive context compaction. Once research completes, it drafts a reply using voice rules encoded in `shared/voice.md` — direct, technically precise, Slack mrkdwn formatted, no em-dashes or corporate closers. The approved draft copies to your clipboard via `pbcopy`.
 
-## How it works
+## Commands
 
-`/customer-reply` is the entry point. Paste the customer's message after invoking it. The skill reads the voice guide, then spawns the `customer-researcher` agent to run parallel research across:
+`/customer-reply` — paste the customer message after invoking it. The command handles intake, triage, parallel research, draft, review loop, and clipboard copy.
 
-- The local WorkOS monorepo (via `Explore` sub-agent)
-- Public docs at workos.com/docs (URL verification included)
-- Relevant SDK repos when the question involves code examples
-- The WorkOS blog when explainer content would help
+## Agents
 
-Sub-agents run in parallel and their results survive context compaction, so findings aren't lost during heavy research sessions. The draft only starts after research completes; speculative drafts waste revision cycles.
-
-After you approve the draft, it copies to your clipboard via `pbcopy`.
+`customer-researcher` — spawned by `/customer-reply` to run parallel research sub-agents. Not intended for direct use.
 
 ## Setup
 
-On first use, the researcher agent will ask for two paths and save them to `config.local.md` (gitignored):
+On first use, the researcher agent asks for two paths and saves them to `config.local.md` (gitignored):
 
-- `workos_monorepo_path`: absolute path to your local WorkOS monorepo checkout
-- `sdk_base_path`: absolute path to the directory containing local SDK checkouts
+- `workos_monorepo_path` — absolute path to your local WorkOS monorepo checkout
+- `sdk_base_path` — absolute path to the directory containing local SDK checkouts
 
-It won't ask again after that.
-
-## Usage
-
-```
-/customer-reply
-
-Customer message goes here. Paste the full thread or just the latest message.
-```
-
-The skill handles the rest: intake, triage, parallel research, draft in voice, review loop, clipboard copy.
+It won't prompt again after that.
 
 ## Voice
 
-The voice rules are encoded in `shared/voice.md` and inlined in the skill. The short version: direct, conversational, technically precise, Slack mrkdwn by default. No em-dashes (ever), no corporate closers, no restating what the customer already said.
+Voice rules live in `shared/voice.md`. The short version: direct, conversational, technically precise, Slack mrkdwn by default. No em-dashes, no corporate closers, no restating what the customer already said. Edit that file to refine the voice as new writing samples accumulate.
 
-Edit `shared/voice.md` to refine the voice over time as new writing samples accumulate. The inlined quick-reference in the skill stays as a reliability fallback; the full guide is where refinement happens.
+When research sources conflict, priority is: codebase > API reference > other docs > SDKs > blog. The researcher only returns URLs it verified — fabricated links are a hard failure.
 
-## Source priority
+## Install
 
-When research results conflict, the skill trusts in this order: codebase > API reference > other docs > SDKs > blog. Fabricated URLs are a hard failure; the researcher only returns links it verified.
+This plugin is deprecated and not recommended for new installs. Use the `ghostwriter` plugin instead.
