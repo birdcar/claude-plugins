@@ -8,6 +8,10 @@
         "typescript": "^5.7.0",
       },
     },
+    "plugins/bat-kol": {
+      "name": "@birdcar/bat-kol",
+      "version": "0.1.0",
+    },
     "plugins/customer-voice": {
       "name": "@birdcar/claude-plugin-customer-voice",
       "version": "0.7.0",
@@ -42,6 +46,8 @@
     },
   },
   "packages": {
+    "@birdcar/bat-kol": ["@birdcar/bat-kol@workspace:plugins/bat-kol"],
+
     "@birdcar/claude-plugin-customer-voice": ["@birdcar/claude-plugin-customer-voice@workspace:plugins/customer-voice"],
 
     "@birdcar/claude-plugin-github-profile": ["@birdcar/claude-plugin-github-profile@workspace:plugins/github-profile"],
