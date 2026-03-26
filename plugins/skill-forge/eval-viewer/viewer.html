@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skill Eval Viewer</title>
+    <style>
+      /* Dark theme, clean and functional */
+      :root {
+        --bg: #1a1a2e;
+        --surface: #16213e;
+        --surface-hover: #1a2744;
+        --text: #e0e0e0;
+        --text-muted: #8892a0;
+        --accent: #0f3460;
+        --green: #4ade80;
+        --red: #f87171;
+        --yellow: #fbbf24;
+        --blue: #60a5fa;
+        --border: #2d3748;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      h1,
+      h2,
+      h3 {
+        color: #fff;
+      }
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+      }
+      h2 {
+        font-size: 1.3rem;
+        margin: 2rem 0 1rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.5rem;
+      }
+      h3 {
+        font-size: 1.1rem;
+        margin: 1rem 0 0.5rem;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+      }
+
+      .summary-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.2rem;
+      }
+
+      .summary-card .label {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+      }
+      .summary-card .value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-top: 0.3rem;
+      }
+      .summary-card .value.green {
+        color: var(--green);
+      }
+      .summary-card .value.red {
+        color: var(--red);
+      }
+      .summary-card .value.blue {
+        color: var(--blue);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+      }
+
+      th {
+        background: var(--accent);
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .pass {
+        color: var(--green);
+        font-weight: 600;
+      }
+      .fail {
+        color: var(--red);
+        font-weight: 600;
+      }
+      .non-disc {
+        color: var(--yellow);
+        font-style: italic;
+      }
+
+      .bar-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .bar {
+        height: 20px;
+        border-radius: 4px;
+        min-width: 4px;
+      }
+
+      .bar.green {
+        background: var(--green);
+      }
+      .bar.red {
+        background: var(--red);
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0.25rem;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid var(--border);
+      }
+
+      .tab {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+      }
+
+      .tab.active {
+        color: var(--blue);
+        border-bottom-color: var(--blue);
+      }
+
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      .side-by-side {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      .transcript {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+        max-height: 500px;
+        overflow-y: auto;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+      }
+
+      .rubric-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+      }
+
+      .rubric-item {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.75rem;
+        text-align: center;
+      }
+
+      .rubric-item .dim {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+      .rubric-item .score {
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+
+      .insights {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+      }
+
+      .insight {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .insight:last-child {
+        border-bottom: none;
+      }
+
+      .priority-high {
+        border-left: 3px solid var(--red);
+        padding-left: 0.75rem;
+      }
+      .priority-medium {
+        border-left: 3px solid var(--yellow);
+        padding-left: 0.75rem;
+      }
+      .priority-low {
+        border-left: 3px solid var(--text-muted);
+        padding-left: 0.75rem;
+      }
+
+      .feedback-form {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.5rem;
+      }
+
+      .feedback-success {
+        color: var(--green);
+        font-size: 1.2rem;
+        text-align: center;
+        padding: 2rem;
+      }
+
+      .stars {
+        display: flex;
+        gap: 0.25rem;
+        margin: 0.5rem 0;
+      }
+      .star {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--border);
+        transition: color 0.15s;
+      }
+      .star.active {
+        color: var(--yellow);
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 100px;
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.75rem;
+        font-family: inherit;
+        font-size: 0.9rem;
+        resize: vertical;
+        margin: 0.5rem 0;
+      }
+
+      .btn {
+        padding: 0.6rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+
+      .btn:hover {
+        opacity: 0.85;
+      }
+      .btn-primary {
+        background: var(--blue);
+        color: #fff;
+      }
+      .btn-group {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .badge-green {
+        background: rgba(74, 222, 128, 0.15);
+        color: var(--green);
+      }
+      .badge-red {
+        background: rgba(248, 113, 113, 0.15);
+        color: var(--red);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>
+      Skill Eval: <span id="skill-name"><!-- skill name --></span>
+    </h1>
+    <p style="color: var(--text-muted)">Iteration <span id="iteration">0</span></p>
+
+    <!-- Summary Section -->
+    <h2>Summary</h2>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="label">Winner</div>
+        <div class="value green" id="winner">with_skill</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Margin</div>
+        <div class="value blue" id="margin">+0.45</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Total Evals</div>
+        <div class="value" id="total-evals">3</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Avg Tokens (with)</div>
+        <div class="value" id="avg-tokens">15,000</div>
+      </div>
+    </div>
+
+    <!-- Assertion Results -->
+    <h2>Assertion Results</h2>
+    <table id="assertions-table">
+      <thead>
+        <tr>
+          <th>Assertion</th>
+          <th>Config A</th>
+          <th>Config B</th>
+          <th>Discriminating</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Populated by JS -->
+      </tbody>
+    </table>
+
+    <!-- Output Comparison (Tabbed) -->
+    <h2>Output Comparison</h2>
+    <div class="tabs" id="eval-tabs">
+      <!-- Tab buttons populated by JS -->
+    </div>
+    <div id="eval-tab-contents">
+      <!-- Tab content populated by JS -->
+    </div>
+
+    <!-- Blind Comparison -->
+    <h2>Blind Comparison</h2>
+    <div id="comparisons">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Metrics -->
+    <h2>Token & Time Metrics</h2>
+    <div id="metrics-charts">
+      <!-- SVG bar charts populated by JS -->
+    </div>
+
+    <!-- Analyzer Insights -->
+    <h2>Improvement Suggestions</h2>
+    <div class="insights" id="insights">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Feedback Form -->
+    <h2>Feedback</h2>
+    <div class="feedback-form" id="feedback-form">
+      <h3>Overall Rating</h3>
+      <div class="stars" id="stars">
+        <span class="star" data-rating="1">&#9733;</span>
+        <span class="star" data-rating="2">&#9733;</span>
+        <span class="star" data-rating="3">&#9733;</span>
+        <span class="star" data-rating="4">&#9733;</span>
+        <span class="star" data-rating="5">&#9733;</span>
+      </div>
+
+      <h3>Notes</h3>
+      <textarea id="feedback-notes" placeholder="What worked well? What should change?"></textarea>
+
+      <h3>Next Action</h3>
+      <div class="btn-group">
+        <button class="btn btn-primary" data-action="iterate" onclick="submitFeedback('iterate')">
+          Iterate
+        </button>
+        <button
+          class="btn"
+          style="background: var(--green); color: #000"
+          data-action="accept"
+          onclick="submitFeedback('accept')"
+        >
+          Accept
+        </button>
+        <button
+          class="btn"
+          style="background: var(--red); color: #fff"
+          data-action="reject"
+          onclick="submitFeedback('reject')"
+        >
+          Reject
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Data injected by generate_report.py
+      const __data__ = {}; // Replaced at generation time
+
+      // Star rating
+      let currentRating = 0;
+      document.querySelectorAll('.star').forEach((star) => {
+        star.addEventListener('click', () => {
+          currentRating = parseInt(star.dataset.rating);
+          document.querySelectorAll('.star').forEach((s, i) => {
+            s.classList.toggle('active', i < currentRating);
+          });
+        });
+      });
+
+      // Tab switching
+      function switchTab(tabId) {
+        document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach((t) => t.classList.remove('active'));
+        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+      }
+
+      // Feedback submission
+      function submitFeedback(action) {
+        const feedback = {
+          submitted_at: new Date().toISOString(),
+          overall_rating: currentRating,
+          notes: document.getElementById('feedback-notes').value,
+          assertion_feedback: [],
+          next_action: action,
+        };
+
+        // Try POST first (server mode), fall back to download (static mode)
+        fetch('/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(feedback),
+        })
+          .then((r) => {
+            if (r.ok) {
+              const form = document.getElementById('feedback-form');
+              while (form.firstChild) {
+                form.removeChild(form.firstChild);
+              }
+              const msg = document.createElement('p');
+              msg.className = 'feedback-success';
+              msg.textContent = 'Feedback submitted. You can close this tab.';
+              form.appendChild(msg);
+            }
+          })
+          .catch(() => {
+            // Static mode: download as file
+            const blob = new Blob([JSON.stringify(feedback, null, 2)], {
+              type: 'application/json',
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'feedback.json';
+            a.click();
+            URL.revokeObjectURL(url);
+          });
+      }
+    </script>
+  </body>
+</html>

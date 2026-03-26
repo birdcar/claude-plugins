@@ -1,6 +1,6 @@
 {
   "name": "skill-forge",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Generate and optimize production-grade Claude Code skills from brain dumps",
   "commands": ["./commands/"],
   "agents": [
@@ -10,6 +10,9 @@
     "./agents/skill-validator.md",
     "./agents/skill-optimizer.md",
     "./agents/scaffold-writer.md",
-    "./agents/retrospective.md"
+    "./agents/retrospective.md",
+    "./agents/grader.md",
+    "./agents/comparator.md",
+    "./agents/analyzer.md"
   ]
 }

@@ -160,6 +160,24 @@ For each improvement identified in the selected dimensions:
 
 Never rewrite entire files. Every Edit must be the minimum change needed for the improvement.
 
+## Step 4b — Eval Comparison (Optional)
+
+After changes are applied, offer eval comparison via AskUserQuestion:
+
+- "Run eval comparison (old vs new)" — compares the skill before and after this improve run
+- "Skip to re-validation"
+
+If the user selects eval comparison:
+
+1. Use the `/eval-skill` command flow in improve mode (old_skill vs new_skill)
+2. The "old" version is the skill state before this improve run — use `git stash` to create a temp copy, or read from the last committed version
+3. The "new" version is the current state after changes
+4. Run the full eval pipeline (parallel runs → grading → comparison → viewer)
+5. If results show regression, offer to revert specific changes
+6. After the user is satisfied, continue to re-validation
+
+This step is most valuable when significant instruction or workflow changes were made. For description-only or structural changes, skipping is fine.
+
 ## Step 5 — Re-validate & Report
 
 After all approved changes are applied:

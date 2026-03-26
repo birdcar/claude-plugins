@@ -206,6 +206,22 @@ Read the approved `{$SKILL_DIR}/docs/spec.md` — this is the primary input for 
 1. Create the skill directory at the target path
 2. Spawn `skill-forge:skill-generator` agent (Opus) with the same spec-based inputs as above
 
+## Step 4b — Eval Testing (Optional)
+
+After generation completes, offer eval testing via AskUserQuestion:
+
+- "Run eval loop (recommended for complex skills)" — runs execution-based evaluation comparing with-skill vs without-skill output
+- "Skip to validation"
+
+If the user selects eval testing:
+
+1. Use the `/eval-skill` command flow in create mode (with_skill vs without_skill)
+2. Auto-generate 2-3 test prompts from the skill's workflow steps and description
+3. Run the full eval pipeline (parallel runs → grading → comparison → viewer)
+4. After the user is satisfied with eval results, continue to validation
+
+This step is most valuable for complex skills with multiple agents or intricate workflows. For simple skills, skipping is fine.
+
 ## Step 5 — Validate
 
 Spawn the `skill-forge:skill-validator` agent (Haiku) via the Agent tool, passing:
