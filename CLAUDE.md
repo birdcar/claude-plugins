@@ -7,7 +7,7 @@ Personal Claude Code plugin marketplace using Bun workspaces and TypeScript.
 - **Add plugin**: Create in `plugins/`, run `bun run sync`
 - **Build**: `bun run build`
 - **Format**: `bun run format`
-- **Before commit**: `bun install && bun run typecheck && bun run format:check`
+- **Before EVERY commit**: Run `bun install` first — CI uses `--frozen-lockfile` and WILL fail on lockfile drift. Stage `bun.lock` if it changed. Then `bun run typecheck && bun run format:check`.
 
 ## Structure
 
@@ -84,10 +84,21 @@ When changes are ready to ship, follow this pipeline in order:
 
 When asked to "ship", "deploy", or "push and update", run this full pipeline automatically. Do not skip steps or stop at push — the local marketplace pull and plugin update are part of shipping.
 
+## Pre-Commit Rule (MANDATORY)
+
+Before EVERY `git commit` in this repo — not just shipping commits — run:
+
+```bash
+bun install && bun run format
+```
+
+Then stage `bun.lock` if it changed. CI uses `--frozen-lockfile` and **will fail** on any lockfile drift, even when no dependencies changed (marketplace sync and version bumps can cause drift). This has caused repeated CI failures.
+
 ## CI Requirements
 
 Before merge, CI checks:
 
+- Lockfile is up to date (`bun install --frozen-lockfile`)
 - Type check passes
 - Build succeeds
 - Sync is up to date (no uncommitted marketplace changes)
