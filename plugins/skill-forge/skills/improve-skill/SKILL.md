@@ -53,6 +53,7 @@ Determine the skill's root directory (the directory containing `skills/`, `agent
 - `{skill-root}/docs/contract.md` — design intent document
 - `{skill-root}/docs/spec.md` — execution plan document
 - `{skill-root}/docs/learnings.md` — accumulated observations
+- `{skill-root}/docs/history.json` — iteration tracking data
 
 Record whether a spec exists or not — this determines Step 2's behavior.
 
@@ -63,6 +64,8 @@ If a braindump was provided, hold it for Step 2 — the user's ideas are passed 
 ### When a spec exists
 
 Spawn the `skill-forge:skill-optimizer` agent (Sonnet) with all collected skill content AND spec content provided in the prompt. Include spec files under a `## Spec Context` section containing the full text of contract.md and spec.md.
+
+If `history.json` exists, include it under a `## Iteration History` section so the optimizer can identify trends across runs.
 
 If the user provided a braindump, include it under a `## User-Requested Improvements` section.
 
@@ -190,7 +193,15 @@ TOTAL                 53     85    +32
 
 Use the actual date (from the system) and real scores. This creates an audit trail of improvement runs over time.
 
-5. If the skill is inside a marketplace plugin (a `package.json` exists in the plugin directory with `bun` scripts), run:
+5. Write an entry to `{skill-root}/docs/history.json`. Create the file if it does not exist (initialize with `{ "skill_name": "<name>", "entries": [] }`). The entry schema is defined in `${CLAUDE_PLUGIN_ROOT}/shared/history-schema.md`. Include:
+   - Timestamp (current time, ISO 8601)
+   - Version from `plugin.json` (or `"unversioned"` for non-plugin skills)
+   - Before and after scores for all four dimensions
+   - List of applied and skipped changes from TodoWrite
+   - Whether the description was changed
+   - Trigger test results if applicable
+
+6. If the skill is inside a marketplace plugin (a `package.json` exists in the plugin directory with `bun` scripts), run:
 
    ```bash
    bun run typecheck && bun run build
@@ -198,7 +209,7 @@ Use the actual date (from the system) and real scores. This creates an audit tra
 
    Report the result.
 
-6. If the description field was changed, spawn the `skill-forge:skill-validator` agent (Haiku) with the skill directory path. The validator generates 20 trigger test queries and writes them to `trigger-tests.md` alongside the improved SKILL.md. Include the trigger test path in the report.
+7. If the description field was changed, spawn the `skill-forge:skill-validator` agent (Haiku) with the skill directory path. The validator generates 20 trigger test queries and writes them to `trigger-tests.md` alongside the improved SKILL.md. Include the trigger test path in the report.
 
 ## Step 6 — Retrospective
 

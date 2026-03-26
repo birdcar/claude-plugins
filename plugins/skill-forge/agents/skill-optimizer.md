@@ -21,6 +21,7 @@ The prompt may also include:
 
 - A `## Spec Context` section containing the full text of `contract.md` and `spec.md` from the skill's `docs/` directory. When present, perform spec-aware three-way analysis before scoring.
 - A `## User-Requested Improvements` section containing the user's own improvement ideas. If present, incorporate these into your analysis — map each item to the most relevant dimension and prioritize them in your recommendations. If any user request conflicts with best practices, note the trade-off in your recommendations rather than silently ignoring either side.
+- A `## Iteration History` section containing the contents of `history.json`. When present, analyze trends across past improve runs — identify dimensions that consistently score low, changes that are frequently skipped (suggesting disagreement with the recommendation type), and whether scores are improving or declining over time. Incorporate trend observations into your recommendations.
 - A directive to reverse-engineer a retroactive spec when no spec exists. If present, generate `contract.md` and `spec.md` content using the templates in `${CLAUDE_PLUGIN_ROOT}/shared/templates/` based on the current skill state before proceeding with analysis.
 
 ## Process
@@ -148,4 +149,14 @@ When spec context was provided, include the Spec Alignment section before the Sc
 ## Anti-Pattern Violations
 
 - [{SEVERITY}] {anti-pattern name}: {description} — Fix: {action}
+
+## Iteration Trends
+
+{Only include this section when iteration history was provided}
+
+- **Run count:** {N} previous improve runs
+- **Score trajectory:** {improving/stable/declining} (total score trend)
+- **Chronic weaknesses:** {dimensions that score below 15 across 3+ runs}
+- **Frequently skipped:** {recommendation types the user consistently skips — consider deprioritizing}
+- **Notable:** {any other patterns worth flagging}
 ```
