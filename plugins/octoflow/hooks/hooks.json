@@ -5,8 +5,9 @@
         "matcher": "Bash",
         "hooks": [
           {
-            "type": "command",
-            "command": "bash -c 'input=$(cat); cmd=$(printf \"%s\" \"$input\" | jq -r \".tool_input.command // empty\"); if printf \"%s\" \"$cmd\" | grep -qE \"git commit\"; then if printf \"%s\" \"$cmd\" | grep -qE \"(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\([^)]*\\))?!?:\"; then exit 0; fi; printf \"{\\\"decision\\\": \\\"block\\\", \\\"reason\\\": \\\"Use /commit instead of raw git commit\\\"}\\n\" >&2; exit 2; fi'"
+            "type": "prompt",
+            "if": "Bash(git commit *)",
+            "prompt": "The user requires conventional commits via the /commit skill.\n\nBLOCK this command. Tell the user to use /commit instead of raw git commit.\n\nThe ONLY exception: if the commit message already follows conventional commit format (feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(scope)?: description — then ALLOW it."
           }
         ]
       }

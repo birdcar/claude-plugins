@@ -46,13 +46,13 @@
       "name": "octoflow",
       "source": "./plugins/octoflow",
       "description": "Core Git workflow commands for commits and pull requests",
-      "version": "0.3.0"
+      "version": "0.3.1"
     },
     {
       "name": "repo-structure",
       "source": "./plugins/repo-structure",
       "description": "Enforces ~/Code/ORG/REPO directory convention for cloned repos and new projects",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     {
       "name": "skill-forge",

@@ -14,6 +14,15 @@ bun.lockb
 *.swp
 *.swo
 
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
 # OS
 .DS_Store
 Thumbs.db
