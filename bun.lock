@@ -40,6 +40,10 @@
       "name": "@birdcar/claude-plugin-repo-structure",
       "version": "0.1.0",
     },
+    "plugins/roost": {
+      "name": "@birdcar/claude-plugin-roost",
+      "version": "0.2.0",
+    },
     "plugins/skill-forge": {
       "name": "@birdcar/claude-plugin-skill-forge",
       "version": "0.1.0",
@@ -57,6 +61,8 @@
     "@birdcar/claude-plugin-octoflow": ["@birdcar/claude-plugin-octoflow@workspace:plugins/octoflow"],
 
     "@birdcar/claude-plugin-repo-structure": ["@birdcar/claude-plugin-repo-structure@workspace:plugins/repo-structure"],
+
+    "@birdcar/claude-plugin-roost": ["@birdcar/claude-plugin-roost@workspace:plugins/roost"],
 
     "@birdcar/claude-plugin-skill-forge": ["@birdcar/claude-plugin-skill-forge@workspace:plugins/skill-forge"],
 

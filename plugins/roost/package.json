@@ -1,0 +1,6 @@
+{
+  "name": "@birdcar/claude-plugin-roost",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module"
+}

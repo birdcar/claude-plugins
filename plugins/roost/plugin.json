@@ -1,0 +1,15 @@
+{
+  "name": "roost",
+  "description": "Full-stack SaaS builder for the Cloudflare Workers + WorkOS + Stripe + Resend stack. Generates production-ready applications with auth, billing, email, and deployment from a product description.",
+  "version": "0.2.0",
+  "commands": ["./commands/"],
+  "agents": [
+    "./agents/cloudflare-architect.md",
+    "./agents/workos-specialist.md",
+    "./agents/stripe-specialist.md",
+    "./agents/resend-specialist.md",
+    "./agents/stack-introspector.md",
+    "./agents/bootstrap-writer.md",
+    "./agents/roost-retrospective.md"
+  ]
+}
