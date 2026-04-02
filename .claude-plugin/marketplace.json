@@ -58,7 +58,7 @@
       "name": "roost",
       "source": "./plugins/roost",
       "description": "Full-stack SaaS builder for the Cloudflare Workers + React Router 7 + WorkOS + Stripe + Resend + Twilio + PostHog stack. Generates production-ready applications with auth, billing, email, messaging, analytics, and deployment from a product description.",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "name": "skill-forge",

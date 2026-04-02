@@ -46,14 +46,49 @@ Use AskUserQuestion to collect:
    - **PLG (Product-Led Growth)**: Free tier with self-service upgrade
    - **B2B/Enterprise**: Annual contracts, custom pricing, invoicing
 4. **Plan structure**: Plan names, pricing, and features per plan
-5. **WorkOS features**: Which features to enable:
-   - AuthKit (always included — via `workos install`)
-   - SSO + Admin Portal widgets (always included for enterprise readiness)
-   - Directory Sync via Events API (for team/org management)
-   - FGA (fine-grained authorization for resource-level permissions)
-   - Audit Logs (compliance/enterprise requirement)
-   - Feature Flags (entitlement-gated rollouts)
-   - Vault (secure secret storage for customer data)
+5. **WorkOS feature analysis**: After gathering items 1–4, analyze the product description and billing model to recommend which WorkOS features the product needs. Use the decision matrix below, then present recommendations via AskUserQuestion for the user to confirm or adjust.
+
+#### WorkOS Feature Decision Matrix
+
+Analyze the product against these signals. A feature is **recommended** if 2+ signals match, **suggested** if 1 signal matches, and **not recommended** if none match.
+
+| Feature                              | Signals That Indicate Need                                                                                                                                                        |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Directory Sync** (Events API)      | Multi-tenant / team-based, B2B billing model, enterprise customers, org management features, user provisioning from IdP                                                           |
+| **FGA** (fine-grained authorization) | Resource-level permissions (documents, projects, files), sharing/collaboration features, permission hierarchies beyond admin/member/viewer, multi-team access to shared resources |
+| **Audit Logs**                       | Enterprise/compliance requirements, B2B billing model, sensitive data handling (finance, healthcare, legal), admin actions that need accountability                               |
+| **Feature Flags**                    | Multiple plan tiers with different feature sets, PLG billing model, gradual rollout needs, entitlement-gated features                                                             |
+| **Vault**                            | Stores customer secrets (API keys, tokens, credentials), integration platform, customer-provided configuration secrets                                                            |
+
+**Always included** (do not ask):
+
+- AuthKit (authentication baseline)
+- SSO + Admin Portal widgets (enterprise readiness)
+- RBAC with default roles: admin, member, viewer
+
+#### Presenting Recommendations
+
+Use AskUserQuestion to present a structured recommendation like:
+
+```
+Based on your product description ("{summary}") and {billing model} billing:
+
+**Recommended** (strong fit for your product):
+- [Feature]: [1-sentence reason tied to their product]
+
+**Worth considering** (moderate fit):
+- [Feature]: [1-sentence reason tied to their product]
+
+**Not needed now** (no clear signal):
+- [Feature]: [brief note on when they might need it later]
+
+**Always included**: AuthKit, SSO, Admin Portal widgets, RBAC
+
+Would you like to adjust these selections?
+```
+
+The user can accept the recommendations as-is, add features, or remove recommended ones. Respect their decision — the analysis is advisory, not prescriptive.
+
 6. **Cloudflare primitives**: Which are needed beyond defaults (D1, KV, R2, Queues):
    - Workers AI (for AI features)
    - Vectorize (for semantic search)
@@ -102,7 +137,13 @@ workos install has already configured basic AuthKit. Now add:
 - RBAC middleware with roles: {role list}
 - Directory Sync via Events API (cron polling)
 - WorkOS widgets: {selected widgets}
-- Additional products: {FGA, Audit Logs, Feature Flags, Vault as selected}
+- Additional products: {FGA, Audit Logs, Feature Flags, Vault as confirmed by user}
+
+Product context (use this to inform implementation depth and patterns):
+- Product: {product description summary}
+- Billing model: {billing model}
+- Why these features were selected: {brief rationale from the recommendation step}
+
 Reference: ${CLAUDE_SKILL_DIR}/references/workos.md
 ```
 
