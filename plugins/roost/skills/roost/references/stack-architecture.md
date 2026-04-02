@@ -1,101 +1,231 @@
 # Stack Architecture Reference
 
-Reference architecture for Roost-generated SaaS projects: directory structure, data flow, deployment topology, and environment management.
+Reference architecture for Roost-generated SaaS projects: directory structure, framework decisions, data flow, deployment topology, local development, and environment management.
+
+## Framework Decision: React Router 7 vs Hono
+
+Roost defaults to **React Router 7 in framework mode on Cloudflare Workers** for all new projects. This provides SSR, SEO, API routes, and a unified deployment — no monorepo split needed.
+
+| Scenario                         | Framework                              | Rationale                                                 |
+| -------------------------------- | -------------------------------------- | --------------------------------------------------------- |
+| Full-stack SaaS with UI          | React Router 7                         | SSR for SEO/AI SEO, unified routing, single deploy        |
+| API-only service (no UI)         | Hono                                   | Lighter weight, pure API, no SSR overhead                 |
+| Existing Hono API + new frontend | React Router 7 (new) + Hono (existing) | Migrate incrementally, RR7 calls Hono via service binding |
+
+React Router 7 replaces the previous Hono + Vite/Pages split because:
+
+- Hono SPAs are invisible to search engines and AI crawlers (no SSR)
+- Two deploy targets (Workers + Pages) adds operational complexity
+- React Router 7 handles both SSR pages and API resource routes in one Worker
 
 ## Project Directory Structure
 
-Every Roost project follows this monorepo structure:
+Every Roost project follows this flat structure (not a monorepo):
 
 ```
 {project-name}/
-  package.json                    # Workspace root (bun workspaces)
+  package.json                    # Dependencies and scripts
   bun.lock
   .gitignore
-  wrangler.toml                   # Top-level wrangler config (may reference packages)
-  workos-seed.yaml                # WorkOS seed data
-  bootstrap.sh                    # Project provisioning script
+  .dev.vars.example               # Template for local secrets
+  wrangler.toml                   # Cloudflare Worker config with all bindings
+  react-router.config.ts          # RR7 config (ssr: true)
+  vite.config.ts                  # Vite + @cloudflare/vite-plugin + @react-router/dev
+  tsconfig.json                   # Strict, ES2022, paths: { "~/*": ["./*"] }
+  drizzle.config.ts               # Drizzle Kit config for D1 migrations
+  workos-seed.yaml                # WorkOS seed data (roles, orgs, users)
+  docker-compose.yml              # Sidecar services (RSSHub, etc.) if needed
 
-  packages/
-    api/                          # Hono API on Cloudflare Workers
-      package.json
-      tsconfig.json
-      wrangler.toml               # Worker-specific config with bindings
-      src/
-        index.ts                  # Hono app entry point, route mounting
-        env.ts                    # Env interface (typed bindings)
-        routes/
-          auth.ts                 # AuthKit callback, session management
-          billing.ts              # Stripe checkout, portal, webhooks
-          webhooks/
-            stripe.ts             # Stripe webhook handler
-            workos.ts             # WorkOS DSync webhook handler
-          [domain].ts             # Product-specific routes
-        middleware/
-          auth.ts                 # Session validation, user injection
-          billing.ts              # Entitlement checks
-          rbac.ts                 # Role-based access control
-          cors.ts                 # CORS configuration
-        lib/
-          stripe.ts               # Stripe client helpers
-          workos.ts               # WorkOS client helpers
-          email.ts                # Email sending utility (Resend)
-          id.ts                   # ID generation (nanoid/cuid)
-        emails/
-          welcome.tsx             # Welcome email template
-          invite.tsx              # Org invitation template
-          billing.tsx             # Billing notification templates
-          password-reset.tsx      # Password reset template
-        db/
-          schema.ts               # D1 schema TypeScript types
-          migrations/
-            0001_initial.sql      # Core tables: users, orgs, memberships
-            0002_billing.sql      # Billing tables: subscriptions, events
-            [NNNN]_[name].sql     # Product-specific migrations
+  script/
+    setup                         # Interactive first-time setup (keys → .dev.vars)
+    bootstrap                     # Install deps, provision dev resources, run migrations
+    dev                           # Start local dev server (wrangler dev via Vite)
+    seed                          # Seed local/dev databases and services
+    teardown                      # Clean up dev resources
 
-    web/                          # React + Vite on Cloudflare Pages
-      package.json
-      tsconfig.json
-      vite.config.ts
-      index.html
-      src/
-        main.tsx                  # App entry with providers
-        App.tsx                   # Root component with routing
-        routes/
-          index.tsx               # Home/dashboard
-          auth/
-            callback.tsx          # AuthKit callback handler
-            login.tsx             # Login page
-          settings/
-            billing.tsx           # Billing management (Stripe portal)
-            organization.tsx      # Org settings (WorkOS widgets)
-            profile.tsx           # User profile (WorkOS widget)
-          [domain]/               # Product-specific routes
-        components/
-          layout/
-            header.tsx
-            sidebar.tsx
-            footer.tsx
-          auth/
-            auth-guard.tsx        # Protected route wrapper
-            org-switcher.tsx      # Organization switcher widget
-          billing/
-            plan-selector.tsx     # Plan selection UI
-            usage-display.tsx     # Usage metrics (for metered billing)
-          ui/                     # Shared Radix-based components
-        lib/
-          api.ts                  # API client (fetch wrapper)
-          auth.ts                 # Auth context/hooks
-          types.ts                # Shared frontend types
-        styles/
-          globals.css             # Global styles, Radix/WorkOS CSS imports
+  workers/
+    app.ts                        # Worker entry: fetch, scheduled, queue handlers
 
-    shared/                       # Shared between api and web
-      package.json
-      tsconfig.json
-      src/
-        types.ts                  # Shared type definitions
-        constants.ts              # Shared constants
-        validation.ts             # Shared validation schemas (zod)
+  app/                            # React Router 7 routes and app-level code
+    root.tsx                      # Root layout with providers
+    routes/
+      _index.tsx                  # Landing/home page (SSR, public)
+      _app.tsx                    # Authenticated layout wrapper
+      _app.dashboard.tsx          # Dashboard (protected)
+      _app.settings.tsx           # Settings layout
+      _app.settings.billing.tsx   # Billing management
+      _app.settings.profile.tsx   # User profile (WorkOS widget)
+      _app.settings.org.tsx       # Org settings (WorkOS widgets)
+      login.tsx                   # Login page → WorkOS AuthKit
+      api.v1.[resource].tsx       # API resource routes (loader/action)
+      api.v1.webhooks.stripe.tsx  # Stripe webhook handler
+      api.v1.webhooks.workos.tsx  # WorkOS webhook handler (deprecated — use Events API)
+      api.v1.webhooks.resend.tsx  # Resend inbound webhook handler
+      [domain]/                   # Product-specific routes
+
+  src/
+    core/                         # Framework-agnostic domain logic
+      db/
+        schema.ts                 # Drizzle schema definitions (all tables)
+        migrations/               # Drizzle Kit generated SQL migrations
+        db.ts                     # Database factory (getDb wrapping D1 + Drizzle)
+      lib/
+        stripe.ts                 # Stripe API helpers
+        email.ts                  # Resend email sending utility
+        id.ts                     # ID generation (crypto.randomUUID)
+        org-sync.ts               # WorkOS Events API polling for DSync
+      middleware/
+        jwt.ts                    # JWT verification against WorkOS JWKS
+        tier.ts                   # Subscription tier gating
+      types.ts                    # Env bindings interface + shared domain types
+      durable-objects/            # Durable Object classes (if needed)
+      agents/                     # Workers AI agent logic (if needed)
+
+    pages/                        # React page components
+    components/                   # React UI components
+      ui/                         # Shared Radix-based components
+      layout/                     # Header, sidebar, footer
+      auth/                       # Auth guard, org switcher
+      billing/                    # Plan selector, usage display
+    hooks/                        # React hooks
+    lib/                          # Client-side utilities
+      api.ts                      # API client (typed fetch wrapper)
+    styles/
+      globals.css                 # Radix, WorkOS widget CSS imports
+
+  public/                         # Static assets
+  content/                        # Blog/marketing markdown (if needed)
+```
+
+### Import Convention
+
+Use `~/` path alias mapping to project root:
+
+```typescript
+import { getDb } from '~/src/core/db/db';
+import { users } from '~/src/core/db/schema';
+import type { Env } from '~/src/core/types';
+```
+
+## Worker Entry Point
+
+The Worker entry lives at `workers/app.ts` and exports the standard `ExportedHandler`:
+
+```typescript
+import { createRequestHandler } from 'react-router';
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    // WebSocket upgrade, cache logic, etc. before RR7
+    const requestHandler = createRequestHandler(
+      // @ts-expect-error virtual module
+      () => import('virtual:react-router/server-build'),
+      import.meta.env.MODE
+    );
+    return requestHandler(request, { env, ctx });
+  },
+
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    // Cron jobs: feed polling, org sync, cleanup
+  },
+
+  async queue(batch: MessageBatch, env: Env, ctx: ExecutionContext) {
+    // Queue consumer: email sending, background jobs
+  },
+} satisfies ExportedHandler<Env>;
+```
+
+## Database: Drizzle ORM on D1
+
+All database access uses Drizzle ORM. Never write raw SQL except in generated migration files.
+
+### Schema Definition
+
+```typescript
+// src/core/db/schema.ts
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  name: text('name'),
+  workosUserId: text('workos_user_id').unique(),
+  stripeCustomerId: text('stripe_customer_id').unique(),
+  tier: text('tier').default('free'),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
+export const organizations = sqliteTable('organizations', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  workosOrgId: text('workos_org_id').unique(),
+  stripeCustomerId: text('stripe_customer_id').unique(),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  stripeSubscriptionStatus: text('stripe_subscription_status').default('none'),
+  plan: text('plan').default('free'),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+  updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
+export const orgMembers = sqliteTable('org_members', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id),
+  orgId: text('org_id')
+    .notNull()
+    .references(() => organizations.id),
+  role: text('role').default('member'),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+});
+
+export const billingEvents = sqliteTable('billing_events', {
+  id: text('id').primaryKey(),
+  orgId: text('org_id').references(() => organizations.id),
+  stripeEventId: text('stripe_event_id').unique(),
+  eventType: text('event_type').notNull(),
+  data: text('data'), // JSON
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+});
+```
+
+### Database Factory
+
+```typescript
+// src/core/db/db.ts
+import { drizzle } from 'drizzle-orm/d1';
+import * as schema from './schema';
+
+export function getDb(d1: D1Database) {
+  return drizzle(d1, { schema });
+}
+```
+
+### Migration Workflow
+
+```bash
+# Edit schema.ts, then generate migration
+bunx drizzle-kit generate
+
+# Apply locally
+bun run db:migrate  # wraps: wrangler d1 migrations apply <DB_NAME> --local
+
+# Apply to production
+wrangler d1 migrations apply <DB_NAME> --remote
+```
+
+### Drizzle Config
+
+```typescript
+// drizzle.config.ts
+import { defineConfig } from 'drizzle-kit';
+
+export default defineConfig({
+  schema: './src/core/db/schema.ts',
+  out: './src/core/db/migrations',
+  dialect: 'sqlite',
+});
 ```
 
 ## Data Flow
@@ -103,127 +233,119 @@ Every Roost project follows this monorepo structure:
 ### Authentication Flow
 
 ```
-Browser -> AuthKit Hosted UI -> WorkOS -> /api/auth/callback -> D1 (user record) -> KV (session)
+Browser → AuthKit Hosted UI → WorkOS → /api/v1/auth/callback (RR7 loader) → D1 (user upsert) → JWT session
 ```
 
-1. User clicks login -> redirect to AuthKit
+1. User clicks login → redirect to AuthKit
 2. AuthKit handles auth method (password, SSO, social)
-3. AuthKit redirects to `/api/auth/callback` with code
-4. Worker exchanges code for user profile
-5. Upsert user in D1
-6. Create session in KV with TTL
-7. Return session token to frontend
+3. AuthKit redirects to callback route
+4. RR7 loader exchanges code for user profile via `@workos-inc/node`
+5. Upsert user in D1 via Drizzle
+6. Return sealed session (WorkOS manages session, verified via JWT)
 
 ### API Request Flow
 
 ```
-Browser -> Worker (auth middleware -> rbac middleware -> entitlement middleware -> route handler) -> D1/KV/R2
+Browser → Worker fetch → RR7 loader/action → JWT verify → tier check → Drizzle query → Response
 ```
 
-1. Frontend sends request with session token
-2. Auth middleware validates session from KV
-3. RBAC middleware checks role permissions
-4. Entitlement middleware checks subscription status
-5. Route handler processes business logic
-6. Response returned to frontend
+1. Frontend sends request with Bearer JWT
+2. `requireAuth()` in loader/action verifies JWT against WorkOS JWKS
+3. Tier middleware checks subscription status
+4. Route handler processes business logic via Drizzle
+5. Response returned (JSON for API routes, SSR HTML for pages)
 
 ### Billing Flow
 
 ```
-Frontend -> /api/billing/checkout -> Stripe Checkout -> Stripe Webhook -> /api/webhooks/stripe -> D1 (subscription update)
+Frontend → /api/v1/billing (action) → Stripe Checkout → Stripe Webhook → /api/v1/webhooks/stripe (action) → D1 update
 ```
-
-1. User selects plan -> create Checkout Session
-2. Stripe handles payment
-3. Stripe sends webhook on completion
-4. Worker updates subscription status in D1
-5. Entitlement middleware reflects new access immediately
 
 ### Email Flow
 
 ```
-Route Handler -> Queue (email job) -> Queue Consumer -> Resend API -> User Inbox
+Route Handler → Queue (email job) → Queue Consumer → Resend API → User Inbox
 ```
 
-1. Business logic triggers email (welcome, invite, billing)
-2. Email job sent to Cloudflare Queue
-3. Queue consumer processes job with retry
-4. Resend sends email using React Email template
-5. Idempotency key prevents duplicates on retry
-
-### Directory Sync Flow
+### Directory Sync Flow (Events API — preferred over webhooks)
 
 ```
-Identity Provider -> WorkOS -> Webhook -> /api/webhooks/workos -> D1 (user/group updates)
+Identity Provider → WorkOS → Events API ← Cron poll (every 15min) → D1 update
 ```
 
-1. Admin configures directory sync in Admin Portal widget
-2. Identity provider syncs to WorkOS
-3. WorkOS sends webhook events (user created/updated/deleted)
-4. Worker processes events, updates D1
-5. User access reflects org directory changes
+WorkOS recommends the Events API over webhooks for DSync because:
+
+- No spiky webhook traffic to handle
+- Cursor-based polling is simpler to implement
+- No webhook signature verification needed
+- Automatic retry via cursor (re-read from last position)
 
 ## Deployment Topology
 
-### Cloudflare Services
+### Single Cloudflare Worker
 
 ```
-┌─────────────────────────────────────┐
-│  Cloudflare Edge Network            │
-│                                     │
-│  ┌─────────┐     ┌──────────────┐  │
-│  │  Pages   │     │   Worker     │  │
-│  │  (web)   │────>│   (api)      │  │
-│  └─────────┘     └──────┬───────┘  │
-│                          │          │
-│  ┌───────┬───────┬───────┼───────┐  │
-│  │  D1   │  KV   │  R2   │ Queue │  │
-│  │(data) │(cache)│(files)│(jobs) │  │
-│  └───────┴───────┴───────┴───────┘  │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  Cloudflare Worker (React Router 7 SSR)          │
+│                                                  │
+│  ┌──────────┐  ┌────────┐  ┌──────────────────┐ │
+│  │  SSR     │  │  API   │  │  Scheduled/Queue │ │
+│  │  Routes  │  │  Routes│  │  Handlers        │ │
+│  └──────────┘  └────────┘  └──────────────────┘ │
+│                                                  │
+│  ┌──────┬──────┬──────┬───────┬──────┬────────┐ │
+│  │  D1  │  KV  │  R2  │ Queue │  AI  │   DO   │ │
+│  │(data)│(cache│(files│(jobs) │(LLM) │(state) │ │
+│  │      │ /kv) │     )│       │      │        │ │
+│  └──────┴──────┴──────┴───────┴──────┴────────┘ │
+└──────────────────────────────────────────────────┘
 ```
 
 ### External Services
 
 ```
-┌──────────────────────┐
-│  WorkOS               │
-│  - AuthKit (auth UI)  │
-│  - DSync (webhooks)   │
-│  - SSO (SAML/OIDC)   │
-└──────────────────────┘
-
-┌──────────────────────┐
-│  Stripe               │
-│  - Checkout (billing) │
-│  - Webhooks (events)  │
-│  - Portal (self-svc)  │
-└──────────────────────┘
-
-┌──────────────────────┐
-│  Resend               │
-│  - Email API          │
-│  - Domain verification│
-└──────────────────────┘
+┌────────────────────────┐  ┌──────────────────────┐
+│  WorkOS                │  │  Stripe               │
+│  - AuthKit (auth UI)   │  │  - Checkout (billing) │
+│  - Organizations/FGA   │  │  - Webhooks (events)  │
+│  - Audit Logs          │  │  - Portal (self-svc)  │
+│  - Feature Flags       │  │  - Meter Events       │
+│  - Vault (secrets)     │  └──────────────────────┘
+│  - Directory Sync      │
+│  - Events API          │  ┌──────────────────────┐
+│  - MCP Auth            │  │  Resend               │
+│  - Connect / Pipes     │  │  - Outbound email     │
+└────────────────────────┘  │  - Inbound email      │
+                            │  - React Email         │
+┌────────────────────────┐  └──────────────────────┘
+│  Twilio                │
+│  - SMS notifications   │  ┌──────────────────────┐
+│  - WhatsApp (optional) │  │  PostHog              │
+│  - Voice (optional)    │  │  - Product analytics  │
+└────────────────────────┘  │  - Feature flags*     │
+                            │  - Session replay      │
+                            └──────────────────────┘
 ```
+
+\*PostHog feature flags complement WorkOS Feature Flags — use WorkOS for entitlement-gated flags, PostHog for A/B testing and gradual rollouts.
 
 ## Environment Management
 
-### Environment Variables by Context
-
-#### Worker Secrets (via `wrangler secret put`)
+### Worker Secrets (via `wrangler secret put`)
 
 ```
 WORKOS_API_KEY
 WORKOS_CLIENT_ID
 WORKOS_COOKIE_PASSWORD
-WORKOS_WEBHOOK_SECRET
 STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 RESEND_API_KEY
+RESEND_WEBHOOK_SECRET
+TWILIO_AUTH_TOKEN
+POSTHOG_API_KEY
 ```
 
-#### Worker Vars (in wrangler.toml `[vars]`)
+### Worker Vars (in wrangler.toml `[vars]`)
 
 ```toml
 [vars]
@@ -231,104 +353,256 @@ ENVIRONMENT = "production"
 APP_URL = "https://app.example.com"
 APP_NAME = "My SaaS"
 EMAIL_DOMAIN = "example.com"
+TWILIO_ACCOUNT_SID = "AC..."
+TWILIO_FROM_NUMBER = "+1..."
+POSTHOG_HOST = "https://us.i.posthog.com"
 ```
 
-#### Frontend Environment (in Vite `.env`)
+### Frontend Environment (via `import.meta.env`)
 
 ```
-VITE_API_URL=https://api.example.com
 VITE_WORKOS_CLIENT_ID=client_xxx
 VITE_APP_NAME=My SaaS
+VITE_POSTHOG_KEY=phc_xxx
+VITE_POSTHOG_HOST=https://us.i.posthog.com
 ```
 
-### Local Development
+### .dev.vars.example
 
 ```bash
-# Start API worker locally
-cd packages/api && wrangler dev
+# WorkOS (required)
+WORKOS_API_KEY=sk_test_xxx
+WORKOS_CLIENT_ID=client_xxx
+VITE_WORKOS_CLIENT_ID=client_xxx
 
-# Start frontend dev server
-cd packages/web && bun run dev
+# Stripe (optional — billing routes return 503 if missing)
+STRIPE_SECRET_KEY=sk_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
 
-# Start WorkOS emulator (separate terminal)
-workos emulate
+# Resend (optional — email routes return 503 if missing)
+RESEND_API_KEY=re_xxx
+RESEND_WEBHOOK_SECRET=whsec_xxx
 
-# Forward Stripe webhooks locally
-stripe listen --forward-to localhost:8787/api/webhooks/stripe
+# Twilio (optional — SMS features disabled if missing)
+TWILIO_ACCOUNT_SID=AC_xxx
+TWILIO_AUTH_TOKEN=xxx
+TWILIO_FROM_NUMBER=+1xxx
+
+# PostHog (optional — analytics disabled if missing)
+POSTHOG_API_KEY=phc_xxx
+VITE_POSTHOG_KEY=phc_xxx
+VITE_POSTHOG_HOST=https://us.i.posthog.com
+
+# Cloudflare (for remote dev bindings)
+CLOUDFLARE_ACCOUNT_ID=xxx
+CLOUDFLARE_API_TOKEN=xxx
 ```
 
-## Database Schema (Core)
+## Local Development
 
-Every Roost project starts with these core tables:
+### script/ Convention
 
-```sql
--- 0001_initial.sql
-CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,
-  email TEXT NOT NULL UNIQUE,
-  name TEXT,
-  workos_user_id TEXT UNIQUE,
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
-);
+Every Roost project includes these scripts as **TypeScript files executed via bun** (using `#!/usr/bin/env bun` shebang). This gives access to bun's built-in APIs (`Bun.spawn`, `Bun.file`, `Bun.write`, `process.env`) and lets scripts share types/utilities with the main app.
 
-CREATE TABLE IF NOT EXISTS organizations (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  workos_org_id TEXT UNIQUE,
-  stripe_customer_id TEXT UNIQUE,
-  plan TEXT DEFAULT 'free',
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
-);
+#### `script/setup` — First-time interactive setup
 
-CREATE TABLE IF NOT EXISTS org_members (
-  id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL REFERENCES users(id),
-  org_id TEXT NOT NULL REFERENCES organizations(id),
-  role TEXT DEFAULT 'member',
-  created_at TEXT DEFAULT (datetime('now')),
-  UNIQUE(user_id, org_id)
-);
+```typescript
+#!/usr/bin/env bun
 
--- 0002_billing.sql
-ALTER TABLE organizations ADD COLUMN stripe_subscription_id TEXT;
-ALTER TABLE organizations ADD COLUMN stripe_subscription_status TEXT DEFAULT 'none';
-ALTER TABLE organizations ADD COLUMN stripe_item_id TEXT;
+// Interactively prompts for all required/optional keys
+// Reads .dev.vars.example as template
+// Groups keys by service (WorkOS, Stripe, Resend, Twilio, PostHog)
+// Writes .dev.vars with correct permissions
+// Validates required keys are non-empty
 
-CREATE TABLE IF NOT EXISTS billing_events (
-  id TEXT PRIMARY KEY,
-  org_id TEXT REFERENCES organizations(id),
-  stripe_event_id TEXT UNIQUE,
-  event_type TEXT NOT NULL,
-  data TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
-);
+import { existsSync } from 'fs';
+
+const template = await Bun.file('.dev.vars.example').text();
+// Parse template, prompt for each key via console.log + readline...
+await Bun.write('.dev.vars', result, { mode: 0o600 });
 ```
+
+#### `script/bootstrap` — Install everything
+
+```typescript
+#!/usr/bin/env bun
+
+// 1. bun install
+// 2. Docker Compose up (sidecar services)
+// 3. Provision dev Cloudflare resources if using remote bindings:
+//    - wrangler d1 create {name}-dev
+//    - wrangler kv namespace create {name}-dev
+// 4. Run migrations: wrangler d1 migrations apply {name}-dev --local
+// 5. workos seed (if workos-seed.yaml exists)
+// 6. Verify all tools installed (wrangler, stripe CLI, etc.)
+
+import { $ } from 'bun';
+
+await $`bun install`;
+if (existsSync('docker-compose.yml')) await $`docker compose up -d`;
+await $`bunx wrangler d1 migrations apply ${dbName} --local`;
+```
+
+#### `script/dev` — Start development
+
+```typescript
+#!/usr/bin/env bun
+
+// 1. Check .dev.vars exists (prompt to run script/setup if not)
+// 2. Start sidecar services if docker-compose.yml exists
+// 3. Start Stripe CLI webhook forwarding (background)
+// 4. Start Vite dev server (wrangler dev via @cloudflare/vite-plugin)
+
+import { $ } from 'bun';
+
+if (!existsSync('.dev.vars')) {
+  console.error('Run script/setup first to create .dev.vars');
+  process.exit(1);
+}
+
+const stripe = Bun.spawn([
+  'stripe',
+  'listen',
+  '--forward-to',
+  'localhost:5173/api/v1/webhooks/stripe',
+]);
+process.on('exit', () => stripe.kill());
+
+await $`bun run dev`;
+```
+
+Also available as `bun dev` / `bun run dev` (via package.json scripts).
+
+#### `script/seed` — Seed development data
+
+```typescript
+#!/usr/bin/env bun
+
+// 1. Run Drizzle seed script (if src/core/db/seed.ts exists)
+// 2. workos seed (provisions test orgs/users)
+// 3. Stripe test data (create test products/prices via Stripe CLI)
+
+import { $ } from 'bun';
+
+if (existsSync('src/core/db/seed.ts')) await $`bun run src/core/db/seed.ts`;
+if (existsSync('workos-seed.yaml')) await $`workos seed`;
+```
+
+#### `script/teardown` — Clean up dev resources
+
+```typescript
+#!/usr/bin/env bun
+
+// 1. workos seed --clean
+// 2. Delete dev Cloudflare resources (if remote)
+// 3. Docker Compose down
+// 4. Remove .wrangler/ local state
+
+import { $ } from 'bun';
+import { rmSync } from 'fs';
+
+if (existsSync('workos-seed.yaml')) await $`workos seed --clean`;
+if (existsSync('docker-compose.yml')) await $`docker compose down`;
+rmSync('.wrangler', { recursive: true, force: true });
+```
+
+### Vite Config for Cloudflare
+
+```typescript
+// vite.config.ts
+import { cloudflare } from '@cloudflare/vite-plugin';
+import { reactRouter } from '@react-router/dev/vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  plugins: [cloudflare({ viteEnvironment: { name: 'ssr' } }), reactRouter(), tsconfigPaths()],
+});
+```
+
+### React Router Config
+
+```typescript
+// react-router.config.ts
+import type { Config } from '@react-router/dev/config';
+
+export default {
+  ssr: true,
+  future: {
+    v8_viteEnvironmentApi: true,
+  },
+} satisfies Config;
+```
+
+## Testing
+
+Use **bun:test** for testing — it's fast, zero-config, and built into the bun runtime.
+
+```typescript
+// src/core/lib/stripe.test.ts
+import { describe, it, expect, mock } from 'bun:test';
+import { createMockEnv } from '~/src/core/test-helpers';
+
+describe('updateSeatCount', () => {
+  it('updates Stripe subscription quantity', async () => {
+    const env = createMockEnv();
+    // ...
+    expect(result).toBeDefined();
+  });
+});
+```
+
+Test helpers mock Cloudflare bindings:
+
+```typescript
+// src/core/test-helpers.ts
+export function createMockEnv(): Env {
+  return {
+    DB: createMockD1(),
+    KV: createMockKV(),
+    STORAGE: createMockR2(),
+    // ... all bindings
+  };
+}
+```
+
+Run tests: `bun test` (no config file needed — bun discovers `*.test.ts` automatically).
+
+For DOM/component testing, use `@happy-dom/global-registrator` or set `jsdom` in bunfig.toml:
+
+```toml
+# bunfig.toml
+[test]
+preload = ["./src/test-setup.ts"]
+```
+
+## Docker Compose (Sidecar Services)
+
+For services deployed to Cloudflare Containers that need local equivalents:
+
+```yaml
+# docker-compose.yml
+services:
+  rsshub:
+    image: diygod/rsshub:latest
+    ports:
+      - '1200:1200'
+    environment:
+      NODE_ENV: production
+```
+
+In production, these run as Cloudflare Containers with service bindings in `wrangler.toml`.
 
 ## Bootstrap Convention
 
-Every Roost project includes a `bootstrap.sh` at the project root that:
+Every Roost project uses the `script/` convention instead of a monolithic `bootstrap.sh`. The scripts are:
 
-1. Creates Cloudflare resources (D1 database, KV namespace, R2 bucket, Queue)
-2. Applies D1 migrations
-3. Sets worker secrets via `wrangler secret put`
-4. Seeds WorkOS environment via `workos seed`
-5. Creates Stripe products/prices
-6. Outputs Resend DNS records for domain verification
-7. Runs `bun install` for all workspace packages
+| Script             | Purpose                                    | Idempotent |
+| ------------------ | ------------------------------------------ | ---------- |
+| `script/setup`     | Interactive .dev.vars creation             | Yes        |
+| `script/bootstrap` | Install deps, provision resources, migrate | Yes        |
+| `script/dev`       | Start local dev server with all services   | N/A        |
+| `script/seed`      | Seed test data in all services             | Yes        |
+| `script/teardown`  | Clean up dev resources                     | Yes        |
 
-The bootstrap script is idempotent — running it twice does not create duplicate resources. It checks for existing resources before creating new ones.
-
-### Bootstrap Flags
-
-| Flag             | Purpose                     |
-| ---------------- | --------------------------- |
-| `--all`          | Full provisioning (default) |
-| `--cf-only`      | Cloudflare resources only   |
-| `--auth-only`    | WorkOS setup only           |
-| `--billing-only` | Stripe setup only           |
-| `--email-only`   | Resend setup only           |
-| `--migrate`      | D1 migrations only          |
-| `--seed`         | WorkOS seed data only       |
-| `--dry-run`      | Show what would be created  |
+All scripts are TypeScript with `#!/usr/bin/env bun` shebangs, use `import { $ } from 'bun'` for shell commands, and check for required tools before executing.

@@ -1,6 +1,6 @@
 ---
 name: new
-description: Generate a new full-stack SaaS project on the Cloudflare Workers + WorkOS + Stripe + Resend stack from a product description
+description: Generate a new full-stack SaaS project on the Cloudflare Workers + React Router 7 + WorkOS + Stripe + Resend + Twilio + PostHog stack from a product description
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion
 argument-hint: [product description]
 ---

@@ -1,6 +1,6 @@
 ---
 name: inspect
-description: Scan an existing project for Roost stack integration gaps (auth, billing, email, Cloudflare bindings)
+description: Scan an existing project for Roost stack integration gaps (RR7, Drizzle, WorkOS, Stripe, Resend, Twilio, PostHog, local dev)
 allowed-tools: Read, Glob, Grep, Agent, AskUserQuestion
 argument-hint: [project-path]
 ---

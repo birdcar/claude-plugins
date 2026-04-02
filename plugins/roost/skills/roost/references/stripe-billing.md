@@ -1,13 +1,13 @@
 # Stripe Billing Reference
 
-Deep reference for Stripe billing integration patterns, webhook handling, entitlements, and CLI usage.
+Deep reference for Stripe billing integration patterns, webhook handling, entitlements, and CLI usage in React Router 7 apps with Drizzle ORM.
 
-## LLM Documentation
+## LLM Documentation and Tools
 
-- Stripe docs in markdown: append `.md` to any docs URL, e.g. `https://docs.stripe.com/billing.md`
-- Full LLM index: `https://docs.stripe.com/llms.txt`
+- Full LLM docs: `https://docs.stripe.com/llms.txt`
+- Building with LLMs guide: `https://docs.stripe.com/building-with-llms`
+- Any docs page in markdown: append `.md` to the URL (e.g., `https://docs.stripe.com/billing.md`)
 - MCP server: `npx -y @stripe/mcp --api-key=...` (local) or `https://mcp.stripe.com` (remote, OAuth)
-- Claude Code plugin: `claude /plugin install stripe@claude-plugins-official`
 - Agent toolkit: `npm install @stripe/agent-toolkit`
 
 ## Security Rules
@@ -15,6 +15,7 @@ Deep reference for Stripe billing integration patterns, webhook handling, entitl
 - Use Restricted API Keys scoped to only the operations needed — never use the full secret key in production
 - Webhook signatures must always be verified before processing events
 - Never log or expose full API keys — use `sk_...xxxx` format for debugging
+- Stripe routes should return 503 if `STRIPE_SECRET_KEY` is not configured (graceful degradation)
 
 ## Billing Models
 
@@ -38,22 +39,23 @@ const price = await stripe.prices.create({
 });
 ```
 
-Seat count update on member add/remove:
+Seat count update on member add/remove (Drizzle):
 
 ```typescript
+import { eq, count } from 'drizzle-orm';
+import { organizations, orgMembers } from '~/src/core/db/schema';
+
 async function updateSeatCount(orgId: string, env: Env) {
-  const org = await env.DB.prepare('SELECT stripe_subscription_id FROM organizations WHERE id = ?')
-    .bind(orgId)
-    .first();
+  const db = getDb(env.DB);
+  const org = await db.select().from(organizations).where(eq(organizations.id, orgId)).get();
 
-  const memberCount = await env.DB.prepare(
-    'SELECT COUNT(*) as count FROM org_members WHERE org_id = ?'
-  )
-    .bind(orgId)
-    .first();
+  const [{ memberCount }] = await db
+    .select({ memberCount: count() })
+    .from(orgMembers)
+    .where(eq(orgMembers.orgId, orgId));
 
-  await stripe.subscriptions.update(org.stripe_subscription_id, {
-    items: [{ id: org.stripe_item_id, quantity: memberCount.count }],
+  await stripe.subscriptions.update(org.stripeSubscriptionId, {
+    items: [{ id: org.stripeItemId, quantity: memberCount }],
   });
 }
 ```
@@ -70,9 +72,9 @@ const price = await stripe.prices.create({
   billing_scheme: 'tiered',
   tiers_mode: 'graduated',
   tiers: [
-    { up_to: 1000, unit_amount: 0 }, // First 1000 free
-    { up_to: 10000, unit_amount: 10 }, // $0.10 per unit
-    { up_to: 'inf', unit_amount: 5 }, // $0.05 per unit after 10k
+    { up_to: 1000, unit_amount: 0 },
+    { up_to: 10000, unit_amount: 10 },
+    { up_to: 'inf', unit_amount: 5 },
   ],
 });
 ```
@@ -80,13 +82,9 @@ const price = await stripe.prices.create({
 Usage reporting:
 
 ```typescript
-// Report usage via meter events (new API)
 await stripe.billing.meterEvents.create({
   event_name: 'api_calls',
-  payload: {
-    stripe_customer_id: customerId,
-    value: '1',
-  },
+  payload: { stripe_customer_id: customerId, value: '1' },
 });
 ```
 
@@ -94,75 +92,79 @@ await stripe.billing.meterEvents.create({
 
 Free tier with self-service upgrade. Focus on conversion.
 
-```typescript
-// Free tier (no payment required)
-const freePlan = await stripe.prices.create({
-  product: product.id,
-  unit_amount: 0,
-  currency: 'usd',
-  recurring: { interval: 'month' },
-});
-
-// Pro tier
-const proPlan = await stripe.prices.create({
-  product: product.id,
-  unit_amount: 2900, // $29/month
-  currency: 'usd',
-  recurring: { interval: 'month' },
-});
-```
-
 ### B2B / Enterprise
 
 Annual contracts with custom pricing, invoicing, and negotiated terms.
 
 ```typescript
-// Create a quote for enterprise deals
 const quote = await stripe.quotes.create({
   customer: customerId,
-  line_items: [
-    { price: annualPriceId, quantity: 50 }, // 50 seats
-  ],
+  line_items: [{ price: annualPriceId, quantity: 50 }],
   collection_method: 'send_invoice',
   days_until_due: 30,
 });
 ```
 
-## Webhook Handling
-
-### Endpoint Pattern for Hono
+## Webhook Handling (React Router 7)
 
 ```typescript
+// app/routes/api.v1.webhooks.stripe.tsx
+import type { Route } from './+types/api.v1.webhooks.stripe';
 import Stripe from 'stripe';
+import { getDb } from '~/src/core/db/db';
+import { organizations, billingEvents } from '~/src/core/db/schema';
+import { eq } from 'drizzle-orm';
 
-app.post('/api/webhooks/stripe', async (c) => {
-  const sig = c.req.header('stripe-signature');
-  const body = await c.req.text();
+export async function action({ request, context }: Route.ActionArgs) {
+  const { env } = context.cloudflare;
+  if (!env.STRIPE_SECRET_KEY) return new Response('Billing not configured', { status: 503 });
+
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+  const sig = request.headers.get('stripe-signature');
+  const body = await request.text();
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig!, c.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    return c.json({ error: 'Invalid signature' }, 400);
+    event = stripe.webhooks.constructEvent(body, sig!, env.STRIPE_WEBHOOK_SECRET);
+  } catch {
+    return Response.json({ error: 'Invalid signature' }, { status: 400 });
   }
+
+  const db = getDb(env.DB);
+
+  // Idempotency check
+  const existing = await db
+    .select()
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, event.id))
+    .get();
+  if (existing) return Response.json({ received: true });
+
+  // Log event
+  await db.insert(billingEvents).values({
+    id: crypto.randomUUID(),
+    stripeEventId: event.id,
+    eventType: event.type,
+    data: JSON.stringify(event.data.object),
+  });
 
   switch (event.type) {
     case 'checkout.session.completed':
-      await handleCheckoutCompleted(event.data.object, c.env);
+      await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, db, env);
       break;
     case 'customer.subscription.updated':
-      await handleSubscriptionUpdated(event.data.object, c.env);
+      await handleSubscriptionUpdated(event.data.object as Stripe.Subscription, db);
       break;
     case 'customer.subscription.deleted':
-      await handleSubscriptionDeleted(event.data.object, c.env);
+      await handleSubscriptionDeleted(event.data.object as Stripe.Subscription, db);
       break;
     case 'invoice.payment_failed':
-      await handlePaymentFailed(event.data.object, c.env);
+      await handlePaymentFailed(event.data.object as Stripe.Invoice, db, env);
       break;
   }
 
-  return c.json({ received: true });
-});
+  return Response.json({ received: true });
+}
 ```
 
 ### Critical Webhooks to Handle
@@ -174,97 +176,122 @@ app.post('/api/webhooks/stripe', async (c) => {
 | `customer.subscription.deleted` | Revoke access, downgrade to free             |
 | `invoice.payment_failed`        | Notify user, grace period logic              |
 | `invoice.paid`                  | Confirm payment, clear warnings              |
-| `customer.created`              | Link Stripe customer to internal user        |
+
+## Billing Routes (React Router 7)
+
+```typescript
+// app/routes/api.v1.billing.tsx
+import type { Route } from './+types/api.v1.billing';
+import { requireAuth } from '~/app/lib/api-auth';
+import { getDb } from '~/src/core/db/db';
+import { organizations } from '~/src/core/db/schema';
+import { eq } from 'drizzle-orm';
+import Stripe from 'stripe';
+
+// GET /api/v1/billing — return current billing status
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const { env } = context.cloudflare;
+  const { user, organizationId } = await requireAuth(request, env);
+  const db = getDb(env.DB);
+
+  const org = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .get();
+
+  return Response.json({
+    plan: org?.plan || 'free',
+    status: org?.stripeSubscriptionStatus || 'none',
+  });
+}
+
+// POST /api/v1/billing — create checkout or portal session
+export async function action({ request, context }: Route.ActionArgs) {
+  const { env } = context.cloudflare;
+  if (!env.STRIPE_SECRET_KEY) return new Response('Billing not configured', { status: 503 });
+
+  const { user, organizationId } = await requireAuth(request, env);
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+  const db = getDb(env.DB);
+  const { intent, priceId } = await request.json();
+
+  const org = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .get();
+
+  if (intent === 'checkout') {
+    const session = await stripe.checkout.sessions.create({
+      customer: org.stripeCustomerId,
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${env.APP_URL}/settings/billing?success=true`,
+      cancel_url: `${env.APP_URL}/settings/billing?canceled=true`,
+      metadata: { org_id: organizationId },
+    });
+    return Response.json({ url: session.url });
+  }
+
+  if (intent === 'portal') {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: org.stripeCustomerId,
+      return_url: `${env.APP_URL}/settings/billing`,
+    });
+    return Response.json({ url: session.url });
+  }
+}
+```
 
 ## Entitlement Middleware
 
-Check subscription status before allowing access to paid features:
-
 ```typescript
-function requireEntitlement(feature: string) {
-  return async (c, next) => {
-    const orgId = c.get('organizationId')
+// app/lib/api-tier.ts
+import { getDb } from '~/src/core/db/db';
+import { organizations } from '~/src/core/db/schema';
+import { eq } from 'drizzle-orm';
 
-    const org = await c.env.DB.prepare(
-      'SELECT plan, stripe_subscription_status FROM organizations WHERE id = ?'
-    ).bind(orgId).first()
+const PLAN_ENTITLEMENTS: Record<string, string[]> = {
+  free: ['basic_access'],
+  pro: ['basic_access', 'advanced_features', 'api_access', 'priority_support'],
+  enterprise: [
+    'basic_access',
+    'advanced_features',
+    'api_access',
+    'priority_support',
+    'sso',
+    'audit_log',
+    'custom_roles',
+  ],
+};
 
-    if (!org || org.stripe_subscription_status !== 'active') {
-      return c.json({ error: 'Subscription required', upgrade_url: '/billing' }, 403)
-    }
+export async function requireEntitlement(feature: string, orgId: string, env: Env) {
+  const db = getDb(env.DB);
+  const org = await db.select().from(organizations).where(eq(organizations.id, orgId)).get();
 
-    const entitlements = getPlanEntitlements(org.plan)
-    if (!entitlements.includes(feature)) {
-      return c.json({ error: 'Feature not available on current plan', upgrade_url: '/billing' }, 403)
-    }
+  if (!org || org.stripeSubscriptionStatus !== 'active') {
+    throw Response.json(
+      { error: 'Subscription required', upgrade_url: '/billing' },
+      { status: 403 }
+    );
+  }
 
-    await next()
+  const entitlements = PLAN_ENTITLEMENTS[org.plan] || PLAN_ENTITLEMENTS.free;
+  if (!entitlements.includes(feature)) {
+    throw Response.json(
+      { error: 'Feature not available on current plan', upgrade_url: '/billing' },
+      { status: 403 }
+    );
   }
 }
-
-function getPlanEntitlements(plan: string): string[] {
-  const plans: Record<string, string[]> = {
-    free: ['basic_access'],
-    pro: ['basic_access', 'advanced_features', 'api_access', 'priority_support'],
-    enterprise: ['basic_access', 'advanced_features', 'api_access', 'priority_support', 'sso', 'audit_log', 'custom_roles'],
-  }
-  return plans[plan] || plans.free
-}
-
-// Usage
-app.get('/api/reports/advanced', requireEntitlement('advanced_features'), async (c) => { ... })
 ```
 
-## Customer Portal
-
-Let users manage their own billing (update payment, change plan, cancel):
-
-```typescript
-app.post('/api/billing/portal', authMiddleware, async (c) => {
-  const orgId = c.get('organizationId');
-  const org = await c.env.DB.prepare('SELECT stripe_customer_id FROM organizations WHERE id = ?')
-    .bind(orgId)
-    .first();
-
-  const session = await stripe.billingPortal.sessions.create({
-    customer: org.stripe_customer_id,
-    return_url: `${c.env.APP_URL}/settings/billing`,
-  });
-
-  return c.json({ url: session.url });
-});
-```
-
-## Checkout Flow
-
-```typescript
-app.post('/api/billing/checkout', authMiddleware, async (c) => {
-  const { priceId } = await c.req.json();
-  const orgId = c.get('organizationId');
-  const org = await c.env.DB.prepare('SELECT stripe_customer_id FROM organizations WHERE id = ?')
-    .bind(orgId)
-    .first();
-
-  const session = await stripe.checkout.sessions.create({
-    customer: org.stripe_customer_id,
-    mode: 'subscription',
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${c.env.APP_URL}/settings/billing?success=true`,
-    cancel_url: `${c.env.APP_URL}/settings/billing?canceled=true`,
-    metadata: { org_id: orgId },
-  });
-
-  return c.json({ url: session.url });
-});
-```
-
-## Stripe CLI
-
-For local development and webhook testing:
+## Stripe CLI — Local Development
 
 ```bash
 # Listen for webhooks locally
-stripe listen --forward-to localhost:8787/api/webhooks/stripe
+stripe listen --forward-to localhost:5173/api/v1/webhooks/stripe
 
 # Trigger test events
 stripe trigger checkout.session.completed
@@ -275,23 +302,14 @@ stripe products create --name="Pro Plan"
 stripe prices create --product=prod_xxx --unit-amount=2900 --currency=usd --recurring[interval]=month
 ```
 
-## Database Schema for Billing
+The `script/dev` script automatically starts `stripe listen` in the background when `STRIPE_SECRET_KEY` is configured in `.dev.vars`.
 
-```sql
--- Add to organizations table
-ALTER TABLE organizations ADD COLUMN plan TEXT DEFAULT 'free';
-ALTER TABLE organizations ADD COLUMN stripe_customer_id TEXT UNIQUE;
-ALTER TABLE organizations ADD COLUMN stripe_subscription_id TEXT;
-ALTER TABLE organizations ADD COLUMN stripe_subscription_status TEXT DEFAULT 'none';
-ALTER TABLE organizations ADD COLUMN stripe_item_id TEXT;
+## Database Schema (Drizzle)
 
--- Billing events log
-CREATE TABLE billing_events (
-  id TEXT PRIMARY KEY,
-  org_id TEXT REFERENCES organizations(id),
-  stripe_event_id TEXT UNIQUE,
-  event_type TEXT NOT NULL,
-  data TEXT, -- JSON
-  created_at TEXT DEFAULT (datetime('now'))
-);
-```
+See `${CLAUDE_SKILL_DIR}/references/stack-architecture.md` for the full Drizzle schema. Key billing fields:
+
+- `organizations.plan` — Current plan tier (free, pro, enterprise)
+- `organizations.stripeCustomerId` — Link to Stripe customer
+- `organizations.stripeSubscriptionId` — Active subscription
+- `organizations.stripeSubscriptionStatus` — none, active, past_due, canceled
+- `billingEvents` — Idempotent event log for webhook processing

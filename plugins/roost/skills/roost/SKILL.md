@@ -1,9 +1,10 @@
 ---
 name: roost
 description: >-
-  Generates full-stack SaaS applications on Cloudflare Workers with WorkOS auth,
-  Stripe billing, and Resend email from a product description. Orchestrates
-  domain specialists to scaffold, wire auth, implement billing, and set up email.
+  Generates full-stack SaaS applications on Cloudflare Workers with React Router 7,
+  Drizzle ORM, WorkOS (full suite), Stripe billing, Resend email, Twilio messaging,
+  and PostHog analytics from a product description. Orchestrates domain specialists
+  to scaffold, wire auth, implement billing, set up email, messaging, and analytics.
   Use when the user asks to "build a SaaS app", "create a new SaaS project",
   "generate a full-stack app on Cloudflare", "set up auth and billing",
   "upgrade my project to latest patterns", or start a greenfield SaaS application.
@@ -13,42 +14,23 @@ description: >-
 
 # Roost
 
-Full-stack SaaS builder for the Cloudflare Workers + WorkOS + Stripe + Resend stack. Generates production-ready applications with auth, billing, email, and deployment from a product description.
+Full-stack SaaS builder for the Cloudflare Workers + React Router 7 + WorkOS + Stripe + Resend + Twilio + PostHog stack. Generates production-ready applications with auth, billing, email, messaging, analytics, and deployment from a product description.
 
 ## Critical Rules
 
-- Use AskUserQuestion for all decisions that need user input — product description, billing model selection, feature choices. Plain text questions cannot capture structured responses.
+- Use AskUserQuestion for all decisions that need user input — product description, billing model, feature choices. Plain text questions cannot capture structured responses.
 - Never hardcode API keys, tokens, or credentials in generated code. All secrets go through `wrangler secret put` and are accessed via `env.SECRET_NAME` bindings.
-- Never read config files directly — use `bash ${CLAUDE_SKILL_DIR}/scripts/load-config.sh` for credential access.
-- Always verify webhook signatures (Stripe and WorkOS) before processing events — unverified webhooks are a security vulnerability.
+- Always verify webhook signatures (Stripe and Resend) before processing events — unverified webhooks are a security vulnerability.
+- Use the WorkOS Events API for Directory Sync, NOT webhooks — WorkOS recommends this to avoid spiky traffic.
 - Send email via Cloudflare Queues, not synchronously — queue-based sending provides retry and prevents request timeouts.
-- Use idempotency keys for all transactional email to prevent duplicates on retry.
-- Agents are dispatched sequentially: cloudflare-architect -> workos-specialist -> stripe-specialist -> resend-specialist -> bootstrap-writer. Each depends on the previous agent's output.
+- Use idempotency keys for all transactional email and SMS to prevent duplicates on retry.
+- Use Drizzle ORM for all database access — never raw SQL in application code.
+- Use React Router 7 in framework mode for all full-stack projects — Hono only for API-only services.
+- Run `workos install` early in the workflow — it uses WorkOS's AI agent and billing, saving tokens.
+- Agents are dispatched sequentially: cloudflare-architect -> workos install -> workos-specialist -> stripe-specialist -> resend-specialist -> twilio-specialist -> posthog-specialist -> bootstrap-writer. Each depends on previous output.
 - Summarize agent results for the user after each agent completes — the user cannot see raw agent output.
 - Generated projects must follow the directory structure defined in `${CLAUDE_SKILL_DIR}/references/stack-architecture.md`.
-
-## Prerequisites
-
-This skill requires local configuration at `~/.config/roost/`:
-
-| File              | Required | Keys                                                                                                         |
-| ----------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
-| `credentials.env` | Yes      | `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, `STRIPE_SECRET_KEY`, `RESEND_API_KEY` |
-
-If missing, instruct the user to create it:
-
-```bash
-mkdir -p ~/.config/roost && chmod 700 ~/.config/roost
-cat > ~/.config/roost/credentials.env << 'EOF'
-CF_API_TOKEN=your-cloudflare-api-token
-CF_ACCOUNT_ID=your-cloudflare-account-id
-WORKOS_API_KEY=your-workos-api-key
-WORKOS_CLIENT_ID=your-workos-client-id
-STRIPE_SECRET_KEY=your-stripe-restricted-key
-RESEND_API_KEY=your-resend-api-key
-EOF
-chmod 600 ~/.config/roost/credentials.env
-```
+- All service integrations must gracefully degrade (return 503) when their API keys are not configured.
 
 ## /roost:new Workflow
 
@@ -64,20 +46,24 @@ Use AskUserQuestion to collect:
    - **PLG (Product-Led Growth)**: Free tier with self-service upgrade
    - **B2B/Enterprise**: Annual contracts, custom pricing, invoicing
 4. **Plan structure**: Plan names, pricing, and features per plan
-5. **Auth features**: Which features to enable:
-   - SSO (always included for enterprise readiness)
-   - Directory Sync (for team/org management)
-   - Admin Portal widgets (self-service SSO/DSync config)
-   - RBAC roles (default: admin, member, viewer)
+5. **WorkOS features**: Which features to enable:
+   - AuthKit (always included — via `workos install`)
+   - SSO + Admin Portal widgets (always included for enterprise readiness)
+   - Directory Sync via Events API (for team/org management)
+   - FGA (fine-grained authorization for resource-level permissions)
+   - Audit Logs (compliance/enterprise requirement)
+   - Feature Flags (entitlement-gated rollouts)
+   - Vault (secure secret storage for customer data)
+6. **Cloudflare primitives**: Which are needed beyond defaults (D1, KV, R2, Queues):
+   - Workers AI (for AI features)
+   - Vectorize (for semantic search)
+   - Durable Objects (for real-time/WebSocket features)
+   - Containers (for sidecar services)
+7. **Additional services**:
+   - Twilio: SMS notifications, verification codes, WhatsApp
+   - PostHog: Always included by default for product analytics
 
-### Step 2: Load Configuration
-
-Run `bash ${CLAUDE_SKILL_DIR}/scripts/load-config.sh` and capture output.
-
-- If exit code is non-zero, show the error and instruct the user to set up config
-- Parse the key-value pairs for use by agents that need them
-
-### Step 3: Scaffold Project
+### Step 2: Scaffold Project
 
 Spawn the `roost:cloudflare-architect` agent:
 
@@ -86,25 +72,41 @@ Prompt: Generate the project scaffold for "{project-name}" based on these requir
 - Product: {product description}
 - Billing model: {selected model}
 - Target directory: {path}
+- CF primitives: {selected primitives}
+- Additional services: {Twilio yes/no}
 Reference: ${CLAUDE_SKILL_DIR}/references/cloudflare-stack.md
 Reference: ${CLAUDE_SKILL_DIR}/references/stack-architecture.md
 ```
 
 Summarize what was created for the user.
 
-### Step 4: Wire Authentication
+### Step 3: Run `workos install`
+
+Run `workos install` in the project directory. This uses WorkOS's AI agent to scaffold AuthKit integration automatically, using their billing — not your tokens.
+
+```bash
+cd {project-path} && workos install
+```
+
+If `workos install` fails or the CLI is not installed, fall back to manual AuthKit scaffolding via the workos-specialist agent.
+
+### Step 4: Enhance WorkOS Integration
 
 Spawn the `roost:workos-specialist` agent:
 
 ```
-Prompt: Wire WorkOS AuthKit into the project at {path}:
-- Auth features: {selected features}
-- RBAC roles: {role list}
-- Implement: callback route, auth middleware, RBAC middleware, DSync webhooks, widget integration
-Reference: ${CLAUDE_SKILL_DIR}/references/workos-authkit.md
+Prompt: Enhance the WorkOS integration in the project at {path}.
+workos install has already configured basic AuthKit. Now add:
+- JWT verification enhancement (jose + JWKS)
+- Auto-provision users in D1 via Drizzle
+- RBAC middleware with roles: {role list}
+- Directory Sync via Events API (cron polling)
+- WorkOS widgets: {selected widgets}
+- Additional products: {FGA, Audit Logs, Feature Flags, Vault as selected}
+Reference: ${CLAUDE_SKILL_DIR}/references/workos.md
 ```
 
-Summarize the auth flow for the user.
+Summarize the auth and WorkOS setup for the user.
 
 ### Step 5: Implement Billing
 
@@ -113,7 +115,9 @@ Spawn the `roost:stripe-specialist` agent:
 ```
 Prompt: Implement {billing-model} billing in the project at {path}:
 - Plans: {plan structure}
-- Implement: webhook handler, checkout flow, customer portal, entitlement middleware
+- Implement: webhook handler (RR7 action), checkout flow, customer portal, entitlement middleware
+- Use Drizzle ORM for all database access
+- Graceful 503 when Stripe not configured
 Reference: ${CLAUDE_SKILL_DIR}/references/stripe-billing.md
 ```
 
@@ -128,40 +132,71 @@ Prompt: Set up transactional email in the project at {path}:
 - Templates needed: welcome, invite, billing notifications, password reset
 - Product-specific templates: {any from requirements}
 - Use queue-based sending for reliability
+- RR7 action for inbound webhooks if needed
 Reference: ${CLAUDE_SKILL_DIR}/references/resend-email.md
 ```
 
 Summarize email templates for the user.
 
-### Step 7: Generate Bootstrap Script
+### Step 7: Set Up Messaging (if Twilio requested)
+
+Spawn the `roost:twilio-specialist` agent:
+
+```
+Prompt: Set up Twilio messaging in the project at {path}:
+- Features: {SMS, verification, WhatsApp as selected}
+- Use REST API (not Node SDK) for Workers compatibility
+- Queue-based sending for reliability
+Reference: ${CLAUDE_SKILL_DIR}/references/twilio.md
+```
+
+Summarize messaging setup for the user.
+
+### Step 8: Set Up Analytics
+
+Spawn the `roost:posthog-specialist` agent:
+
+```
+Prompt: Set up PostHog analytics in the project at {path}:
+- Client-side: PostHogProvider, page view tracking, user identification
+- Server-side: capture utility for webhook/cron events
+- Key events: user_signed_up, billing_upgrade_clicked, feature_used
+- Group analytics for organizations
+Reference: ${CLAUDE_SKILL_DIR}/references/posthog.md
+```
+
+Summarize analytics setup for the user.
+
+### Step 9: Generate Development Scripts
 
 Spawn the `roost:bootstrap-writer` agent:
 
 ```
-Prompt: Generate the bootstrap.sh provisioning script for the project at {path}.
-Scan wrangler.toml for resource names, workos-seed.yaml for seed data, and billing config for Stripe setup.
+Prompt: Generate the script/ directory for the project at {path}.
+Scan wrangler.toml for resource names, workos-seed.yaml for seed data, and service config.
+Create: script/setup, script/bootstrap, script/dev, script/seed, script/teardown
 Reference: ${CLAUDE_SKILL_DIR}/references/stack-architecture.md
-Template: ${CLAUDE_SKILL_DIR}/scripts/bootstrap.sh
 ```
 
-### Step 8: Final Summary
+### Step 10: Final Summary
 
 Present to the user:
 
 1. **Project structure** — what was generated and where
-2. **Next steps** — ordered list of manual actions:
-   - Run `bun install` in the project root
-   - Run `./bootstrap.sh --dry-run` to preview provisioning
-   - Run `./bootstrap.sh` to create all resources
-   - Configure WorkOS redirect URI in dashboard
+2. **Next steps** — ordered list:
+   - Run `script/setup` to configure .dev.vars
+   - Run `script/bootstrap` to install deps and provision resources
+   - Run `workos env claim` to link WorkOS environment
+   - Run `script/dev` to start local development
    - Configure Stripe webhook endpoint in dashboard
    - Add Resend DNS records for domain verification
-   - Set worker secrets via `wrangler secret put`
-3. **Development commands** — how to run locally:
-   - `cd packages/api && wrangler dev`
-   - `cd packages/web && bun run dev`
-   - `workos emulate` (local auth)
-   - `stripe listen --forward-to localhost:8787/api/webhooks/stripe`
+   - Set worker secrets for production: `wrangler secret put`
+3. **Development commands**:
+   - `script/dev` or `bun dev` — start dev server
+   - `script/seed` — seed test data
+   - `bun run test` — run tests
+   - `bun run typecheck` — type check
+   - `wrangler deploy` — deploy to production
 
 ## /roost:inspect Workflow
 
@@ -175,7 +210,7 @@ Spawn the `roost:stack-introspector` agent:
 
 ```
 Prompt: Scan the project at {path} and produce a gap report.
-Check for: Cloudflare bindings, WorkOS AuthKit, Stripe billing, Resend email, bootstrap script.
+Check for: React Router 7, Drizzle ORM, Cloudflare bindings, WorkOS (full suite), Stripe billing, Resend email, Twilio, PostHog, script/ directory, local dev setup.
 Reference: ${CLAUDE_SKILL_DIR}/references/stack-architecture.md
 ```
 
@@ -185,82 +220,66 @@ Show the structured gap report to the user. For each gap, suggest the specific a
 
 ## /roost:upgrade Workflow
 
-Audits an existing project against current reference docs and applies improvements. This is the primary way to bring an existing roost project up to date when the skill's reference docs or patterns evolve.
+Audits an existing project against current reference docs and applies improvements.
 
 ### Step 1: Inspect First
 
-Run the full `/roost:inspect` workflow (Steps 1-3 above) to produce a gap report. This is the input to the upgrade.
+Run the full `/roost:inspect` workflow to produce a gap report.
 
 ### Step 2: Classify Gaps
 
-Categorize each gap from the report:
+Categorize each gap:
 
-| Category   | Examples                                                                   | Agent                        |
-| ---------- | -------------------------------------------------------------------------- | ---------------------------- |
-| Cloudflare | Missing bindings, outdated wrangler.toml patterns, missing typed Env       | `roost:cloudflare-architect` |
-| Auth       | Missing widgets, outdated AuthKit patterns, missing RBAC middleware        | `roost:workos-specialist`    |
-| Billing    | Missing webhook verification, outdated checkout flow, missing entitlements | `roost:stripe-specialist`    |
-| Email      | Missing templates, no queue integration, missing idempotency keys          | `roost:resend-specialist`    |
-| Bootstrap  | Missing or outdated bootstrap.sh, missing provisioning steps               | `roost:bootstrap-writer`     |
+| Category    | Examples                                               | Agent                        |
+| ----------- | ------------------------------------------------------ | ---------------------------- |
+| Cloudflare  | Missing bindings, needs RR7 migration, missing Drizzle | `roost:cloudflare-architect` |
+| Auth/WorkOS | Missing widgets, needs Events API DSync, missing FGA   | `roost:workos-specialist`    |
+| Billing     | Missing webhook verification, outdated patterns        | `roost:stripe-specialist`    |
+| Email       | Missing templates, no queue integration                | `roost:resend-specialist`    |
+| Messaging   | Missing Twilio integration                             | `roost:twilio-specialist`    |
+| Analytics   | Missing PostHog setup                                  | `roost:posthog-specialist`   |
+| Dev Scripts | Missing script/ directory, outdated bootstrap          | `roost:bootstrap-writer`     |
 
 ### Step 3: Present Upgrade Plan
 
-Use AskUserQuestion to present the categorized gaps and let the user choose:
+Use AskUserQuestion to present gaps and let the user choose:
 
-1. **Apply all** — fix everything identified
-2. **Select categories** — pick which domains to upgrade (multiSelect)
-3. **Review individually** — go through each gap one by one
+1. **Apply all** — fix everything
+2. **Select categories** — pick which domains
+3. **Review individually** — go through each gap
 
 ### Step 4: Apply Upgrades
 
-For each selected category, spawn the appropriate specialist agent with:
-
-```
-Prompt: Upgrade the {domain} integration in the project at {path}.
-Current state: {relevant gaps from inspection report}
-Apply current best practices from the reference docs.
-Reference: ${CLAUDE_SKILL_DIR}/references/{domain-reference}.md
-
-IMPORTANT: Do not remove or break existing functionality. Only add missing pieces
-and update patterns that have improved. Show a summary of changes made.
-```
-
-Dispatch agents sequentially (same order as /roost:new) since later agents may depend on earlier changes.
+For each selected category, spawn the appropriate agent. Dispatch sequentially.
 
 ### Step 5: Verify and Report
 
 After all agents complete:
 
-1. Run `wrangler types` if wrangler.toml was changed (regenerate typed bindings)
-2. Run the project's build command if it exists to verify nothing broke
-3. Present a summary of all changes made, grouped by category
-4. Suggest running `/roost:retrospect` to capture learnings from the upgrade
+1. Run `wrangler types` if wrangler.toml was changed
+2. Run the project's build command to verify nothing broke
+3. Present summary of changes
+4. Suggest running `/roost:retrospect`
 
 ## /roost:bootstrap Workflow
 
-### Step 1: Locate Bootstrap Script
+### Step 1: Check script/ Directory
 
-Check for `bootstrap.sh` in the current project directory. If missing, offer to generate one via the bootstrap-writer agent.
+Check for `script/bootstrap` in the project. If missing, offer to generate via bootstrap-writer.
 
-### Step 2: Load Config
-
-Run `bash ${CLAUDE_SKILL_DIR}/scripts/load-config.sh` to verify credentials are available.
-
-### Step 3: Execute
-
-Run the project's `bootstrap.sh` with the flags from `$ARGUMENTS` (default `--all`):
+### Step 2: Execute
 
 ```bash
-bash ./bootstrap.sh {flags}
+script/bootstrap
 ```
 
-Report the output to the user, highlighting any manual steps needed.
+Report the output, highlighting any manual steps needed.
 
 ## /roost:retrospect Workflow
 
 ### Step 1: Determine Target
 
-Use `$ARGUMENTS` as the project path or default to the current directory.
+Use `$ARGUMENTS` or default to current directory.
 
 ### Step 2: Run Analysis
 
@@ -280,8 +299,10 @@ Summarize the retrospective findings for the user.
 
 ## References
 
-- `${CLAUDE_SKILL_DIR}/references/cloudflare-stack.md` — Workers runtime, D1, KV, R2, Queues, DO, wrangler CLI
-- `${CLAUDE_SKILL_DIR}/references/workos-authkit.md` — AuthKit, widgets, CLI, SSO/DSync, RBAC
-- `${CLAUDE_SKILL_DIR}/references/stripe-billing.md` — Billing models, webhooks, entitlements, Stripe CLI
-- `${CLAUDE_SKILL_DIR}/references/resend-email.md` — Resend API, React Email templates, transactional patterns
-- `${CLAUDE_SKILL_DIR}/references/stack-architecture.md` — Project structure, data flow, deployment topology
+- `${CLAUDE_SKILL_DIR}/references/cloudflare-stack.md` — Workers runtime, RR7, D1/Drizzle, KV, R2, Queues, DO, AI, Vectorize, Containers, wrangler CLI
+- `${CLAUDE_SKILL_DIR}/references/workos.md` — Full WorkOS suite: AuthKit, widgets, CLI, FGA, Audit Logs, Feature Flags, Vault, DSync Events API, MCP Auth, Pipes
+- `${CLAUDE_SKILL_DIR}/references/stripe-billing.md` — Billing models, webhooks, entitlements, Stripe CLI, Drizzle patterns
+- `${CLAUDE_SKILL_DIR}/references/resend-email.md` — Resend API, React Email templates, inbound email, queue patterns
+- `${CLAUDE_SKILL_DIR}/references/twilio.md` — SMS, voice, WhatsApp, Verify, REST API patterns for Workers
+- `${CLAUDE_SKILL_DIR}/references/posthog.md` — Product analytics, event tracking, feature flags, server-side capture
+- `${CLAUDE_SKILL_DIR}/references/stack-architecture.md` — Project structure, data flow, local dev, deployment topology

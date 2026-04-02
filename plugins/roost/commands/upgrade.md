@@ -1,6 +1,6 @@
 ---
 name: upgrade
-description: Audit an existing Roost stack project and apply improvements — updates patterns, closes integration gaps, and applies latest best practices from reference docs
+description: Audit an existing Roost stack project and apply improvements — updates to RR7, Drizzle, full WorkOS suite, and latest patterns from reference docs
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion
 argument-hint: [project-path]
 ---
