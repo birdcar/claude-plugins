@@ -9,22 +9,43 @@ allowed-tools: Bash, AskUserQuestion
 
 Bootstrap the Focus productivity system in one session: labels, annual milestones, quarterly goals, and an initial task backlog.
 
-## Configuration
+## Stage 0: Configuration
 
-Before running any `gh` commands, resolve the target repository and timezone:
+First, check if focus is already configured:
+
+```bash
+CONFIG_JSON=$(${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.sh 2>/dev/null) && echo "configured" || echo "not configured"
+```
+
+**If not configured**, set it up interactively before anything else:
+
+1. Ask via AskUserQuestion: "Which GitHub repository should Focus manage? This is where your goals, tasks, and daily threads live."
+   - Options: "Other" (user types `owner/repo`)
+   - If you can detect the current repo via `gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null`, offer it as the first option
+
+2. Ask via AskUserQuestion: "What timezone are you in?"
+   - Options: "America/Chicago (Central)", "America/New_York (Eastern)", "America/Denver (Mountain)", "America/Los_Angeles (Pacific)", "Other"
+
+3. Write the config:
+
+```bash
+mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/focus"
+cat > "${XDG_CONFIG_HOME:-$HOME/.config}/focus/config.json" << EOF
+{"repo": "<REPO>", "timezone": "<TIMEZONE>"}
+EOF
+```
+
+4. Confirm: "Focus configured: repo=`<REPO>`, timezone=`<TIMEZONE>`. Config saved to `~/.config/focus/config.json`."
+
+**If already configured**, load the values:
 
 ```bash
 CONFIG_JSON=$(${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.sh)
-```
-
-If this fails, tell the user: "Focus is not configured. Run `/focus:init` to set up, or create `~/.config/focus/config.json` with `{"repo": "owner/repo", "timezone": "America/Chicago"}`."
-
-Extract values:
-
-```bash
 REPO=$(echo "$CONFIG_JSON" | jq -r '.repo')
 TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
 ```
+
+Report: "Using repo `$REPO` (timezone: `$TZ_NAME`). Change with `~/.config/focus/config.json`."
 
 **All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
 
