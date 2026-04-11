@@ -406,11 +406,126 @@ Quarterly goals: N active
 Standalone tasks: N created
 
 Next steps:
+- Complete the automation setup below (Stage 8)
 - Run /focus:plan tomorrow morning to select your daily Big 3
-- The daily-thread Action will create your first thread at 6 AM UTC
 - Use /focus:task anytime to add new tasks to any goal
 - Use /focus:goal at the start of next quarter to set new quarterly goals
 - Use /focus:review to scan Slack and meetings for missed tasks
+```
+
+---
+
+## Stage 8: Automation setup
+
+The Focus system needs GitHub Actions workflows to automate the daily loop. Without these, no daily threads get created, no journals get compiled, and no reviews get generated.
+
+Ask via AskUserQuestion:
+
+> "The goals, labels, and tasks are set up. The last step is automation — GitHub Actions that create your daily thread each morning, compile journals at night, and generate weekly reviews. Want me to set this up now?"
+
+Options: "Yes, set up automation", "Skip for now (I'll do it manually)"
+
+**If the user skips**, report what they'll need to do later and move to Stage 9.
+
+**If the user chooses to set up automation**:
+
+### 8a: Check for existing workflows
+
+```bash
+gh api /repos/$REPO/contents/.github/workflows --jq '.[].name' 2>/dev/null
+```
+
+If all 7 workflows already exist (`daily-thread.yml`, `rituals.yml`, `journal-compile.yml`, `weekly-review.yml`, `stale-cleanup.yml`, `migration.yml`, `sync-labels.yml`), report: "All workflows already present. No action needed." and skip to Stage 9.
+
+If some exist, note which are missing and only generate the missing ones.
+
+### 8b: Locate the repo on disk
+
+The workflows must be written to the `.github/workflows/` directory in the repo's local checkout. Determine the local path:
+
+```bash
+# Check common locations
+for dir in "$HOME/Code"/*/"$(echo $REPO | cut -d/ -f2)" "$HOME/code"/*/"$(echo $REPO | cut -d/ -f2)"; do
+  if [ -d "$dir/.git" ]; then
+    echo "$dir"
+    break
+  fi
+done
+```
+
+If the repo isn't cloned locally, ask: "I can't find a local checkout of $REPO. Where is it cloned? (Or type 'clone' and I'll clone it for you.)"
+
+### 8c: Compute cron schedules
+
+Read the timezone from config (`$TZ_NAME`) and compute UTC cron expressions. Reference: `${CLAUDE_PLUGIN_ROOT}/shared/workflows-reference.md` has a timezone-to-cron mapping table.
+
+For the user's timezone, compute these 5 cron schedules:
+
+- **6 AM local daily**: daily thread creation
+- **6 PM local weekdays**: evening ritual (note: cron day-of-week shifts for timezones behind UTC)
+- **11 PM local daily**: journal compilation
+- **6 PM local Sunday**: weekly review
+- **9 AM local Monday**: stale cleanup
+
+### 8d: Generate workflow files
+
+Read `${CLAUDE_PLUGIN_ROOT}/shared/workflows-reference.md` for the complete workflow templates. For each of the 7 workflows:
+
+1. Take the template from the reference doc
+2. Replace `<TIMEZONE>` with `$TZ_NAME`
+3. Replace `<6AM_CRON>`, `<6PM_WEEKDAY_CRON>`, `<11PM_CRON>`, `<6PM_SUNDAY_CRON>`, `<9AM_MONDAY_CRON>` with the computed cron expressions
+4. Write to `<repo-path>/.github/workflows/<filename>.yml`
+
+For `weekly-review.yml` (the most complex workflow), use the birdcar/home repo's implementation as the reference and adapt the timezone. The reference doc notes this is too large to template inline.
+
+### 8e: Commit and push
+
+```bash
+cd <repo-path>
+git add .github/workflows/
+git commit -m "feat: Add Focus system automation workflows
+
+7 GitHub Actions workflows for the daily productivity loop:
+daily thread, evening ritual, journal compilation, weekly
+review, stale cleanup, task migration, and label sync.
+Cron schedules configured for $TZ_NAME."
+git push
+```
+
+### 8f: Add .qmd/ to .gitignore
+
+The Focus plugin's session-start hook caches goals/tasks to `.qmd/context.qmd` (1-hour TTL). This must be gitignored:
+
+```bash
+cd <repo-path>
+if ! grep -q '.qmd/' .gitignore 2>/dev/null; then
+  echo '.qmd/' >> .gitignore
+  git add .gitignore
+  git commit -m "chore: Gitignore .qmd/ ephemeral context cache"
+  git push
+fi
+```
+
+Report: "Automation setup complete. 7 workflows created and pushed. QMD cache gitignored."
+
+---
+
+## Stage 9: Final report
+
+Update the summary from Stage 7 to include automation status:
+
+```
+Automation: 7 workflows created and pushed
+  daily-thread.yml     — 6 AM $TZ_NAME daily
+  rituals.yml          — 6 PM $TZ_NAME weekdays
+  journal-compile.yml  — 11 PM $TZ_NAME daily
+  weekly-review.yml    — 6 PM $TZ_NAME Sundays
+  stale-cleanup.yml    — 9 AM $TZ_NAME Mondays
+  migration.yml        — on task close
+  sync-labels.yml      — manual trigger
+
+Your first daily thread will appear tomorrow morning at 6 AM.
+Run /focus:plan when it arrives to set your Big 3.
 ```
 
 ---
