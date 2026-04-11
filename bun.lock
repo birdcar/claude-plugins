@@ -20,6 +20,10 @@
       "name": "@birdcar/dev-commands",
       "version": "0.1.0",
     },
+    "plugins/focus": {
+      "name": "@birdcar/claude-plugin-focus",
+      "version": "0.1.0",
+    },
     "plugins/github-actions-generator": {
       "name": "@birdcar/github-actions-generator",
       "version": "0.1.0",
@@ -53,6 +57,8 @@
     "@birdcar/bat-kol": ["@birdcar/bat-kol@workspace:plugins/bat-kol"],
 
     "@birdcar/claude-plugin-customer-voice": ["@birdcar/claude-plugin-customer-voice@workspace:plugins/customer-voice"],
+
+    "@birdcar/claude-plugin-focus": ["@birdcar/claude-plugin-focus@workspace:plugins/focus"],
 
     "@birdcar/claude-plugin-github-profile": ["@birdcar/claude-plugin-github-profile@workspace:plugins/github-profile"],
 

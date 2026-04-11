@@ -10,6 +10,7 @@
     { "path": "plugins/github-profile" },
     { "path": "plugins/home-server" },
     { "path": "plugins/bat-kol" },
-    { "path": "plugins/roost" }
+    { "path": "plugins/roost" },
+    { "path": "plugins/focus" }
   ]
 }

@@ -25,6 +25,12 @@
       "version": "0.2.0"
     },
     {
+      "name": "focus",
+      "source": "./plugins/focus",
+      "description": "Personal productivity system with AI-powered goal cascade, daily planning, task capture, and external source review. Adapted from the Full Focus planner.",
+      "version": "0.1.0"
+    },
+    {
       "name": "github-actions-generator",
       "source": "./plugins/github-actions-generator",
       "description": "Generate TypeScript GitHub Actions with Bun workspaces",

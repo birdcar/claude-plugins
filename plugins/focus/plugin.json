@@ -1,0 +1,6 @@
+{
+  "name": "focus",
+  "version": "0.1.0",
+  "description": "Personal productivity system with AI-powered goal cascade, daily planning, task capture, and external source review. Adapted from the Full Focus planner.",
+  "skills": ["./skills/"]
+}
