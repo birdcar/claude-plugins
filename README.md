@@ -41,6 +41,12 @@ Generate production-grade Claude Code plugins from a brain dump. `/forge-skill` 
 
 `/improve-skill` takes an existing skill or command and iteratively improves it based on feedback, showing proposed changes before applying them.
 
+### [focus](plugins/focus/) `v0.4.0`
+
+A personal productivity system that uses GitHub Issues as its data layer. Inspired by the Full Focus Planner, it maps annual goals across 9 life domains (Body, Mind, Spirit, Love, Family, Money, Community, Hobbies, Work) to quarterly outcomes to daily tasks. Every morning, a GitHub Action creates a daily thread where you pick your Big 3. At night, it compiles into a journal entry.
+
+Nine slash commands cover the full loop: `/focus:init` bootstraps everything in one session, `/focus:plan` proposes your Big 3 each morning, `/focus:daily` shows your thread, `/focus:goal` and `/focus:task` create with coached interviews, `/focus:goals` views the cascade, `/focus:review` scans Slack/Granola/Gmail/Calendar for missed commitments, `/focus:rituals` manages your daily checklists, and `/focus:labels` syncs the taxonomy. Seven GitHub Actions automate daily threads, ritual postings, journal compilation, weekly reviews, and stale task cleanup.
+
 ### github-actions-generator `v0.1.0`
 
 Scaffold TypeScript GitHub Actions for Bun workspace monorepos. The `generate-action` skill handles the full lifecycle: `action.yml`, entrypoint, package.json, tsconfig, CI workflow, release workflow, Octokit patterns, error handling, and tests. It carries reference templates so the generated output follows established patterns rather than guessing.
