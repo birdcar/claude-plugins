@@ -1,6 +1,6 @@
 ---
 name: labels
-description: Generate or regenerate the label taxonomy for the Home system. Creates .github/labels.yml with status, type, and domain labels, then syncs to GitHub. Can also scan existing issues to discover labels retroactively.
+description: Generate or regenerate the Focus label taxonomy — creates .github/labels.yml with status, type, and domain labels, then syncs to GitHub. Use when the user asks to "set up labels", "sync labels", "fix labels", or "scan labels". Use the "retroactive" or "scan" argument to discover labels already in use that aren't in the canonical taxonomy.
 disable-model-invocation: true
 allowed-tools: Bash
 ---
@@ -11,22 +11,7 @@ Generate the Focus label taxonomy and sync it to GitHub.
 
 ## Configuration
 
-Before running any `gh` commands, resolve the target repository and timezone:
-
-```bash
-CONFIG_JSON=$(${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.sh)
-```
-
-If this fails, tell the user: "Focus is not configured. Run `/focus:init` to set up, or create `~/.config/focus/config.json` with `{"repo": "owner/repo", "timezone": "America/Chicago"}`."
-
-Extract values:
-
-```bash
-REPO=$(echo "$CONFIG_JSON" | jq -r '.repo')
-TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
-```
-
-**All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
+Follow the setup steps in `${CLAUDE_PLUGIN_ROOT}/shared/config-preamble.md` before running any `gh` commands.
 
 ## What to do
 
@@ -55,98 +40,26 @@ Compare discovered labels against the canonical set (Step 3). For any label that
 
 Then proceed to Step 3.
 
-### Step 3: Generate labels.yml
+### Step 3: Generate labels.yml (optional)
 
-Write `.github/labels.yml` to the configured repo with this exact content. First ensure the directory exists:
+If the user has a local checkout of the repo at a known path, copy the canonical taxonomy file to it:
 
 ```bash
-mkdir -p /path/to/repo/.github
+mkdir -p <repo-path>/.github
+cp ${CLAUDE_SKILL_DIR}/references/taxonomy.yml <repo-path>/.github/labels.yml
 ```
 
-Then write the file with the canonical taxonomy:
-
-```yaml
-labels:
-  # Status labels
-  - name: 'status.active'
-    color: '0075ca'
-    description: 'Actively being worked on'
-  - name: 'status.blocked'
-    color: 'd73a4a'
-    description: 'Blocked by a dependency or decision'
-  - name: 'status.waiting'
-    color: 'e4e669'
-    description: 'Waiting on external input before progressing'
-  - name: 'status.stale'
-    color: 'e4e669'
-    description: 'No activity for 30+ days — needs triage'
-  - name: 'status.done'
-    color: '0e8a16'
-    description: 'Completed and closed'
-  - name: 'status.cancelled'
-    color: 'cfd3d7'
-    description: 'Cancelled — no longer relevant'
-
-  # Type labels
-  - name: 'type.goal'
-    color: 'a2eeef'
-    description: 'A goal at any level of the cascade (annual, quarterly, weekly)'
-  - name: 'type.task'
-    color: 'd4c5f9'
-    description: 'An actionable task or sub-task'
-  - name: 'type.daily-thread'
-    color: 'f9d0c4'
-    description: "Today's daily planning and activity thread"
-  - name: 'type.review'
-    color: 'fef2c0'
-    description: 'A periodic review (weekly, quarterly)'
-  - name: 'type.note'
-    color: 'bfd4f2'
-    description: 'A reference note or captured idea'
-
-  # Domain labels (life areas — Full Focus planner system)
-  - name: 'domain.body'
-    color: 'bfd4f2'
-    description: 'Life domain: physical health and fitness'
-  - name: 'domain.mind'
-    color: 'bfd4f2'
-    description: 'Life domain: mental health, learning, and growth'
-  - name: 'domain.spirit'
-    color: 'bfd4f2'
-    description: 'Life domain: spiritual practice and inner life'
-  - name: 'domain.love'
-    color: 'bfd4f2'
-    description: 'Life domain: romantic relationship'
-  - name: 'domain.family'
-    color: 'bfd4f2'
-    description: 'Life domain: family relationships'
-  - name: 'domain.money'
-    color: 'bfd4f2'
-    description: 'Life domain: finances and financial goals'
-  - name: 'domain.community'
-    color: 'bfd4f2'
-    description: 'Life domain: community involvement and service'
-  - name: 'domain.hobbies'
-    color: 'bfd4f2'
-    description: 'Life domain: hobbies, recreation, and creative pursuits'
-  - name: 'domain.work'
-    color: 'bfd4f2'
-    description: 'Life domain: career and professional work'
-```
-
-Note: If running from outside the configured repo, you'll need to clone or locate the repo first. The file path should be relative to the repo root: `.github/labels.yml`.
+If no local checkout is available, skip this step — the sync in Step 4 is the functional step. The YAML file is optional documentation.
 
 ### Step 4: Sync labels to GitHub
 
-For each label in the taxonomy, run:
+Use the shared sync script to create/update all 20 labels:
 
 ```bash
-gh label create "<name>" --color "<hex>" --description "<description>" --force -R $REPO
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/sync-labels.sh $REPO
 ```
 
-The `--force` flag makes this idempotent — it creates or updates as needed.
-
-Sync all 20 labels. Report progress and any errors.
+If the script exits non-zero, report which labels failed.
 
 ### Step 5: Report
 

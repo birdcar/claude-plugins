@@ -1,8 +1,9 @@
 ---
 name: goal
-description: Create a quarterly goal with coaching. Walks through domain selection, outcome definition, measurable milestones, and initial task decomposition. Pushes back on vague or overambitious goals. Use at the start of a quarter or whenever adding a new goal.
+description: Create a quarterly goal with coaching — walks through domain selection, outcome definition, measurement, and initial task decomposition. Pushes back on vague or overambitious goals. Use when the user asks to "create a goal", "add a goal", "set a new quarterly goal", or "start a new goal". Do NOT use for viewing existing goals — use focus:goals for that.
 disable-model-invocation: true
 allowed-tools: Bash, AskUserQuestion
+argument-hint: [domain] [outcome description]
 ---
 
 # /focus:goal
@@ -11,22 +12,7 @@ Create a quarterly goal with coaching, milestone assignment, and task decomposit
 
 ## Configuration
 
-Before running any `gh` commands, resolve the target repository and timezone:
-
-```bash
-CONFIG_JSON=$(${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.sh)
-```
-
-If this fails, tell the user: "Focus is not configured. Run `/focus:init` to set up, or create `~/.config/focus/config.json` with `{"repo": "owner/repo", "timezone": "America/Chicago"}`."
-
-Extract values:
-
-```bash
-REPO=$(echo "$CONFIG_JSON" | jq -r '.repo')
-TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
-```
-
-**All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
+Follow the setup steps in `${CLAUDE_PLUGIN_ROOT}/shared/config-preamble.md` before running any `gh` commands.
 
 ## Step 1: Gather context
 
@@ -53,22 +39,27 @@ Count active goals per domain for the domain selection step.
 
 If `$ARGUMENTS` specifies a domain (e.g., `/focus:goal body`), use it and skip to Step 3.
 
-Otherwise, use AskUserQuestion to present the 9 life domains. Show how many active goals each domain already has:
+Otherwise, present the 9 life domains for selection. Since AskUserQuestion supports at most 4 options, split into two steps:
 
-```
-"Which life domain is this goal for?"
+First ask which area (AskUserQuestion with 3 options):
+
+> "Which area is this goal in?"
 
 Options:
+
+- "Personal (Body, Mind, Spirit)" — Health, learning, spiritual practice
+- "Relationships (Love, Family, Community)" — Partner, family, service
+- "Achievement (Money, Hobbies, Work)" — Finances, recreation, career
+
+Then ask the specific domain within that area (AskUserQuestion with 3 options), showing active goal counts:
+
+> "Which domain specifically?"
+
+Options (for Personal area as example):
+
 - "Body (N active goals)" — Physical health and fitness
 - "Mind (N active goals)" — Mental health, learning, growth
 - "Spirit (N active goals)" — Spiritual practice and inner life
-- "Love (N active goals)" — Romantic relationship
-- "Family (N active goals)" — Family relationships
-- "Money (N active goals)" — Finances and financial goals
-- "Community (N active goals)" — Community involvement and service
-- "Hobbies (N active goals)" — Hobbies, recreation, creative pursuits
-- "Work (N active goals)" — Career and professional work
-```
 
 This helps the user see gaps and balance their focus.
 
@@ -219,23 +210,10 @@ Supports goal #<GOAL_NUMBER>: <goal title>
 <Acceptance criteria — specific, testable>
 ```
 
-After creating each task, get its node ID and link as sub-issue:
+After creating each task, link it as a sub-issue of the goal using the shared script (handles fallback automatically):
 
 ```bash
-TASK_NODE_ID=$(gh issue view <TASK_NUMBER> -R $REPO --json id --jq '.id')
-gh api graphql -f query='mutation { addSubIssue(input: { issueId: "<GOAL_NODE_ID>", subIssueId: "'"$TASK_NODE_ID"'" }) { issue { id } } }'
-```
-
-### 5d: If sub-issue API fails
-
-Fall back: add a comment on the goal listing the tasks:
-
-```bash
-gh issue comment <GOAL_NUMBER> -R $REPO \
-  --body "Tasks created for this goal:
-- #<TASK_1> <title>
-- #<TASK_2> <title>
-- #<TASK_3> <title>"
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/link-sub-issue.sh <GOAL_NUMBER> <TASK_NUMBER> $REPO
 ```
 
 ## Step 6: Report

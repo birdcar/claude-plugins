@@ -1,6 +1,6 @@
 ---
 name: init
-description: Bootstrap the Home productivity system from scratch. Walks through all 9 life domains, creates milestones, quarterly goals with coaching, and initial tasks. Run once to get started, or at the beginning of a new year to reset. Acts as a coach — pushes back on overambition and vague goals.
+description: Bootstraps the Focus productivity system from scratch — labels, annual milestones across all 9 life domains, quarterly goals with coaching, initial task backlog, daily rituals, and GitHub Actions automation. Use when the user asks to "set up focus", "initialize the system", "get started with focus", or "bootstrap my productivity system". Run once on first setup; safe to re-run (warns before adding to existing data). Do NOT use to add a single goal — use focus:goal. Do NOT use to update rituals only — use focus:rituals.
 disable-model-invocation: true
 allowed-tools: Bash, AskUserQuestion
 ---
@@ -47,7 +47,7 @@ TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
 
 Report: "Using repo `$REPO` (timezone: `$TZ_NAME`). Change with `~/.config/focus/config.json`."
 
-**All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
+Always use `-R $REPO` in `gh` commands — omitting it silently targets whatever repo `gh` infers from the current directory, which may not be the configured Focus repo. Similarly, use `TZ="$TZ_NAME"` for all timezone-sensitive operations.
 
 ---
 
@@ -78,52 +78,13 @@ If the repo is clean (0 milestones, 0 goals) OR the user chooses "Continue", pro
 
 ## Stage 2: Labels
 
-Write `.github/labels.yml` with the canonical 20-label taxonomy, then sync.
-
-### 2a: Write the labels file
-
-Create or overwrite the repo's `.github/labels.yml`. Since this skill runs from any directory, use `gh` to locate the repo root — or simply write the labels directly via `gh label create` (the file is for documentation; the source of truth is GitHub).
-
-Sync all 20 labels via `gh label create --force` to create new labels and update existing ones:
-
-**Status labels (6)**:
+Sync the canonical 20-label taxonomy to the repo:
 
 ```bash
-gh label create "status.active"    -R $REPO --color "0075ca" --description "Actively being worked on" --force
-gh label create "status.blocked"   -R $REPO --color "d73a4a" --description "Blocked by something external" --force
-gh label create "status.waiting"   -R $REPO --color "e4e669" --description "Waiting on someone else" --force
-gh label create "status.stale"     -R $REPO --color "e4e669" --description "No activity in 14+ days" --force
-gh label create "status.done"      -R $REPO --color "0e8a16" --description "Completed" --force
-gh label create "status.cancelled" -R $REPO --color "cfd3d7" --description "Cancelled — no longer relevant" --force
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/sync-labels.sh $REPO
 ```
 
-**Type labels (5)**:
-
-```bash
-gh label create "type.goal"         -R $REPO --color "a2eeef" --description "Quarterly goal" --force
-gh label create "type.task"         -R $REPO --color "d4c5f9" --description "Actionable task" --force
-gh label create "type.daily-thread" -R $REPO --color "f9d0c4" --description "Daily planning thread" --force
-gh label create "type.review"       -R $REPO --color "fef2c0" --description "Review (weekly, quarterly)" --force
-gh label create "type.note"         -R $REPO --color "bfd4f2" --description "Reference note" --force
-```
-
-**Domain labels (9)** — all use color `bfd4f2`:
-
-```bash
-gh label create "domain.body"      -R $REPO --color "bfd4f2" --description "Physical health and fitness" --force
-gh label create "domain.mind"      -R $REPO --color "bfd4f2" --description "Mental health, learning, growth" --force
-gh label create "domain.spirit"    -R $REPO --color "bfd4f2" --description "Spiritual practice and inner life" --force
-gh label create "domain.love"      -R $REPO --color "bfd4f2" --description "Romantic relationship" --force
-gh label create "domain.family"    -R $REPO --color "bfd4f2" --description "Family relationships" --force
-gh label create "domain.money"     -R $REPO --color "bfd4f2" --description "Finances and financial goals" --force
-gh label create "domain.community" -R $REPO --color "bfd4f2" --description "Community involvement and service" --force
-gh label create "domain.hobbies"   -R $REPO --color "bfd4f2" --description "Hobbies, recreation, creative pursuits" --force
-gh label create "domain.work"      -R $REPO --color "bfd4f2" --description "Career and professional work" --force
-```
-
-### 2b: Report
-
-After all labels sync successfully, tell the user: "Labels synced. 20 labels created/updated." Then proceed to Stage 3.
+If the script exits non-zero, report which labels failed but continue to Stage 3. Label sync failure is non-fatal.
 
 ---
 
@@ -199,7 +160,7 @@ After the coaching summary, ask via AskUserQuestion:
 Options:
 
 - "Proceed — create milestones"
-- "Revise [domain]: [user types new goal]" — accept free text. After revision, re-present the full summary and ask again. Allow up to 3 revision rounds, then proceed regardless.
+- "Revise [domain]: [user types new goal]" — accept free text. After revision, re-present the full summary and ask again. Allow up to 2 revision rounds, then proceed regardless.
 
 ### 3c: Create milestones
 
@@ -353,22 +314,10 @@ Supports goal #<GOAL_NUMBER>: <goal title>
   --label "type.task,status.active,domain.<domain>"
 ```
 
-After creating each task, link it as a sub-issue of the goal:
+After creating each task, link it as a sub-issue of the goal using the shared script (handles fallback automatically):
 
 ```bash
-TASK_NODE_ID=$(gh issue view <TASK_NUMBER> -R $REPO --json id --jq '.id')
-GOAL_NODE_ID="<stored node ID from Stage 5>"
-gh api graphql -f query='mutation { addSubIssue(input: { issueId: "'"$GOAL_NODE_ID"'", subIssueId: "'"$TASK_NODE_ID"'" }) { issue { id } } }'
-```
-
-If the sub-issue API call fails, fall back: post a comment on the goal issue instead.
-
-```bash
-gh issue comment <GOAL_NUMBER> -R $REPO \
-  --body "Tasks created for this goal:
-- #<TASK_1> <title>
-- #<TASK_2> <title>
-- #<TASK_3> <title>"
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/link-sub-issue.sh <GOAL_NUMBER> <TASK_NUMBER> $REPO
 ```
 
 ### 6c: Freeform orphan brain dump
@@ -380,7 +329,7 @@ After all goals have tasks, ask via AskUserQuestion:
 If the user provides tasks:
 
 - Create each as a standalone task issue with `type.task,status.active` labels
-- Infer the domain label from the task content — if ambiguous, use `domain.work` as a default and note it
+- Infer the domain label from the task content. If ambiguous, show your best guess to the user inline and let them confirm or correct before creating the issue
 - Do NOT link as sub-issues (these are orphan tasks by definition)
 
 If the user says "none" or similar, skip.
@@ -418,144 +367,15 @@ Next steps:
 
 ## Stage 8: Ritual definition
 
-The Focus system uses 4 daily rituals — short, personal checklists that bookend your day and work transitions. Setting these up now means the automation in Stage 9 will post them at the right times.
-
-The 4 Full Focus rituals:
-
-- **Morning** — What you do when you first get up. Important but not urgent activities that make life rich. These set your mental and physical tone for the day.
-- **Workday Startup** — What you do when you first sit down to work. Tasks that set you up to win for the day.
-- **Workday Shutdown** — What you do as you wrap up work and transition to evening. Prep to hit the ground running tomorrow.
-- **Evening** — What you do right before bed. Activities that set you up for restful sleep.
-
 Ask via AskUserQuestion:
 
-> "The system includes 4 daily rituals that get posted to your daily thread automatically. Want to define them now?"
+> "The system includes 4 daily rituals (morning, workday startup, workday shutdown, evening) that get posted to your daily thread automatically. Want to define them now?"
 
 Options: "Yes, define my rituals", "Skip for now (I'll run /focus:rituals later)"
 
 **If the user skips**, note: "You can define them anytime with `/focus:rituals`. The automation will post empty placeholders until you do." Then proceed to Stage 9.
 
-**If the user chooses to define rituals**, walk through all 4 in order below.
-
----
-
-### 8a: Morning ritual
-
-Present the ritual context:
-
-> "**Morning Ritual** — What you do when you first get up. Important but not urgent activities that make life rich. These set your mental and physical tone for the day.
->
-> Examples: Meditate (10 min), Exercise (30 min), Journal (10 min), Read (15 min), Prayer (5 min), Healthy breakfast (15 min)"
-
-Ask via AskUserQuestion:
-
-> "What activities make up your **Morning Ritual**? List each activity and roughly how many minutes it takes. For example: 'Meditate (10 min), Journal (5 min), Exercise (30 min)'"
-
-**Coaching gate:**
-
-- **Season of life warning** (always): "Take into account your season of life. If you have a newborn or a high-intensity stretch at work, 15 minutes to yourself is a win. Don't set yourself up for frustration by planning a 90-minute morning routine."
-- **Too long** (>60 min total): "That's [N] minutes. That's ambitious for a morning routine — most people find a 30-45 minute ritual more sustainable. Can you trim to what you'll actually do consistently?"
-- **Too few items** (0-1): "A ritual works best with 2-5 items. What else would set you up for a strong day?"
-- **Good** (2-7 items, reasonable total): proceed to confirm.
-
-Show formatted summary, ask: "Look good? Or adjust anything?" Accept after 2 rounds max.
-
----
-
-### 8b: Workday Startup ritual
-
-Present the ritual context:
-
-> "**Workday Startup** — What you do when you first sit down to work. Tasks that set you up to win for the day.
->
-> Examples: Review calendar (5 min), Clear inbox to zero (15 min), Review Big 3 (5 min), Check Slack for urgent items (10 min), Set up workspace (5 min)"
-
-Ask via AskUserQuestion:
-
-> "What activities make up your **Workday Startup**? List each activity and how many minutes it takes."
-
-**Coaching gate:**
-
-- **Too long** (>30 min total): "That's [N] minutes of startup. A workday startup over 30 minutes can eat into your peak work time. Can you trim it?"
-- **Too few items** (0-1): "A startup ritual should cover at least your calendar and inbox. What else sets you up for the day?"
-- **Good**: proceed to confirm.
-
-Show formatted summary, ask: "Look good? Or adjust anything?" Accept after 2 rounds max.
-
----
-
-### 8c: Workday Shutdown ritual
-
-Present the ritual context:
-
-> "**Workday Shutdown** — What you do as you wrap up work and transition to evening. Prep to hit the ground running tomorrow.
->
-> Examples: Process inbox (10 min), Review tomorrow's calendar (5 min), Update task status (5 min), Clear desk (3 min), Write tomorrow's Big 3 draft (5 min), Run \`/focus:review\` (10 min)"
-
-Ask via AskUserQuestion:
-
-> "What activities make up your **Workday Shutdown**? List each activity and how many minutes it takes."
-
-**Coaching gate:**
-
-- **Too long** (>45 min total): "That's [N] minutes. A shutdown ritual over 30-45 minutes is often a sign you're trying to complete work here rather than transition out. Can you trim?"
-- **Good**: proceed to confirm.
-
-Show formatted summary, ask: "Look good? Or adjust anything?" Accept after 2 rounds max.
-
----
-
-### 8d: Evening ritual
-
-Present the ritual context:
-
-> "**Evening Ritual** — What you do right before bed. Activities that set you up for restful sleep.
->
-> Examples: Read fiction (20 min), Gratitude journal (5 min), Prep clothes for tomorrow (5 min), Screen-free wind-down (15 min), Review wins and challenges (5 min)"
-
-Ask via AskUserQuestion:
-
-> "What activities make up your **Evening Ritual**? List each activity and how many minutes it takes."
-
-**Coaching gate:**
-
-- **Too long** (>60 min total): "That's [N] minutes right before bed. Keep the evening ritual calming and brief — it's easy to over-plan this one. Can you trim?"
-- **Good**: proceed to confirm.
-
-Show formatted summary, ask: "Look good? Or adjust anything?" Accept after 2 rounds max.
-
----
-
-### 8e: Save rituals to repo
-
-Build the JSON object for all 4 rituals. Use the schema from `${CLAUDE_PLUGIN_ROOT}/shared/rituals-schema.md`.
-
-Check if `.focus/rituals.json` already exists:
-
-```bash
-EXISTING_SHA=$(gh api /repos/$REPO/contents/.focus/rituals.json --jq '.sha' 2>/dev/null || echo "")
-```
-
-If it exists, update (include `sha`):
-
-```bash
-CONTENT=$(printf '%s' '<JSON>' | base64)
-gh api -X PUT /repos/$REPO/contents/.focus/rituals.json \
-  -f message="focus: Define daily rituals (init)" \
-  -f content="$CONTENT" \
-  -f sha="$EXISTING_SHA"
-```
-
-If it doesn't exist, create:
-
-```bash
-CONTENT=$(printf '%s' '<JSON>' | base64)
-gh api -X PUT /repos/$REPO/contents/.focus/rituals.json \
-  -f message="focus: Define daily rituals (init)" \
-  -f content="$CONTENT"
-```
-
-Report: "Rituals saved to `.focus/rituals.json` and committed to $REPO."
+**If the user chooses to define rituals**, follow the full interview and save logic from `${CLAUDE_PLUGIN_ROOT}/skills/rituals/SKILL.md` — specifically Steps 2 (full ritual interview), 4 (interview one ritual), and 6 (save to repo). Walk through all 4 rituals in order using that skill's coaching gates and time budgets, then save the result.
 
 ---
 
@@ -579,72 +399,42 @@ Options: "Yes, set up automation", "Skip for now (I'll do it manually)"
 gh api /repos/$REPO/contents/.github/workflows --jq '.[].name' 2>/dev/null
 ```
 
-If all 7 workflows already exist (`daily-thread.yml`, `rituals.yml`, `journal-compile.yml`, `weekly-review.yml`, `stale-cleanup.yml`, `migration.yml`, `sync-labels.yml`), report: "All workflows already present. No action needed." and skip to Stage 10.
+The 7 expected workflows: `daily-thread.yml`, `rituals.yml`, `journal-compile.yml`, `weekly-review.yml`, `stale-cleanup.yml`, `migration.yml`, `sync-labels.yml`.
 
-If some exist, note which are missing and only generate the missing ones.
+If all 7 exist, report: "All workflows already present. No action needed." and skip to Stage 10. If some exist, only generate the missing ones.
 
 ### 9b: Locate the repo on disk
 
-The workflows must be written to the `.github/workflows/` directory in the repo's local checkout. Determine the local path:
+Find the local checkout of `$REPO`. Try `gh repo view -R $REPO --json path` first, then check `$HOME/Code/` and `$HOME/code/` for a directory matching the repo name with a `.git/` subdirectory.
 
-```bash
-# Check common locations
-for dir in "$HOME/Code"/*/"$(echo $REPO | cut -d/ -f2)" "$HOME/code"/*/"$(echo $REPO | cut -d/ -f2)"; do
-  if [ -d "$dir/.git" ]; then
-    echo "$dir"
-    break
-  fi
-done
-```
+If not found, ask via AskUserQuestion: "I can't find a local checkout of $REPO. Where is it cloned on this machine?" with options including "Clone it for me" (runs `gh repo clone $REPO` in `$HOME/Code/`).
 
-If the repo isn't cloned locally, ask: "I can't find a local checkout of $REPO. Where is it cloned? (Or type 'clone' and I'll clone it for you.)"
+### 9c–9d: Generate workflow files
 
-### 9c: Compute cron schedules
+Read `${CLAUDE_PLUGIN_ROOT}/shared/workflows-reference.md` for:
 
-Read the timezone from config (`$TZ_NAME`) and compute UTC cron expressions. Reference: `${CLAUDE_PLUGIN_ROOT}/shared/workflows-reference.md` has a timezone-to-cron mapping table.
+1. The timezone-to-cron mapping table — look up `$TZ_NAME` to get UTC cron expressions for each local time target
+2. Complete workflow templates for all 7 workflows
 
-For the user's timezone, compute these 8 cron schedules:
+For each workflow template, replace `<TIMEZONE>` with `$TZ_NAME` and replace the cron placeholders (`<6AM_CRON>`, `<830AM_WEEKDAY_CRON>`, etc.) with the computed values. Write each to `<repo-path>/.github/workflows/<filename>.yml`.
 
-- **6 AM local daily**: daily thread creation
-- **6 AM local daily**: morning ritual (same cron as daily thread — rituals.yml fires separately)
-- **8:30 AM local weekdays**: workday startup ritual
-- **5 PM local weekdays**: workday shutdown ritual
-- **9 PM local daily**: evening ritual
-- **11 PM local daily**: journal compilation
-- **6 PM local Sunday**: weekly review
-- **9 AM local Monday**: stale cleanup
+For `weekly-review.yml`, the reference doc notes it is too large to template inline — use the birdcar/home repo's implementation as reference and adapt the timezone.
 
-### 9d: Generate workflow files
-
-Read `${CLAUDE_PLUGIN_ROOT}/shared/workflows-reference.md` for the complete workflow templates. For each of the 7 workflows:
-
-1. Take the template from the reference doc
-2. Replace `<TIMEZONE>` with `$TZ_NAME`
-3. Replace `<6AM_CRON>`, `<830AM_WEEKDAY_CRON>`, `<5PM_WEEKDAY_CRON>`, `<9PM_CRON>`, `<11PM_CRON>`, `<6PM_SUNDAY_CRON>`, `<9AM_MONDAY_CRON>` with the computed cron expressions
-4. Write to `<repo-path>/.github/workflows/<filename>.yml`
-
-For `weekly-review.yml` (the most complex workflow), use the birdcar/home repo's implementation as the reference and adapt the timezone. The reference doc notes this is too large to template inline.
-
-### 9e: Commit and push
+### 9e: Commit, push, and gitignore
 
 ```bash
 cd <repo-path>
 git add .github/workflows/
 git commit -m "feat: Add Focus system automation workflows
 
-7 GitHub Actions workflows for the daily productivity loop:
-daily thread, 4 ritual postings, journal compilation, weekly
-review, stale cleanup, task migration, and label sync.
+7 GitHub Actions workflows for the daily productivity loop.
 Cron schedules configured for $TZ_NAME."
 git push
 ```
 
-### 9f: Add .qmd/ to .gitignore
-
-The Focus plugin's session-start hook caches goals/tasks to `.qmd/context.qmd` (1-hour TTL). This must be gitignored:
+Also add `.qmd/` to `.gitignore` if not already present (the Focus plugin's session-start hook caches goals/tasks there with a 1-hour TTL):
 
 ```bash
-cd <repo-path>
 if ! grep -q '.qmd/' .gitignore 2>/dev/null; then
   echo '.qmd/' >> .gitignore
   git add .gitignore
@@ -653,7 +443,7 @@ if ! grep -q '.qmd/' .gitignore 2>/dev/null; then
 fi
 ```
 
-Report: "Automation setup complete. 7 workflows created and pushed. QMD cache gitignored."
+Report: "Automation setup complete. N workflows created and pushed. QMD cache gitignored."
 
 ---
 
@@ -685,5 +475,5 @@ Run /focus:plan when it arrives to set your Big 3.
 - **User selects 0 domains in Stage 4**: Ask: "You didn't select any quarterly focus domains. Would you like to select at least one, or skip quarterly goal setup entirely?" If they skip, jump to Stage 7 with summary reflecting only labels and milestones.
 - **gh auth error**: Report "gh CLI auth error — run `gh auth login` and then re-run /focus:init." Stop immediately.
 - **Milestone creation failure**: Report the error, note which milestone failed, and continue. Summarize failures in Stage 7.
-- **Sub-issue API failure**: Use the comment fallback (Stage 6b). Do not stop — task linkage failure is non-fatal.
+- **Sub-issue API failure**: The `link-sub-issue.sh` script handles its own fallback (posts a comment). Do not stop — task linkage failure is non-fatal.
 - **User runs init on a repo with existing data and chooses "Continue"**: Stage 1 warned them. Proceed normally. New milestones will be created alongside existing ones.

@@ -1,6 +1,6 @@
 ---
 name: daily
-description: View and update today's daily thread. Shows Big 3 status, ritual progress, and recent activity. Use to check daily priorities, log an activity, or update the thread.
+description: View today's daily thread — Big 3 status, ritual progress, and recent activity. Use when the user asks to "see my daily thread", "check today's status", "log an activity", or "what's on my thread today". Do NOT use when the user wants to choose or plan today's Big 3 — use focus:plan for that.
 disable-model-invocation: true
 allowed-tools: Bash
 ---
@@ -11,22 +11,7 @@ View today's daily thread and optionally update it.
 
 ## Configuration
 
-Before running any `gh` commands, resolve the target repository and timezone:
-
-```bash
-CONFIG_JSON=$(${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.sh)
-```
-
-If this fails, tell the user: "Focus is not configured. Run `/focus:init` to set up, or create `~/.config/focus/config.json` with `{"repo": "owner/repo", "timezone": "America/Chicago"}`."
-
-Extract values:
-
-```bash
-REPO=$(echo "$CONFIG_JSON" | jq -r '.repo')
-TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
-```
-
-**All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
+Follow the setup steps in `${CLAUDE_PLUGIN_ROOT}/shared/config-preamble.md` before running any `gh` commands.
 
 ## What to do
 
@@ -54,7 +39,7 @@ gh issue view <NUMBER> -R $REPO \
   --jq '[.comments | sort_by(.createdAt) | reverse | .[:5][] | {created: .createdAt, body: .body}]'
 ```
 
-3. If `$ARGUMENTS` contains "log" or any message text: post it as a comment:
+3. If `$ARGUMENTS` is non-empty and is not "refresh": treat it as a log entry and post it as a comment:
 
 ```bash
 gh issue comment <NUMBER> -R $REPO --body "<message>"

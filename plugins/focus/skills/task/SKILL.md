@@ -1,8 +1,9 @@
 ---
 name: task
-description: Create a task in the Home system. Provide enough context and it creates directly. Vague input triggers a short interview to clarify scope, goal linkage, and acceptance criteria. Use for ad-hoc tasks or when you need help defining what needs to be done.
+description: Create a task in the Focus system. Provide enough context and it creates directly; vague input triggers a short interview to clarify scope, goal linkage, and acceptance criteria. Use when the user asks to "add a task", "create a task", "log a to-do", or capture ad-hoc work. Do NOT use for viewing or listing tasks — use focus:goals with "tasks" argument. Do NOT use for creating goals — use focus:goal.
 disable-model-invocation: true
 allowed-tools: Bash, AskUserQuestion
+argument-hint: [task description or "for goal #N: description"]
 ---
 
 # /focus:task
@@ -11,28 +12,13 @@ Create a well-formed task issue in the Focus system.
 
 ## Configuration
 
-Before running any `gh` commands, resolve the target repository and timezone:
-
-```bash
-CONFIG_JSON=$(${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.sh)
-```
-
-If this fails, tell the user: "Focus is not configured. Run `/focus:init` to set up, or create `~/.config/focus/config.json` with `{"repo": "owner/repo", "timezone": "America/Chicago"}`."
-
-Extract values:
-
-```bash
-REPO=$(echo "$CONFIG_JSON" | jq -r '.repo')
-TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
-```
-
-**All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
+Follow the setup steps in `${CLAUDE_PLUGIN_ROOT}/shared/config-preamble.md` before running any `gh` commands.
 
 ## Step 1: Score confidence
 
-Evaluate `$ARGUMENTS` against this rubric. Score each dimension 0-15. Do NOT show the scores to the user.
+Evaluate `$ARGUMENTS` against this rubric. Score each of the 4 dimensions from 0–15 using the ranges below. Sum the scores (max 60). Do NOT show the scores to the user.
 
-| Dimension         | 0-5 (Ask)                               | 6-10 (Maybe ask)                         | 11-15 (Create)                                                     |
+| Dimension         | 0–5 (Ask — information missing)         | 6–10 (Maybe ask — information implied)   | 11–15 (Create — information present)                               |
 | ----------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------ |
 | **What**          | No clear action ("something about API") | Action implied but vague ("fix the API") | Specific action ("Fix 500 error on /api/users when email is null") |
 | **Why/Goal**      | No context on which goal this serves    | Domain identifiable but goal unclear     | Explicit goal linkage or obvious domain                            |
@@ -70,6 +56,8 @@ Then ask via AskUserQuestion:
 **Low "Scope"** — Ask:
 
 - "Is this a single action or does it involve multiple steps? Can you describe the boundary?"
+
+If the user says "just create it" or "I know what I want": stop the interview and proceed to Step 3 with whatever context is available. Coaching is firm but not blocking.
 
 After the interview, re-score. If still < 40, ask one more round. After 2 rounds, proceed regardless with whatever context is available.
 
@@ -134,29 +122,10 @@ gh issue create -R $REPO \
 
 Capture the issue number from the output.
 
-If a parent goal was identified in Step 4, link as sub-issue:
+If a parent goal was identified in Step 4, link as sub-issue using the shared script (handles fallback automatically):
 
 ```bash
-gh api -X POST "/repos/$REPO/issues/<GOAL_NUMBER>/sub_issues" \
-  -f sub_issue_id=<TASK_ISSUE_NODE_ID>
-```
-
-Note: The sub-issues API requires the **node ID** (not the issue number) of the task. Fetch it after creation:
-
-```bash
-gh issue view <TASK_NUMBER> -R $REPO --json id --jq '.id'
-```
-
-Then link:
-
-```bash
-gh api graphql -f query='mutation { addSubIssue(input: { issueId: "<GOAL_NODE_ID>", subIssueId: "<TASK_NODE_ID>" }) { issue { id } } }'
-```
-
-Fetch the goal's node ID the same way:
-
-```bash
-gh issue view <GOAL_NUMBER> -R $REPO --json id --jq '.id'
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/link-sub-issue.sh <GOAL_NUMBER> <TASK_NUMBER> $REPO
 ```
 
 ## Step 7: Report

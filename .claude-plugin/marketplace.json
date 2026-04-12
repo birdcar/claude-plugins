@@ -28,7 +28,7 @@
       "name": "focus",
       "source": "./plugins/focus",
       "description": "Personal productivity system with AI-powered goal cascade, daily planning, task capture, and external source review. Adapted from the Full Focus planner.",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "name": "github-actions-generator",

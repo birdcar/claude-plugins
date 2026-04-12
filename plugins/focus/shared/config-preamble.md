@@ -15,4 +15,4 @@ REPO=$(echo "$CONFIG_JSON" | jq -r '.repo')
 TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
 ```
 
-**All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
+Always use `-R $REPO` in `gh` commands — omitting it silently targets whatever repo `gh` infers from the current directory, which may not be the configured Focus repo. Similarly, use `TZ="$TZ_NAME"` for all timezone-sensitive operations (dates, cron calculations) instead of hardcoding a timezone.

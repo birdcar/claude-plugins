@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Run the Big 3 planner. Queries the goal cascade, scores quarterly goals and tasks by priority criteria, proposes today's 3 most important tasks, and updates the daily thread when approved.
+description: Runs the Big 3 planner — queries the goal cascade, scores tasks by priority criteria, proposes the 3 most important tasks for today, and updates the daily thread on approval. Use when the user asks to "plan my day", "pick my Big 3", "what should I work on today", or "set today's priorities". Do NOT use to view the current thread or log activity — use focus:daily for that.
 disable-model-invocation: true
 allowed-tools: Bash
 ---
@@ -11,22 +11,7 @@ Select today's Big 3 from the goal cascade and update the daily thread on confir
 
 ## Configuration
 
-Before running any `gh` commands, resolve the target repository and timezone:
-
-```bash
-CONFIG_JSON=$(${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.sh)
-```
-
-If this fails, tell the user: "Focus is not configured. Run `/focus:init` to set up, or create `~/.config/focus/config.json` with `{"repo": "owner/repo", "timezone": "America/Chicago"}`."
-
-Extract values:
-
-```bash
-REPO=$(echo "$CONFIG_JSON" | jq -r '.repo')
-TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
-```
-
-**All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
+Follow the setup steps in `${CLAUDE_PLUGIN_ROOT}/shared/config-preamble.md` before running any `gh` commands.
 
 ## Step 1: Gather data
 
@@ -127,8 +112,6 @@ gh issue edit <THREAD_NUMBER> -R $REPO --body "<updated body>"
 
 4. Confirm: "Daily thread updated. Big 3 set for today."
 
-**IMPORTANT: Do not update the daily thread until the user has confirmed the selection.**
-
 If the user requests adjustments, apply them and re-present the updated proposal. Wait for confirmation again before updating.
 
 ## Edge cases
@@ -137,3 +120,4 @@ If the user requests adjustments, apply them and re-present the updated proposal
 - If today's daily thread is not found: complete Steps 1–4 and show the proposal. Note: "No daily thread found for today — the proposal is ready but the thread could not be updated."
 - If no active goals exist: show "No active quarterly goals found. Add goals first with `/focus:goals`."
 - If a focus goal has no open tasks: note this in the proposal and pull the next-highest-scoring goal.
+- If the user approves the proposal but no daily thread was found in Step 1: respond "The proposal is ready but I couldn't find today's thread to update. The GitHub Action creates it overnight — try again after it runs, or create the thread manually with `/focus:daily`."

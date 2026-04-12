@@ -1,8 +1,9 @@
 ---
 name: goals
-description: View the goal cascade from annual milestones down to active tasks. Use to understand current priorities, find tasks for a goal, or trace any task back to its annual goal.
+description: View the goal cascade from annual milestones down to active tasks. Use when the user asks to "show my goals", "view goals", "list goals", "what are my priorities", "show my tasks", or "trace a task". Supports "tasks" argument to show only tasks grouped by goal. Do NOT use for creating new goals — use focus:goal for that.
 disable-model-invocation: true
 allowed-tools: Bash
+argument-hint: [issue-number|tasks]
 ---
 
 # /focus:goals
@@ -11,22 +12,7 @@ View the full goal cascade or trace a specific issue.
 
 ## Configuration
 
-Before running any `gh` commands, resolve the target repository and timezone:
-
-```bash
-CONFIG_JSON=$(${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.sh)
-```
-
-If this fails, tell the user: "Focus is not configured. Run `/focus:init` to set up, or create `~/.config/focus/config.json` with `{"repo": "owner/repo", "timezone": "America/Chicago"}`."
-
-Extract values:
-
-```bash
-REPO=$(echo "$CONFIG_JSON" | jq -r '.repo')
-TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
-```
-
-**All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
+Follow the setup steps in `${CLAUDE_PLUGIN_ROOT}/shared/config-preamble.md` before running any `gh` commands.
 
 ## What to do
 

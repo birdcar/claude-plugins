@@ -1,6 +1,6 @@
 ---
 name: rituals
-description: Define, update, or view the 4 daily rituals (morning, workday startup, workday shutdown, evening). Interviews to create personalized checklists with time estimates. Use at the start of each quarter to re-evaluate, or anytime to update a single ritual.
+description: Define, update, or view the 4 daily rituals (morning, workday startup, workday shutdown, evening). Interviews to create personalized checklists with time estimates. Use when the user asks to "set up rituals", "update my morning routine", "view my rituals", or "change my evening ritual". Re-evaluate at the start of each quarter, or update a single ritual anytime.
 disable-model-invocation: true
 allowed-tools: Bash, AskUserQuestion
 argument-hint: [morning|workday-startup|workday-shutdown|evening|view]
@@ -12,22 +12,7 @@ Define, update, or view the 4 Full Focus daily rituals.
 
 ## Configuration
 
-Before running any `gh` commands, resolve the target repository and timezone:
-
-```bash
-CONFIG_JSON=$(${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.sh)
-```
-
-If this fails, tell the user: "Focus is not configured. Run `/focus:init` to set up, or create `~/.config/focus/config.json` with `{\"repo\": \"owner/repo\", \"timezone\": \"America/Chicago\"}`."
-
-Extract values:
-
-```bash
-REPO=$(echo "$CONFIG_JSON" | jq -r '.repo')
-TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
-```
-
-**All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
+Follow the setup steps in `${CLAUDE_PLUGIN_ROOT}/shared/config-preamble.md` before running any `gh` commands.
 
 ## Step 1: Route on arguments
 
@@ -87,12 +72,19 @@ The user types their list freely. Parse it into items with text and minutes.
 
 ### 4c: Coaching gate
 
-Evaluate the list:
+Evaluate the list using type-specific time budgets:
 
-- **Too long** (>60 minutes total): "That's [N] minutes. For a [ritual type], that's ambitious. Can you trim to what you'll actually do consistently? It's better to have a 15-minute ritual you do every day than a 60-minute one you skip."
+| Ritual type      | Max minutes |
+| ---------------- | ----------- |
+| Morning          | 45          |
+| Workday Startup  | 30          |
+| Workday Shutdown | 20          |
+| Evening          | 20          |
+
+- **Too long** (exceeds the type-specific budget above): "That's [N] minutes. For a [ritual type], [max] minutes is a good ceiling. Can you trim to what you'll actually do consistently? It's better to have a short ritual you do every day than a long one you skip."
 - **No time estimates**: "Each item needs a time estimate so you can budget your day. How long does each take?"
 - **Too few items** (0-1): "A ritual works best with 2-5 items. What else would set you up for [purpose]?"
-- **Good** (2-7 items, reasonable total): Proceed.
+- **Good** (2-7 items, within budget): Proceed.
 
 ### 4d: Confirm
 

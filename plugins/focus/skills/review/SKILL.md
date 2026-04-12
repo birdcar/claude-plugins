@@ -1,8 +1,8 @@
 ---
 name: review
-description: Scan external sources (Slack, meetings, email, calendar) for action items and commitments, then create or update tasks. Cross-references against open tasks to close completed ones and flag resolved stale items. Configurable sources — tell it where to look.
+description: Scan external sources (Slack, meetings, email, calendar) for action items and commitments, then create or update Focus tasks. Cross-references against open tasks to suggest closures and flag resolved stale items. Use when the user asks to "review my day", "scan for action items", "check Slack for tasks", or "what did I commit to". Do NOT use to review task lists or goal progress — use focus:daily or focus:goals for that.
 disable-model-invocation: true
-allowed-tools: Bash, AskUserQuestion, mcp__claude_ai_Slack__*, mcp__claude_ai_Granola__*, mcp__claude_ai_Google_Calendar__*, mcp__claude_ai_Gmail__*, mcp__claude_ai_Glean__*, mcp__claude_ai_Notion__*, mcp__claude_ai_Linear__*
+allowed-tools: Bash, AskUserQuestion, mcp__claude_ai_Slack__*, mcp__claude_ai_Granola__*, mcp__claude_ai_Google_Calendar__*, mcp__claude_ai_Gmail__*
 ---
 
 # /focus:review
@@ -11,22 +11,7 @@ Scan external sources for action items and commitments, then create or update Gi
 
 ## Configuration
 
-Before running any `gh` commands, resolve the target repository and timezone:
-
-```bash
-CONFIG_JSON=$(${CLAUDE_PLUGIN_ROOT}/scripts/resolve-config.sh)
-```
-
-If this fails, tell the user: "Focus is not configured. Run `/focus:init` to set up, or create `~/.config/focus/config.json` with `{"repo": "owner/repo", "timezone": "America/Chicago"}`."
-
-Extract values:
-
-```bash
-REPO=$(echo "$CONFIG_JSON" | jq -r '.repo')
-TZ_NAME=$(echo "$CONFIG_JSON" | jq -r '.timezone')
-```
-
-**All `gh` commands MUST use `-R $REPO`** instead of a hardcoded repo. All timezone-sensitive operations MUST use `TZ="$TZ_NAME"` instead of a hardcoded timezone.
+Follow the setup steps in `${CLAUDE_PLUGIN_ROOT}/shared/config-preamble.md` before running any `gh` commands.
 
 ## Step 1: Source selection
 
@@ -186,11 +171,14 @@ Example Notes line: `Source: Slack thread in #engineering, 2026-04-11`
 Example Notes line: `Source: Meeting with Sarah — Granola transcript, 2026-04-11`
 Example Notes line: `Source: Gmail from finance@company.com, 2026-04-11`
 
-**Domain inference**:
+**Domain inference** — use the canonical 9 domains only:
 
 - Work-related Slack channels, work meetings, work email → `domain.work`
-- Personal calendar events, personal email → `domain.personal`
-- Health/fitness context → `domain.health`
+- Health or fitness context → `domain.body`
+- Mental health, learning, personal growth → `domain.mind`
+- Family-related → `domain.family`
+- Financial → `domain.money`
+- Personal calendar, personal email — infer the most specific domain from content
 - If ambiguous, default to `domain.work`
 
 **Goal linkage**: If the task clearly relates to an open goal (from Step 2), link it as a sub-issue after creation:
