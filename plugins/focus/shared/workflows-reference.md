@@ -1,6 +1,6 @@
 # Focus Workflows Reference
 
-When `/focus:init` Stage 8 generates workflows, use this reference. All workflows need the user's timezone to compute correct cron schedules.
+When `/focus:init` Stage 9 generates workflows, use this reference. All workflows need the user's timezone to compute correct cron schedules.
 
 ## Timezone → Cron Mapping
 
@@ -9,7 +9,9 @@ The cron schedules below assume **America/Chicago (UTC-6 standard / UTC-5 daylig
 | Local time target | America/Chicago (UTC-6) | America/New_York (UTC-5) | America/Denver (UTC-7) | America/Los_Angeles (UTC-8) |
 | ----------------- | ----------------------- | ------------------------ | ---------------------- | --------------------------- |
 | 6 AM daily        | `0 12 * * *`            | `0 11 * * *`             | `0 13 * * *`           | `0 14 * * *`                |
-| 6 PM weekdays     | `0 0 * * 2-6`           | `0 23 * * 1-5`           | `0 1 * * 2-6`          | `0 2 * * 2-6`               |
+| 8:30 AM weekdays  | `30 14 * * 1-5`         | `30 13 * * 1-5`          | `30 15 * * 1-5`        | `30 16 * * 1-5`             |
+| 5 PM weekdays     | `0 23 * * 1-5`          | `0 22 * * 1-5`           | `0 0 * * 2-6`          | `0 1 * * 2-6`               |
+| 9 PM daily        | `0 3 * * *`             | `0 2 * * *`              | `0 4 * * *`            | `0 5 * * *`                 |
 | 11 PM daily       | `0 5 * * *`             | `0 4 * * *`              | `0 6 * * *`            | `0 7 * * *`                 |
 | 6 PM Sunday       | `0 0 * * 1`             | `0 23 * * 0`             | `0 1 * * 1`            | `0 2 * * 1`                 |
 | 9 AM Monday       | `0 15 * * 1`            | `0 14 * * 1`             | `0 16 * * 1`           | `0 17 * * 1`                |
@@ -24,7 +26,7 @@ Note: DST causes the effective local time to shift by 1 hour twice a year. This 
 **Permissions**: `contents: read`, `issues: write`
 **Needs checkout**: Yes (for repo context, though current impl doesn't read files)
 
-Creates a daily thread issue with Big 3 placeholders, morning ritual checklist, and goal context.
+Creates a daily thread issue with Big 3 placeholders and goal context. The morning ritual checklist is posted separately by `rituals.yml` at the same time.
 
 ```yaml
 name: Daily Thread
@@ -72,26 +74,20 @@ jobs:
             --jq '.[]' | jq -c '.')
 
           BODY_FILE=$(mktemp)
-          cat > "$BODY_FILE" <<EOF
-          # ${WEEKDAY}, ${TODAY}
-
-          ## Big 3
-
-          - [ ] _[to be selected]_
-          - [ ] _[to be selected]_
-          - [ ] _[to be selected]_
-
-          ## Morning Ritual
-
-          - [ ] Energy check: ___/10
-          - [ ] Top blocker today: ___
-          - [ ] Big 3 confirmed
-
-          ## Goal Context
-
-          _Active quarterly goals and open tasks for reference:_
-          ${GOAL_CONTEXT}
-          EOF
+          printf '%s\n' \
+            "# ${WEEKDAY}, ${TODAY}" \
+            '' \
+            '## Big 3' \
+            '' \
+            '- [ ] _[to be selected]_' \
+            '- [ ] _[to be selected]_' \
+            '- [ ] _[to be selected]_' \
+            '' \
+            '## Goal Context' \
+            '' \
+            '_Active quarterly goals and open tasks for reference:_' \
+            "${GOAL_CONTEXT}" \
+            > "$BODY_FILE"
 
           gh issue create \
             --title "Daily Thread — ${TODAY}" \
@@ -104,35 +100,43 @@ jobs:
 
 ## Workflow 2: rituals.yml
 
-**Cron target**: 6 PM local, Monday-Friday (cron fires Tue-Sat UTC for CT)
-**Permissions**: `issues: write`
-**Needs checkout**: No
+**Cron targets**: 4 schedules — morning (6 AM daily), workday startup (8:30 AM weekdays), workday shutdown (5 PM weekdays), evening (9 PM daily)
+**Permissions**: `contents: read`, `issues: write`
+**Needs checkout**: Yes (reads `.focus/rituals.json`)
 
-Posts evening ritual checklist to today's daily thread.
+Reads ritual definitions from `.focus/rituals.json` and posts formatted checklist comments to today's daily thread. Each cron target maps to one ritual type. On `workflow_dispatch`, the user picks which ritual to post manually.
 
 ```yaml
 name: Rituals
 
 on:
   schedule:
-    - cron: '<6PM_WEEKDAY_CRON>'
+    - cron: '<6AM_CRON>' # Morning (same time as daily-thread)
+    - cron: '<830AM_WEEKDAY_CRON>' # Workday Startup
+    - cron: '<5PM_WEEKDAY_CRON>' # Workday Shutdown
+    - cron: '<9PM_CRON>' # Evening
   workflow_dispatch:
     inputs:
       ritual:
-        description: 'Ritual to run manually'
-        required: false
-        default: 'evening'
+        description: 'Ritual to post manually'
+        required: true
+        default: 'morning'
         type: choice
         options:
           - morning
+          - workday-startup
+          - workday-shutdown
           - evening
 
 jobs:
   run:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       issues: write
     steps:
+      - uses: actions/checkout@v4
+
       - name: Determine ritual type
         id: ritual-type
         env:
@@ -142,18 +146,32 @@ jobs:
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             echo "ritual=$INPUT_RITUAL" >> "$GITHUB_OUTPUT"
           else
-            echo "ritual=evening" >> "$GITHUB_OUTPUT"
+            HOUR=$(TZ="<TIMEZONE>" date +%H)
+            DOW=$(TZ="<TIMEZONE>" date +%u)   # 1=Mon ... 7=Sun
+            if [ "$HOUR" -lt 10 ]; then
+              echo "ritual=morning" >> "$GITHUB_OUTPUT"
+            elif [ "$HOUR" -lt 13 ] && [ "$DOW" -le 5 ]; then
+              echo "ritual=workday-startup" >> "$GITHUB_OUTPUT"
+            elif [ "$HOUR" -lt 18 ] && [ "$DOW" -le 5 ]; then
+              echo "ritual=workday-shutdown" >> "$GITHUB_OUTPUT"
+            else
+              echo "ritual=evening" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
-      - name: Morning ritual (no-op)
-        if: steps.ritual-type.outputs.ritual == 'morning'
-        run: echo "Morning ritual content is embedded in the daily thread issue body."
+      - name: Load rituals config
+        id: config
+        run: |
+          RITUALS=$(gh api /repos/$GITHUB_REPOSITORY/contents/.focus/rituals.json \
+            --jq '.content' | base64 -d 2>/dev/null || echo '{}')
+          echo "rituals=$RITUALS" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Evening ritual
-        if: steps.ritual-type.outputs.ritual == 'evening'
+      - name: Find today's thread
+        id: thread
         run: |
           TODAY=$(TZ="<TIMEZONE>" date +%Y-%m-%d)
-
           THREAD_NUMBER=$(gh issue list \
             --label "type.daily-thread" \
             --state open \
@@ -161,26 +179,48 @@ jobs:
             --limit 5 \
             --json number \
             --jq '.[0].number // empty')
-
           if [ -z "$THREAD_NUMBER" ]; then
             echo "::warning::No open daily thread found for $TODAY"
             exit 0
           fi
+          echo "number=$THREAD_NUMBER" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post ritual comment
+        if: steps.thread.outputs.number != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RITUAL: ${{ steps.ritual-type.outputs.ritual }}
+          THREAD_NUMBER: ${{ steps.thread.outputs.number }}
+          RITUALS_JSON: ${{ steps.config.outputs.rituals }}
+        run: |
+          # Map ritual key to display name and JSON field
+          case "$RITUAL" in
+            morning)          LABEL="Morning Ritual";        KEY="morning"          ;;
+            workday-startup)  LABEL="Workday Startup";       KEY="workdayStartup"   ;;
+            workday-shutdown) LABEL="Workday Shutdown";      KEY="workdayShutdown"  ;;
+            evening)          LABEL="Evening Ritual";        KEY="evening"          ;;
+          esac
+
+          # Build checklist from rituals.json items, fall back to placeholder if unconfigured
+          ITEMS=$(echo "$RITUALS_JSON" | jq -r \
+            --arg key "$KEY" \
+            '.[$key].items[]? | "- [ ] \(.text) (\(.minutes) min)"' 2>/dev/null)
+
+          if [ -z "$ITEMS" ]; then
+            ITEMS="- [ ] _(ritual not configured — run \`/focus:rituals\` to set up)_"
+          fi
+
+          TOTAL=$(echo "$RITUALS_JSON" | jq -r \
+            --arg key "$KEY" \
+            '[.[$key].items[]?.minutes // 0] | add // 0' 2>/dev/null)
 
           COMMENT_FILE=$(mktemp)
-          printf '%s\n' \
-            '## Evening Ritual' \
-            '' \
-            '- [ ] Wins: ___' \
-            '- [ ] Challenges: ___' \
-            '- [ ] Gratitude: ___' \
-            "- [ ] Tomorrow's #1 priority: ___" \
-            > "$COMMENT_FILE"
+          printf '## %s (~%s min)\n\n%s\n' "$LABEL" "$TOTAL" "$ITEMS" > "$COMMENT_FILE"
 
           gh issue comment "$THREAD_NUMBER" --body-file "$COMMENT_FILE"
           rm "$COMMENT_FILE"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Workflow 3: journal-compile.yml

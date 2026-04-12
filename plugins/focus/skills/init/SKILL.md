@@ -406,7 +406,8 @@ Quarterly goals: N active
 Standalone tasks: N created
 
 Next steps:
-- Complete the automation setup below (Stage 8)
+- Define your daily rituals in Stage 8
+- Complete the automation setup in Stage 9
 - Run /focus:plan tomorrow morning to select your daily Big 3
 - Use /focus:task anytime to add new tasks to any goal
 - Use /focus:goal at the start of next quarter to set new quarterly goals
@@ -415,31 +416,174 @@ Next steps:
 
 ---
 
-## Stage 8: Automation setup
+## Stage 8: Ritual definition
+
+The Focus system uses 4 daily rituals — short, personal checklists that bookend your day and work transitions. Setting these up now means the automation in Stage 9 will post them at the right times.
+
+The 4 Full Focus rituals:
+
+- **Morning** — What you do when you first get up. Important but not urgent activities that make life rich. These set your mental and physical tone for the day.
+- **Workday Startup** — What you do when you first sit down to work. Tasks that set you up to win for the day.
+- **Workday Shutdown** — What you do as you wrap up work and transition to evening. Prep to hit the ground running tomorrow.
+- **Evening** — What you do right before bed. Activities that set you up for restful sleep.
+
+Ask via AskUserQuestion:
+
+> "The system includes 4 daily rituals that get posted to your daily thread automatically. Want to define them now?"
+
+Options: "Yes, define my rituals", "Skip for now (I'll run /focus:rituals later)"
+
+**If the user skips**, note: "You can define them anytime with `/focus:rituals`. The automation will post empty placeholders until you do." Then proceed to Stage 9.
+
+**If the user chooses to define rituals**, walk through all 4 in order below.
+
+---
+
+### 8a: Morning ritual
+
+Present the ritual context:
+
+> "**Morning Ritual** — What you do when you first get up. Important but not urgent activities that make life rich. These set your mental and physical tone for the day.
+>
+> Examples: Meditate (10 min), Exercise (30 min), Journal (10 min), Read (15 min), Prayer (5 min), Healthy breakfast (15 min)"
+
+Ask via AskUserQuestion:
+
+> "What activities make up your **Morning Ritual**? List each activity and roughly how many minutes it takes. For example: 'Meditate (10 min), Journal (5 min), Exercise (30 min)'"
+
+**Coaching gate:**
+
+- **Season of life warning** (always): "Take into account your season of life. If you have a newborn or a high-intensity stretch at work, 15 minutes to yourself is a win. Don't set yourself up for frustration by planning a 90-minute morning routine."
+- **Too long** (>60 min total): "That's [N] minutes. That's ambitious for a morning routine — most people find a 30-45 minute ritual more sustainable. Can you trim to what you'll actually do consistently?"
+- **Too few items** (0-1): "A ritual works best with 2-5 items. What else would set you up for a strong day?"
+- **Good** (2-7 items, reasonable total): proceed to confirm.
+
+Show formatted summary, ask: "Look good? Or adjust anything?" Accept after 2 rounds max.
+
+---
+
+### 8b: Workday Startup ritual
+
+Present the ritual context:
+
+> "**Workday Startup** — What you do when you first sit down to work. Tasks that set you up to win for the day.
+>
+> Examples: Review calendar (5 min), Clear inbox to zero (15 min), Review Big 3 (5 min), Check Slack for urgent items (10 min), Set up workspace (5 min)"
+
+Ask via AskUserQuestion:
+
+> "What activities make up your **Workday Startup**? List each activity and how many minutes it takes."
+
+**Coaching gate:**
+
+- **Too long** (>30 min total): "That's [N] minutes of startup. A workday startup over 30 minutes can eat into your peak work time. Can you trim it?"
+- **Too few items** (0-1): "A startup ritual should cover at least your calendar and inbox. What else sets you up for the day?"
+- **Good**: proceed to confirm.
+
+Show formatted summary, ask: "Look good? Or adjust anything?" Accept after 2 rounds max.
+
+---
+
+### 8c: Workday Shutdown ritual
+
+Present the ritual context:
+
+> "**Workday Shutdown** — What you do as you wrap up work and transition to evening. Prep to hit the ground running tomorrow.
+>
+> Examples: Process inbox (10 min), Review tomorrow's calendar (5 min), Update task status (5 min), Clear desk (3 min), Write tomorrow's Big 3 draft (5 min), Run \`/focus:review\` (10 min)"
+
+Ask via AskUserQuestion:
+
+> "What activities make up your **Workday Shutdown**? List each activity and how many minutes it takes."
+
+**Coaching gate:**
+
+- **Too long** (>45 min total): "That's [N] minutes. A shutdown ritual over 30-45 minutes is often a sign you're trying to complete work here rather than transition out. Can you trim?"
+- **Good**: proceed to confirm.
+
+Show formatted summary, ask: "Look good? Or adjust anything?" Accept after 2 rounds max.
+
+---
+
+### 8d: Evening ritual
+
+Present the ritual context:
+
+> "**Evening Ritual** — What you do right before bed. Activities that set you up for restful sleep.
+>
+> Examples: Read fiction (20 min), Gratitude journal (5 min), Prep clothes for tomorrow (5 min), Screen-free wind-down (15 min), Review wins and challenges (5 min)"
+
+Ask via AskUserQuestion:
+
+> "What activities make up your **Evening Ritual**? List each activity and how many minutes it takes."
+
+**Coaching gate:**
+
+- **Too long** (>60 min total): "That's [N] minutes right before bed. Keep the evening ritual calming and brief — it's easy to over-plan this one. Can you trim?"
+- **Good**: proceed to confirm.
+
+Show formatted summary, ask: "Look good? Or adjust anything?" Accept after 2 rounds max.
+
+---
+
+### 8e: Save rituals to repo
+
+Build the JSON object for all 4 rituals. Use the schema from `${CLAUDE_PLUGIN_ROOT}/shared/rituals-schema.md`.
+
+Check if `.focus/rituals.json` already exists:
+
+```bash
+EXISTING_SHA=$(gh api /repos/$REPO/contents/.focus/rituals.json --jq '.sha' 2>/dev/null || echo "")
+```
+
+If it exists, update (include `sha`):
+
+```bash
+CONTENT=$(printf '%s' '<JSON>' | base64)
+gh api -X PUT /repos/$REPO/contents/.focus/rituals.json \
+  -f message="focus: Define daily rituals (init)" \
+  -f content="$CONTENT" \
+  -f sha="$EXISTING_SHA"
+```
+
+If it doesn't exist, create:
+
+```bash
+CONTENT=$(printf '%s' '<JSON>' | base64)
+gh api -X PUT /repos/$REPO/contents/.focus/rituals.json \
+  -f message="focus: Define daily rituals (init)" \
+  -f content="$CONTENT"
+```
+
+Report: "Rituals saved to `.focus/rituals.json` and committed to $REPO."
+
+---
+
+## Stage 9: Automation setup
 
 The Focus system needs GitHub Actions workflows to automate the daily loop. Without these, no daily threads get created, no journals get compiled, and no reviews get generated.
 
 Ask via AskUserQuestion:
 
-> "The goals, labels, and tasks are set up. The last step is automation — GitHub Actions that create your daily thread each morning, compile journals at night, and generate weekly reviews. Want me to set this up now?"
+> "The goals, labels, tasks, and rituals are set up. The last step is automation — GitHub Actions that create your daily thread each morning, post ritual checklists at the right times, compile journals at night, and generate weekly reviews. Want me to set this up now?"
 
 Options: "Yes, set up automation", "Skip for now (I'll do it manually)"
 
-**If the user skips**, report what they'll need to do later and move to Stage 9.
+**If the user skips**, report what they'll need to do later and move to Stage 10.
 
 **If the user chooses to set up automation**:
 
-### 8a: Check for existing workflows
+### 9a: Check for existing workflows
 
 ```bash
 gh api /repos/$REPO/contents/.github/workflows --jq '.[].name' 2>/dev/null
 ```
 
-If all 7 workflows already exist (`daily-thread.yml`, `rituals.yml`, `journal-compile.yml`, `weekly-review.yml`, `stale-cleanup.yml`, `migration.yml`, `sync-labels.yml`), report: "All workflows already present. No action needed." and skip to Stage 9.
+If all 7 workflows already exist (`daily-thread.yml`, `rituals.yml`, `journal-compile.yml`, `weekly-review.yml`, `stale-cleanup.yml`, `migration.yml`, `sync-labels.yml`), report: "All workflows already present. No action needed." and skip to Stage 10.
 
 If some exist, note which are missing and only generate the missing ones.
 
-### 8b: Locate the repo on disk
+### 9b: Locate the repo on disk
 
 The workflows must be written to the `.github/workflows/` directory in the repo's local checkout. Determine the local path:
 
@@ -455,30 +599,33 @@ done
 
 If the repo isn't cloned locally, ask: "I can't find a local checkout of $REPO. Where is it cloned? (Or type 'clone' and I'll clone it for you.)"
 
-### 8c: Compute cron schedules
+### 9c: Compute cron schedules
 
 Read the timezone from config (`$TZ_NAME`) and compute UTC cron expressions. Reference: `${CLAUDE_PLUGIN_ROOT}/shared/workflows-reference.md` has a timezone-to-cron mapping table.
 
-For the user's timezone, compute these 5 cron schedules:
+For the user's timezone, compute these 8 cron schedules:
 
 - **6 AM local daily**: daily thread creation
-- **6 PM local weekdays**: evening ritual (note: cron day-of-week shifts for timezones behind UTC)
+- **6 AM local daily**: morning ritual (same cron as daily thread — rituals.yml fires separately)
+- **8:30 AM local weekdays**: workday startup ritual
+- **5 PM local weekdays**: workday shutdown ritual
+- **9 PM local daily**: evening ritual
 - **11 PM local daily**: journal compilation
 - **6 PM local Sunday**: weekly review
 - **9 AM local Monday**: stale cleanup
 
-### 8d: Generate workflow files
+### 9d: Generate workflow files
 
 Read `${CLAUDE_PLUGIN_ROOT}/shared/workflows-reference.md` for the complete workflow templates. For each of the 7 workflows:
 
 1. Take the template from the reference doc
 2. Replace `<TIMEZONE>` with `$TZ_NAME`
-3. Replace `<6AM_CRON>`, `<6PM_WEEKDAY_CRON>`, `<11PM_CRON>`, `<6PM_SUNDAY_CRON>`, `<9AM_MONDAY_CRON>` with the computed cron expressions
+3. Replace `<6AM_CRON>`, `<830AM_WEEKDAY_CRON>`, `<5PM_WEEKDAY_CRON>`, `<9PM_CRON>`, `<11PM_CRON>`, `<6PM_SUNDAY_CRON>`, `<9AM_MONDAY_CRON>` with the computed cron expressions
 4. Write to `<repo-path>/.github/workflows/<filename>.yml`
 
 For `weekly-review.yml` (the most complex workflow), use the birdcar/home repo's implementation as the reference and adapt the timezone. The reference doc notes this is too large to template inline.
 
-### 8e: Commit and push
+### 9e: Commit and push
 
 ```bash
 cd <repo-path>
@@ -486,13 +633,13 @@ git add .github/workflows/
 git commit -m "feat: Add Focus system automation workflows
 
 7 GitHub Actions workflows for the daily productivity loop:
-daily thread, evening ritual, journal compilation, weekly
+daily thread, 4 ritual postings, journal compilation, weekly
 review, stale cleanup, task migration, and label sync.
 Cron schedules configured for $TZ_NAME."
 git push
 ```
 
-### 8f: Add .qmd/ to .gitignore
+### 9f: Add .qmd/ to .gitignore
 
 The Focus plugin's session-start hook caches goals/tasks to `.qmd/context.qmd` (1-hour TTL). This must be gitignored:
 
@@ -510,14 +657,15 @@ Report: "Automation setup complete. 7 workflows created and pushed. QMD cache gi
 
 ---
 
-## Stage 9: Final report
+## Stage 10: Final report
 
-Update the summary from Stage 7 to include automation status:
+Update the summary from Stage 7 to include rituals and automation status:
 
 ```
 Automation: 7 workflows created and pushed
   daily-thread.yml     — 6 AM $TZ_NAME daily
-  rituals.yml          — 6 PM $TZ_NAME weekdays
+  rituals.yml          — 4 cron targets: morning (6 AM), workday startup (8:30 AM weekdays),
+                         workday shutdown (5 PM weekdays), evening (9 PM daily)
   journal-compile.yml  — 11 PM $TZ_NAME daily
   weekly-review.yml    — 6 PM $TZ_NAME Sundays
   stale-cleanup.yml    — 9 AM $TZ_NAME Mondays
