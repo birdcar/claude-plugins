@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Creates git commits with conventional commit messages (type(scope): subject + why-focused body). Analyzes changes, proposes logical splits, and requires approval before executing. Do NOT use for pushing, creating PRs, or amending published commits.
+description: "Creates git commits with conventional commit messages (type(scope): subject + why-focused body). Analyzes changes, proposes logical splits, and requires approval before executing. Do NOT use for pushing, creating PRs, or amending published commits."
 allowed-tools: [Bash, Read, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate]
 ---
 
