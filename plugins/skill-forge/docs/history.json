@@ -50,6 +50,42 @@
       },
       "description_changed": false,
       "trigger_test_results": {}
+    },
+    {
+      "timestamp": "2026-05-20T16:00:00Z",
+      "version": "0.7.1",
+      "parent_version": "0.7.0",
+      "trigger": "systematic improvement (no braindump) — improve create-skill and improve-skill sequentially; revealed surviving TodoWrite refs and post-0.7.0 hook-rule drift",
+      "scores": {
+        "before": {
+          "description_quality": 22,
+          "structural_compliance": 21,
+          "instruction_quality": 19,
+          "agent_tool_optimization": 22,
+          "total": 84
+        },
+        "after": {
+          "description_quality": 23,
+          "structural_compliance": 23,
+          "instruction_quality": 23,
+          "agent_tool_optimization": 22,
+          "total": 91
+        }
+      },
+      "changes": {
+        "applied": [
+          "Replaced remaining TodoWrite references with TaskCreate/TaskUpdate in improve-skill SKILL.md (lines 160, 219), docs/spec.md (lines 158, 166), shared/workflow-patterns.md (3 pattern descriptions), shared/templates/command-template.md (2 allowed-tools rows), commands/eval-skill.md (line 99)",
+          "Rewrote skill-generator and scaffold-writer hook-placement rules to permit inline hooks in plugin.json, matching the modernized validator and hooks-json-template",
+          "Added Agent tool to skill-generator tools list to support parallel-phase spawning its own Step 4 already required",
+          "Tightened create-skill description: added 'add a skill' trigger, named improve-skill as the alternative for modification requests",
+          "Tightened improve-skill description: 'points to' -> 'references', named code-review as the alternative for non-skill review",
+          "Folded Step 4b into Step 4 as ### Optional subsections in both SKILL.md files, re-aligning with spec's stated 6-step pipeline",
+          "Bumped plugin version 0.7.0 -> 0.7.1"
+        ],
+        "skipped": []
+      },
+      "description_changed": true,
+      "trigger_test_results": {}
     }
   ]
 }

@@ -155,7 +155,7 @@ Step 3: Recommendations
   Output: User's improvement selection
 
 Step 4: Apply Changes
-  Tools: Edit, AskUserQuestion, TodoWrite
+  Tools: Edit, AskUserQuestion, TaskCreate, TaskUpdate
   Input: Selected improvements
   Process:
     - If spec updates approved: Edit contract.md and/or spec.md first
@@ -163,7 +163,7 @@ Step 4: Apply Changes
       - AskUserQuestion shows old vs new text
       - User: Apply / Skip / Modify
       - If Apply: Edit tool (surgical, minimum change)
-      - TodoWrite tracks applied/skipped
+      - TaskCreate/TaskUpdate tracks applied/skipped
   Output: Updated skill files, updated spec (if applicable)
 
 Step 5: Re-validate & Report

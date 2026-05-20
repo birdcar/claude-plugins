@@ -5,9 +5,9 @@ description: >-
   structural compliance, instruction quality, and agent efficiency. Produces
   measurable before/after scorecards. Use when the user asks to "improve a skill",
   "optimize a skill", "review a skill", "audit skill quality", "fix skill triggers",
-  or points to an existing SKILL.md that needs work.
-  Do NOT use for creating new skills (use create-skill instead) or for general
-  code review.
+  or references an existing SKILL.md that needs work.
+  Do NOT use for creating new skills (use create-skill instead) or for reviewing
+  non-skill code (use code-review instead).
 ---
 
 ## Critical Rules
@@ -157,11 +157,11 @@ For each improvement identified in the selected dimensions:
 3. If "Apply": use Edit to make the surgical change
 4. If "Modify": use AskUserQuestion to collect the desired modification, then apply
 5. If "Skip": record it as skipped
-6. Use TodoWrite to track which improvements have been applied and which were skipped
+6. Use TaskCreate/TaskUpdate to track which improvements have been applied and which were skipped
 
 Never rewrite entire files. Every Edit must be the minimum change needed for the improvement.
 
-## Step 4b — Eval Comparison (Optional)
+### Optional: Eval Comparison
 
 After changes are applied, offer eval comparison via AskUserQuestion:
 
@@ -216,7 +216,7 @@ Use the actual date (from the system) and real scores. This creates an audit tra
    - Timestamp (current time, ISO 8601)
    - Version from `plugin.json` (or `"unversioned"` for non-plugin skills)
    - Before and after scores for all four dimensions
-   - List of applied and skipped changes from TodoWrite
+   - List of applied and skipped changes from TaskCreate/TaskUpdate
    - Whether the description was changed
    - Trigger test results if applicable
 

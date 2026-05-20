@@ -2,12 +2,11 @@
 name: create-skill
 description: >-
   Generates production-grade Claude Code skills from unstructured brain dumps.
-  Creates complete plugin packages with optimized SKILL.md, agents, commands,
-  and hooks. Use when the user asks to "create a skill", "build a skill",
-  "make a skill that...", "write a skill for...", "generate a skill", or
-  describes functionality they want as a reusable skill.
-  Do NOT use for general code generation, documentation writing, or when
-  the user wants to modify existing code that isn't a skill.
+  Creates complete plugin packages with SKILL.md, agents, commands, and hooks.
+  Use when the user asks to "create a skill", "build a skill", "add a skill",
+  "make a skill that...", "write a skill for...", or "generate a skill".
+  Do NOT use for general code generation, documentation writing, or modifying
+  an existing skill — use improve-skill for that last case.
 ---
 
 ## Critical Rules
@@ -211,7 +210,7 @@ Read the approved `{$SKILL_DIR}/docs/spec.md` — this is the primary input for 
 1. Create the skill directory at the target path
 2. Spawn `skill-forge:skill-generator` agent (Opus) with the same spec-based inputs as above
 
-## Step 4b — Eval Testing (Optional)
+### Optional: Eval Testing
 
 After generation completes, offer eval testing via AskUserQuestion:
 

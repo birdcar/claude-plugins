@@ -96,7 +96,7 @@ Finalize the prompt list before proceeding.
 
 ## Step 4 — Launch Runs (Parallel) + Step 5 — Draft Assertions (Concurrent)
 
-Use TodoWrite to initialize a task list tracking each run, the assertion-drafting session, grading, comparison, and aggregation.
+Use TaskCreate to initialize a task list tracking each run, the assertion-drafting session, grading, comparison, and aggregation. Update task status with TaskUpdate as each phase progresses.
 
 Create the workspace directory: `{skill-name}-workspace/iteration-0/`
 

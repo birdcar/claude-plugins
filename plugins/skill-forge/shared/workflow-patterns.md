@@ -27,7 +27,7 @@
 - Rollback instructions for failure cases
 - Each step's output feeds the next step's input
 
-**Primitives typically used**: TodoWrite (track progress), AskUserQuestion (approval gates), Edit/Write (file operations)
+**Primitives typically used**: TaskCreate/TaskUpdate (track progress), AskUserQuestion (approval gates), Edit/Write (file operations)
 
 ---
 
@@ -98,7 +98,7 @@
 - Each iteration targets specific failures, not wholesale rewrites
 - User approval as final gate
 
-**Primitives typically used**: TodoWrite (track criteria), AskUserQuestion (approval after each round or final), Agent (subagent for validation)
+**Primitives typically used**: TaskCreate/TaskUpdate (track criteria), AskUserQuestion (approval after each round or final), Agent (subagent for validation)
 
 ---
 
@@ -181,7 +181,7 @@ Analyze the input and select the appropriate approach:
 - Actionable findings (don't just flag problems, suggest fixes)
 - Audit trail — record what was checked and what passed/failed
 
-**Primitives typically used**: Read/Grep (collect evidence), TodoWrite (track findings), AskUserQuestion (present report), Agent (parallelize rule checking)
+**Primitives typically used**: Read/Grep (collect evidence), TaskCreate/TaskUpdate (track findings), AskUserQuestion (present report), Agent (parallelize rule checking)
 
 ---
 

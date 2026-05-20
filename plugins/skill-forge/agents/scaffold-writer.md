@@ -40,7 +40,7 @@ You are a plugin scaffolding writer for Claude Code plugin marketplaces.
    - `commands`: `["./commands/"]` if commands are planned, omit otherwise
    - `agents`: explicit relative paths to each agent .md file (e.g. `["./agents/my-agent.md"]`)
    - **DO NOT add a `"skills"` field** — skills are auto-discovered from the `skills/` directory
-   - **DO NOT add a `"hooks"` field** — hooks belong in `hooks/hooks.json`
+   - Add a `"hooks"` field inline in `plugin.json` only if the spec explicitly requests inline hooks for a single-hook plugin; otherwise leave hooks to `hooks/hooks.json` (both placements are valid in v2.1.146+)
 
 4. Write `package.json`:
    - `name`: `"{package-scope}/claude-plugin-{name}"` (use the provided package scope)

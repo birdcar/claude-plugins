@@ -15,12 +15,12 @@ argument-hint: [{ hint text }]
 
 ### Common allowed-tools sets
 
-| Command type         | Tools                                                                                       |
-| -------------------- | ------------------------------------------------------------------------------------------- |
-| Read-only analysis   | Read, Grep, Glob                                                                            |
-| Code generation      | Read, Write, Edit, Glob, Grep, Bash                                                         |
-| Interactive workflow | Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TodoWrite                      |
-| Full access          | Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TodoWrite, WebFetch, WebSearch |
+| Command type         | Tools                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Read-only analysis   | Read, Grep, Glob                                                                                                   |
+| Code generation      | Read, Write, Edit, Glob, Grep, Bash                                                                                |
+| Interactive workflow | Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList                      |
+| Full access          | Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, WebFetch, WebSearch |
 
 ## Body Structure
 
