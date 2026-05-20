@@ -2,6 +2,14 @@
 
 Skills that need sensitive or machine-specific information (API keys, local file paths, PII, hostnames, credentials) must keep that data out of the repository and out of LLM context. This document defines the standard pattern for local configuration.
 
+> **Pick the right tool first:**
+>
+> - **`userConfig` in `plugin.json`** (Claude Code v2.1.130+) — for any value the user supplies _once at install time_. Claude Code prompts for it via UI when the plugin is enabled, stores sensitive values in the OS keychain (not on disk), and exposes them as `${user_config.KEY}` and `CLAUDE_PLUGIN_OPTION_<KEY>`. See `${CLAUDE_PLUGIN_ROOT}/shared/templates/plugin-json-template.md` for the schema.
+> - **`$XDG_CONFIG_HOME/{skill-name}/` env files (this doc's pattern)** — for runtime/machine-specific values that change between sessions or environments, or when the plugin needs to read existing config from another tool (`.aws/credentials`, `kubectl` configs, dotfile-managed env files).
+> - **`${CLAUDE_PLUGIN_DATA}`** — for plugin-managed persistent state (caches, generated code, downloaded assets). Survives plugin updates.
+>
+> Default to `userConfig` for new install-time prompts. Reach for `$XDG_CONFIG_HOME` only when you genuinely need an external file you don't own.
+
 ## Principle
 
 Configuration lives on-disk in `$XDG_CONFIG_HOME/{skill-name}/` (typically `~/.config/{skill-name}/`). Skills never read config files directly — they run wrapper scripts that extract specific, descriptive environment variables. The LLM sees only the variable names and values, never the raw config files.
@@ -116,8 +124,10 @@ This is the tightest pattern — the script outputs a single value, so the LLM c
 ```markdown
 ## Step 2: Load Credentials
 
-Run `COOLIFY_TOKEN=$(bash ${CLAUDE_SKILL_DIR}/scripts/get-coolify-token.sh)` before making API calls.
+Run `COOLIFY_TOKEN=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/get-coolify-token.sh)` before making API calls.
 ```
+
+> **Variable choice:** use `${CLAUDE_PLUGIN_ROOT}` for plugin-bundled scripts (the common case for skill-forge output) and `${CLAUDE_SKILL_DIR}` only for project/global skills that ship their scripts inside the skill directory itself.
 
 ## Integration in SKILL.md
 
@@ -165,7 +175,7 @@ The `chmod 700` on the directory and `chmod 600` on files ensures that only the 
 ```markdown
 ## Step 1: Load Configuration
 
-Run `bash ${CLAUDE_SKILL_DIR}/scripts/load-config.sh` and capture its output.
+Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh` and capture its output.
 
 - If exit code is non-zero, show the error and instruct the user to set up config
 - Parse the output key-value pairs for use in subsequent steps
@@ -173,14 +183,15 @@ Run `bash ${CLAUDE_SKILL_DIR}/scripts/load-config.sh` and capture its output.
 
 ## When to Use This Pattern
 
-| Signal                                                       | Action                                                           |
-| ------------------------------------------------------------ | ---------------------------------------------------------------- |
-| Skill needs API keys or tokens                               | Use `credentials.env`                                            |
-| Skill references machine-specific paths                      | Use `paths.env`                                                  |
-| Skill needs user identity (email, username)                  | Use `config.env`, source via script that outputs role-based keys |
-| Skill references colleagues or contacts by name              | Store real names in `config.env`, output anonymized handles only |
-| Skill asks the user for a value that varies per machine      | Store in local config, source via script                         |
-| Skill stores a value in memory that could change per machine | Move to local config instead                                     |
+| Signal                                                       | Action                                                            |
+| ------------------------------------------------------------ | ----------------------------------------------------------------- |
+| Plugin needs an API key the user supplies at install         | Use `userConfig` with `sensitive: true` (auto-routes to keychain) |
+| Skill needs API keys or tokens from an existing dotfile      | Use `credentials.env`                                             |
+| Skill references machine-specific paths                      | Use `paths.env` (or `userConfig` of `type: "directory"`)          |
+| Skill needs user identity (email, username)                  | Use `config.env`, source via script that outputs role-based keys  |
+| Skill references colleagues or contacts by name              | Store real names in `config.env`, output anonymized handles only  |
+| Skill asks the user for a value that varies per machine      | Store in local config, source via script                          |
+| Skill stores a value in memory that could change per machine | Move to local config instead                                      |
 
 ## When NOT to Use This Pattern
 

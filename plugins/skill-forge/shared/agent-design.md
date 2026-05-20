@@ -1,6 +1,6 @@
 ## Agent File Structure
 
-Agents are `.md` files referenced from plugin.json's `"agents"` array.
+Agents are `.md` files in the plugin's `agents/` directory (auto-discovered) or referenced explicitly from `plugin.json`'s `"agents"` array.
 
 ```yaml
 ---
@@ -13,26 +13,41 @@ tools:
   - Glob
   - Grep
 model: sonnet
+effort: medium
+maxTurns: 20
 ---
 # Agent Name
 
 System prompt body that defines the agent's role, constraints, and output format.
 ```
 
-Key fields:
+### Full frontmatter field reference
 
-- `name`: kebab-case, matches the file name (without .md)
-- `description`: follows same trigger-phrase rules as skills, but for Agent tool's subagent_type matching
-- `tools`: YAML sequence (not inline array) — only the tools this agent needs
-- `model`: right-sized for the task (see model sizing below)
+| Field             | Type          | Notes                                                                       |
+| ----------------- | ------------- | --------------------------------------------------------------------------- | ------ | ------------------------------------ | ---- | ------------------------------------------------------------- |
+| `name`            | string        | kebab-case, matches file name without .md                                   |
+| `description`     | string        | Trigger-phrase rules same as skills; used for `subagent_type` matching      |
+| `tools`           | YAML sequence | Tools the agent may use. Prefer over `disallowedTools` for least-privilege. |
+| `disallowedTools` | YAML sequence | Subtractive — denies specific tools while inheriting others. Use sparingly. |
+| `model`           | `opus         | sonnet                                                                      | haiku` | Right-sized for the task (see below) |
+| `effort`          | `low          | medium                                                                      | high   | xhigh                                | max` | Compute budget. Opus 4.7/4.6 and Sonnet 4.6 support all five. |
+| `maxTurns`        | integer       | Hard cap on agent turn count. Prevents runaway loops.                       |
+| `skills`          | YAML sequence | Skills the agent has access to. Defaults to all.                            |
+| `memory`          | string        | Path to an agent-scoped memory file.                                        |
+| `background`      | boolean       | If `true`, agent runs in the background by default when spawned.            |
+| `isolation`       | `worktree`    | Run agent in a git worktree (auto-cleanup if no changes).                   |
+
+**Disallowed in plugin agents:** `hooks`, `mcpServers`, `permissionMode` — those live at the plugin manifest level, not on individual agents.
 
 ## Model Right-Sizing
 
-| Model    | Use for                                                                     | Token cost | Speed   |
-| -------- | --------------------------------------------------------------------------- | ---------- | ------- |
-| `opus`   | Complex reasoning, generation, multi-step analysis, skill content authoring | Highest    | Slowest |
-| `sonnet` | Research, analysis, code review, standard agent tasks, most subagents       | Medium     | Medium  |
-| `haiku`  | Validation, formatting, file writing, simple transformations, scaffolding   | Lowest     | Fastest |
+Current model IDs (verified v2.1.146):
+
+| Model    | Latest ID                   | Use for                                                                     | Token cost | Speed   |
+| -------- | --------------------------- | --------------------------------------------------------------------------- | ---------- | ------- |
+| `opus`   | `claude-opus-4-7`           | Complex reasoning, generation, multi-step analysis, skill content authoring | Highest    | Slowest |
+| `sonnet` | `claude-sonnet-4-6`         | Research, analysis, code review, standard agent tasks, most subagents       | Medium     | Medium  |
+| `haiku`  | `claude-haiku-4-5-20251001` | Validation, formatting, file writing, simple transformations, scaffolding   | Lowest     | Fastest |
 
 Rules:
 
@@ -46,14 +61,14 @@ Rules:
 
 Only grant tools the agent actually needs:
 
-| Agent role           | Typical tools                                 |
-| -------------------- | --------------------------------------------- |
-| Read-only researcher | Read, Glob, Grep                              |
-| Codebase explorer    | Read, Glob, Grep, Bash (for git commands)     |
-| File generator       | Read, Write, Edit, Glob                       |
-| Full-stack builder   | Read, Write, Edit, Glob, Grep, Bash           |
-| Web researcher       | Read, WebFetch, WebSearch                     |
-| Interactive agent    | Read, Write, Edit, AskUserQuestion, TodoWrite |
+| Agent role           | Typical tools                                              |
+| -------------------- | ---------------------------------------------------------- |
+| Read-only researcher | Read, Glob, Grep                                           |
+| Codebase explorer    | Read, Glob, Grep, Bash (for git commands)                  |
+| File generator       | Read, Write, Edit, Glob                                    |
+| Full-stack builder   | Read, Write, Edit, Glob, Grep, Bash                        |
+| Web researcher       | Read, WebFetch, WebSearch                                  |
+| Interactive agent    | Read, Write, Edit, AskUserQuestion, TaskCreate, TaskUpdate |
 
 Never grant:
 

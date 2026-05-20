@@ -1,8 +1,19 @@
 ---
 name: improve-skill
 description: Analyze and optimize an existing Claude Code skill for better trigger precision, structure, instruction quality, and agent efficiency. Works on any skill anywhere.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TodoWrite
-argument-hint: [path or name] [optional improvement notes]
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Bash
+  - Agent
+  - AskUserQuestion
+  - TaskCreate
+  - TaskUpdate
+  - TaskList
+argument-hint: '[path or name] [optional improvement notes]'
 ---
 
 Analyze and improve an existing Claude Code skill.

@@ -14,7 +14,9 @@ allowed-tools:
   - Bash
   - Agent
   - AskUserQuestion
-  - TodoWrite
+  - TaskCreate
+  - TaskUpdate
+  - TaskList
 argument-hint: '[skill-path]'
 ---
 
@@ -24,7 +26,7 @@ argument-hint: '[skill-path]'
 - Capture `timing.json` IMMEDIATELY when each subagent completes — this data is transient
 - The comparator MUST NOT know which config produced which output (blind A/B)
 - Track the A/B mapping separately to unblind during analysis
-- Use TodoWrite to track progress through every pipeline stage
+- Use TaskCreate/TaskUpdate to track progress through every pipeline stage
 - Use AskUserQuestion for ALL decisions — never plain text questions
 
 ## Step 1 — Resolve Skill
@@ -109,9 +111,9 @@ uv run ${CLAUDE_PLUGIN_ROOT}/scripts/run_eval.py \
   --prompt "<prompt text>" \
   --eval-id <ID> \
   --eval-name "<skill-name>" \
-  --output-dir <path-to-eval-{ID}/with_skill> \
-  --model claude-sonnet-4-5 \
-  --skill-path <resolved-skill-path>
+  --output-dir <path-to-eval-{ID}> \
+  --config-label with_skill \
+  --model claude-sonnet-4-6
 ```
 
 ```bash
@@ -119,11 +121,14 @@ uv run ${CLAUDE_PLUGIN_ROOT}/scripts/run_eval.py \
   --prompt "<prompt text>" \
   --eval-id <ID> \
   --eval-name "<skill-name>" \
-  --output-dir <path-to-eval-{ID}/without_skill> \
-  --model claude-sonnet-4-5
+  --output-dir <path-to-eval-{ID}> \
+  --config-label without_skill \
+  --model claude-sonnet-4-6
 ```
 
-For improve mode, replace `with_skill` / `without_skill` with `new_skill` / `old_skill` and pass the appropriate `--skill-path` to each.
+`run_eval.py` writes its artifacts under `<output-dir>/<config-label>/` — so both invocations target the same `eval-{ID}/` parent. The script writes `eval_metadata.json` once at the eval root, then `transcript.txt` and `metrics.json` per config subdir.
+
+For improve mode, use `--config-label new_skill` and `--config-label old_skill`. The "skill" is determined at runtime by whatever the prompt activates inside Claude Code's installed-skills set; there is no `--skill-path` flag on `run_eval.py`.
 
 **Timing capture:** When each subagent completes, immediately write `timing.json` to its config directory using the `total_tokens` and `duration_ms` from the task completion notification:
 
@@ -158,7 +163,7 @@ Once finalized, write the assertions into each `eval-{ID}/eval_metadata.json`:
 }
 ```
 
-Update the TodoWrite task list as runs and assertion drafting complete.
+Update task statuses via TaskUpdate as runs and assertion drafting complete.
 
 ## Step 6 — Grade
 

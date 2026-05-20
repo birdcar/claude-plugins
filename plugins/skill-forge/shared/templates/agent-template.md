@@ -15,28 +15,32 @@ tools:
   - { Tool2 }
   - { Tool3 }
 model: { opus|sonnet|haiku }
+effort: { low|medium|high|xhigh|max } # optional — defaults to medium
+maxTurns: 20 # optional — caps runaway loops
 ---
 ```
 
 ### Model selection
 
-| Task complexity                                             | Model  |
-| ----------------------------------------------------------- | ------ |
-| Complex reasoning, creative generation, multi-step analysis | opus   |
-| Research, code review, standard analysis, most tasks        | sonnet |
-| Validation, formatting, scaffolding, checklists             | haiku  |
+| Task complexity                                             | Model  | Latest ID                   |
+| ----------------------------------------------------------- | ------ | --------------------------- |
+| Complex reasoning, creative generation, multi-step analysis | opus   | `claude-opus-4-7`           |
+| Research, code review, standard analysis, most tasks        | sonnet | `claude-sonnet-4-6`         |
+| Validation, formatting, scaffolding, checklists             | haiku  | `claude-haiku-4-5-20251001` |
 
 ### Tool selection
 
 Grant ONLY what's needed:
 
-| Agent role           | Typical tools                                 |
-| -------------------- | --------------------------------------------- |
-| Read-only researcher | Read, Glob, Grep                              |
-| Web researcher       | Read, WebFetch, WebSearch                     |
-| File generator       | Read, Write, Edit, Glob                       |
-| Full builder         | Read, Write, Edit, Glob, Grep, Bash           |
-| Interactive          | Read, Write, Edit, AskUserQuestion, TodoWrite |
+| Agent role           | Typical tools                                              |
+| -------------------- | ---------------------------------------------------------- |
+| Read-only researcher | Read, Glob, Grep                                           |
+| Web researcher       | Read, WebFetch, WebSearch                                  |
+| File generator       | Read, Write, Edit, Glob                                    |
+| Full builder         | Read, Write, Edit, Glob, Grep, Bash                        |
+| Interactive          | Read, Write, Edit, AskUserQuestion, TaskCreate, TaskUpdate |
+
+> `TodoWrite` is deprecated (disabled by default v2.1.142+). Use `TaskCreate`/`TaskUpdate` for any progress tracking.
 
 ## Body Structure
 

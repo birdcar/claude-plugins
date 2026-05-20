@@ -1,0 +1,55 @@
+{
+  "skill_name": "skill-forge",
+  "entries": [
+    {
+      "timestamp": "2026-05-20T00:00:00Z",
+      "version": "0.7.0",
+      "parent_version": "0.6.0",
+      "trigger": "User-directed modernization: use Claude Code references to update knowledge base and leverage modern features (Hooks, Checkpointing, etc.)",
+      "scores": {
+        "before": {
+          "description_quality": 22,
+          "structural_compliance": 19,
+          "instruction_quality": 15,
+          "agent_tool_optimization": 13,
+          "total": 69
+        },
+        "after": {
+          "description_quality": 22,
+          "structural_compliance": 22,
+          "instruction_quality": 23,
+          "agent_tool_optimization": 22,
+          "total": 89
+        }
+      },
+      "changes": {
+        "applied": [
+          "Rewrote hooks-json-template to cover all 28 events, 5 handler types, if filter, asyncRewake, once, terminalSequence",
+          "Rewrote plugin-json-template to cover all 18 manifest fields including displayName/userConfig/dependencies/monitors/channels/outputStyles/lspServers",
+          "Replaced TodoWrite with Task* family across primitives-guide, agent-design, agent-template, both SKILL.md files, and all four eval pipeline commands",
+          "Added Monitor/LSP/EnterPlanMode/EnterWorktree/Cron*/RemoteTrigger/PushNotification/SendMessage/NotebookEdit/Skill/ShareOnboardingGuide sections to primitives-guide",
+          "Added new shared/checkpointing.md documenting Bash-edit warnings for generated skills",
+          "Documented single-file plugin auto-loading pattern (v2.1.142+) and path-rule semantics in skill-anatomy.md",
+          "Modernized agent frontmatter docs with effort/maxTurns/isolation/background/disallowedTools fields and current model IDs",
+          "Added Write to tools lists of analyzer, comparator, grader, skill-validator agents",
+          "Canonicalized feedback.json next_action enum to iterate/accept/reject across schema, viewer, and command",
+          "Fixed run_eval.py <-> eval-skill.md signature mismatch (added --config-label, removed unsupported --skill-path)",
+          "Fixed aggregate_history.py to read schema-correct nested field paths with legacy fallback",
+          "Raised quick_validate.py severity for kebab name/directory checks from HIGH to CRITICAL",
+          "Standardized allowed-tools format on YAML list across all four commands",
+          "Reconciled local-config-pattern.md variables and added userConfig guidance preamble",
+          "Thinned quality-checklist.md to remove duplicates of skill-validator check table and trigger-test spec",
+          "Added Modern primitives check to skill-validator scanning for deprecated TodoWrite and stale model IDs",
+          "Reconciled inline-hooks rule: re-tested v2.1.146 confirms inline plugin.json hooks are valid",
+          "Updated project MEMORY.md to reflect corrected inline-hooks support",
+          "Archived docs/ideation/ and 2026-03-25 design doc under docs/archive/",
+          "Added 0.7.0 modernization section to docs/contract.md",
+          "Bumped plugin version 0.6.0 -> 0.7.0"
+        ],
+        "skipped": []
+      },
+      "description_changed": false,
+      "trigger_test_results": {}
+    }
+  ]
+}

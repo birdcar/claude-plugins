@@ -134,6 +134,31 @@ Claude only sees the rendered result, not the original command.
 - Nested `.claude/skills/` directories in monorepos are auto-discovered
 - The `--add-dir` flag enables live reloading without restarting
 
+### Single-file plugin auto-loading (v2.1.142+)
+
+A plugin with `SKILL.md` at the plugin root, no `skills/` subdirectory, and no `skills` manifest field is automatically loaded as a single-skill plugin. The skill's invocation name comes from the SKILL.md frontmatter `name`, or the plugin directory's basename as a fallback.
+
+```
+my-single-skill-plugin/
+├── .claude-plugin/
+│   └── plugin.json    # { "name": "my-plugin" } — name is the only required field
+└── SKILL.md           # frontmatter: name, description
+```
+
+This is the most compact form for a one-skill plugin — no `skills/` wrapper directory needed. Use when:
+
+- The plugin provides exactly one skill
+- There are no agents, commands, or hooks to ship alongside
+- The skill needs nothing beyond what `${CLAUDE_PLUGIN_ROOT}` provides
+
+When a `skills` path points to a directory containing `SKILL.md` directly (like `"skills": ["./"]`), the frontmatter `name` is authoritative regardless of where the plugin installs.
+
+### Path-rule semantics (manifest fields)
+
+- **Additive** (default folder + manifest paths both scanned): `skills`
+- **Replacement** (manifest paths replace default folder): `commands`, `agents`, `outputStyles`, `experimental.themes`, `experimental.monitors`. To keep the default plus add more, list it explicitly: `"commands": ["./commands/", "./extras/"]`
+- **Own merge rules**: `hooks`, `mcpServers`, `lspServers`
+
 ### Capability Matrix by Location
 
 Not all features are available at every location. Plugins unlock the full feature set:

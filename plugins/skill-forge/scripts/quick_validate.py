@@ -10,6 +10,8 @@ Checks frontmatter, naming, file sizes, and anti-patterns.
 Exit code: 0 if all CRITICAL checks pass, 1 otherwise.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import re
@@ -79,9 +81,9 @@ def run_checks(skill_md: Path) -> list[dict[str, Any]]:
         if has_name:
             name_val = str(fm["name"])
             kebab_ok = is_kebab_case(name_val)
-            check("kebab_name_field", "HIGH", kebab_ok, f"name '{name_val}' is kebab-case." if kebab_ok else f"name '{name_val}' is not kebab-case.")
+            check("kebab_name_field", "CRITICAL", kebab_ok, f"name '{name_val}' is kebab-case." if kebab_ok else f"name '{name_val}' is not kebab-case.")
         else:
-            check("kebab_name_field", "HIGH", False, "Skipped — no name field.")
+            check("kebab_name_field", "CRITICAL", False, "Skipped — no name field.")
 
         if has_desc:
             desc_len = len(str(fm["description"]))
@@ -96,7 +98,7 @@ def run_checks(skill_md: Path) -> list[dict[str, Any]]:
         check("no_xml_in_frontmatter", "HIGH", not xml_found, "No XML tags in frontmatter." if not xml_found else "XML tags detected in frontmatter (not allowed).")
 
     dir_ok = is_kebab_case(dir_name)
-    check("kebab_directory_name", "HIGH", dir_ok, f"Directory '{dir_name}' is kebab-case." if dir_ok else f"Directory '{dir_name}' is not kebab-case.")
+    check("kebab_directory_name", "CRITICAL", dir_ok, f"Directory '{dir_name}' is kebab-case." if dir_ok else f"Directory '{dir_name}' is not kebab-case.")
 
     line_count = len(content.splitlines())
     lines_ok = line_count <= 500

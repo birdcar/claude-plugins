@@ -7,6 +7,7 @@ description: >-
   configuration run.
 tools:
   - Read
+  - Write
   - Glob
   - Grep
 model: sonnet

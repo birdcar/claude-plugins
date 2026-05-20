@@ -17,6 +17,7 @@ description: >-
 - ALWAYS present before/after diffs via AskUserQuestion with preview before applying
 - ALWAYS update the spec before modifying skill artifacts when design intent has shifted
 - Read shared knowledge base from `${CLAUDE_PLUGIN_ROOT}/shared/` for scoring criteria
+- When auditing a skill, also check for outdated patterns: `TodoWrite` references (should be `TaskCreate`/`TaskUpdate`), old model IDs (`claude-sonnet-4-5` → `claude-sonnet-4-6`, `claude-opus-4-1` → `claude-opus-4-7`), hooks-template references that pre-date `prompt`/`mcp_tool`/`http`/`agent` handler types, plugin.json missing `displayName`/`userConfig`/`dependencies` where they'd add value
 - Non-destructive: every individual change must be approved before applying
 
 ## Step 1 — Locate Skill & Gather Context

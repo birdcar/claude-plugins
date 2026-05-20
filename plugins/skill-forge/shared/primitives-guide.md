@@ -25,28 +25,45 @@ The ONLY way to ask users questions in skills. Never use plain text questions.
 
 ---
 
-## TodoWrite
+## TaskCreate / TaskGet / TaskList / TaskUpdate / TaskStop
 
-For tracking multi-step progress within a session.
+For tracking multi-step progress within a session. **`TodoWrite` is deprecated** — disabled by default in Claude Code v2.1.142+ and replaced by this `Task*` family.
 
 **When to use**:
 
 - Complex workflows with 5+ steps where losing track is likely
 - Checklists that need visible progress tracking
 - Before context compaction might erase progress state
+- Coordinating work across subagents (tasks can be claimed via `owner` field)
+
+**API surface**:
+
+| Tool         | Purpose                                                          |
+| ------------ | ---------------------------------------------------------------- |
+| `TaskCreate` | Add a task with `subject`, `description`, optional `activeForm`  |
+| `TaskGet`    | Read full details (description + comments) for a single task     |
+| `TaskList`   | Summary of all tasks: id, subject, status, owner, blockedBy      |
+| `TaskUpdate` | Change status, owner, dependencies (`addBlocks`, `addBlockedBy`) |
+| `TaskStop`   | Stop a running task                                              |
+
+Status flow: `pending` → `in_progress` → `completed` (or `deleted`).
 
 **Effective patterns**:
 
-- Create todos at the START of a multi-step workflow, not mid-way
-- Update status: `in_progress` when starting, `completed` when done
-- Use clear, specific todo descriptions (not "Do step 3")
-- Group related todos logically
+- Create tasks at the START of a multi-step workflow, not mid-way
+- Set `status: "in_progress"` when starting, `"completed"` only when fully done
+- Use clear, specific subjects in imperative form ("Run database migration")
+- Use `addBlockedBy` to encode sequential dependencies
+- Set `owner` to claim a task when working as a teammate; check `TaskList` for available work
 
 **Anti-patterns**:
 
-- Creating todos for 2-3 step workflows (overkill)
-- Never updating status (defeats the purpose)
-- Using todos as a communication channel (they're internal state)
+- Creating tasks for 2-3 step workflows (overkill)
+- Marking `completed` while errors are unresolved or tests are failing
+- Using tasks as a communication channel (they're internal state, not chat)
+- Calling `TodoWrite` — it's not loaded by default; fall back to `Task*`
+
+> **For skill generators:** Always emit `Task*` references in generated skills. Older skills that still reference `TodoWrite` will silently fail to track progress on v2.1.142+ unless the user has explicitly re-enabled the legacy tool.
 
 ---
 
@@ -246,14 +263,79 @@ Use ONLY for operations without a dedicated tool.
 
 ---
 
+## Monitor
+
+For reactive watches over background processes (logs, file changes, CI runs). Each stdout line of the watched command becomes a notification to Claude.
+
+**When to use**:
+
+- "Wait until X" loops — use Monitor with an `until <check>; do sleep 2; done` shell pattern
+- Tail logs while implementing a fix
+- Watch CI status without polling
+
+**Effective patterns**:
+
+- Pair with `monitors/monitors.json` declarative monitors in plugins for automatic startup
+- Prefer over `Bash(run_in_background: true)` when you need streaming notifications, not just an exit signal
+
+## LSP
+
+Language-server intelligence: go-to-definition, find-references, type info. Use over Grep when the question is semantic ("where is this function called from?") rather than textual.
+
+## EnterPlanMode / ExitPlanMode
+
+Programmatic control over plan mode. Use when a skill should force a planning gate before implementation. The skill can call `EnterPlanMode`, present analysis, and require user approval via `ExitPlanMode` before any edits land.
+
+## EnterWorktree / ExitWorktree
+
+Native git worktree creation/teardown. Use when a skill needs git-isolated work without invoking the Agent tool's `isolation: "worktree"` parameter — for example, when the main thread (not a subagent) needs to make changes in isolation.
+
+## CronCreate / CronList / CronDelete
+
+Session-scoped scheduled prompts. The cron schedule fires the prompt as if the user typed it.
+
+**When to use**:
+
+- Recurring polls within a long session (CI status checks, deploy monitoring)
+- Use with caution — every fire consumes context
+
+## RemoteTrigger / PushNotification / ShareOnboardingGuide
+
+- `RemoteTrigger` — invokes a claude.ai Routine remotely
+- `PushNotification` — sends a push to the user's phone/desktop
+- `ShareOnboardingGuide` — uploads a local `ONBOARDING.md` and returns a shareable link
+
+## SendMessage
+
+Used in agent-teams contexts to message a named teammate, or to resume a stopped subagent by id. The first call with `to: "<agentId>"` resumes that agent with full context preserved.
+
+## NotebookEdit
+
+Jupyter notebook cell-level editing. Use instead of Read/Edit when working with `.ipynb` files.
+
+## Skill
+
+The entry point that runs other skills. Calling `Skill` with `skill: "<name>"` loads and runs that skill. Use when one skill needs to delegate to another (the called skill's content is presented to you to follow).
+
 ## Model Selection Guide
 
-| Task                  | Model  | Rationale                                 |
-| --------------------- | ------ | ----------------------------------------- |
-| Main skill workflow   | opus   | Full reasoning for complex orchestration  |
-| Research agents       | sonnet | Good analysis without opus cost           |
-| Code review agents    | sonnet | Pattern matching, not creative generation |
-| Validation agents     | haiku  | Checklist execution, fast and cheap       |
-| Scaffold/file writers | haiku  | Template filling, no reasoning needed     |
-| Creative generation   | opus   | Quality matters, cost justified           |
-| Formatting/cleanup    | haiku  | Mechanical transformation                 |
+Current model IDs (as of Claude Code v2.1.146):
+
+| Tier   | Latest ID                   | Use for                                                                  |
+| ------ | --------------------------- | ------------------------------------------------------------------------ |
+| opus   | `claude-opus-4-7`           | Complex reasoning, creative generation, multi-step orchestration         |
+| sonnet | `claude-sonnet-4-6`         | Research, analysis, code review, standard agent tasks, most subagents    |
+| haiku  | `claude-haiku-4-5-20251001` | Validation, formatting, scaffolding, prompt hooks, mechanical transforms |
+
+Effort levels (Opus 4.7 / 4.6, Sonnet 4.6): `low | medium | high | xhigh | max`. Set per-agent via `effort:` frontmatter or per-skill via `effort:` frontmatter.
+
+| Task                  | Model  | Rationale                                          |
+| --------------------- | ------ | -------------------------------------------------- |
+| Main skill workflow   | opus   | Full reasoning for complex orchestration           |
+| Research agents       | sonnet | Good analysis without opus cost                    |
+| Code review agents    | sonnet | Pattern matching, not creative generation          |
+| Validation agents     | haiku  | Checklist execution, fast and cheap                |
+| Scaffold/file writers | haiku  | Template filling, no reasoning needed              |
+| Creative generation   | opus   | Quality matters, cost justified                    |
+| Formatting/cleanup    | haiku  | Mechanical transformation                          |
+| Prompt-hook handlers  | haiku  | Hooks fire on every matched event; latency matters |

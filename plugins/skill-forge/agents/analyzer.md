@@ -7,6 +7,7 @@ description: >-
   hide. Use after comparator and aggregation complete.
 tools:
   - Read
+  - Write
   - Glob
   - Grep
 model: sonnet

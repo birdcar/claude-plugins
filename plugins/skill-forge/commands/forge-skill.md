@@ -1,8 +1,19 @@
 ---
 name: forge-skill
 description: Create a production-grade Claude Code skill from a brain dump. Generates complete plugin scaffolding with optimized skills, agents, commands, and hooks.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TodoWrite
-argument-hint: [brain dump or description of the skill you want]
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Bash
+  - Agent
+  - AskUserQuestion
+  - TaskCreate
+  - TaskUpdate
+  - TaskList
+argument-hint: '[brain dump or description of the skill you want]'
 ---
 
 This command is a thin entry point into the `skill-forge:create-skill` workflow.

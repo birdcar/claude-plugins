@@ -245,8 +245,8 @@ def render_feedback_form(assertions: list[dict[str, Any]], static: bool) -> str:
     <label style="display:block;margin-bottom:6px;color:#aaa">Next action</label>
     <select name="next_action" id="next-action" style="background:#1a1a2e;color:#eee;border:1px solid #333;border-radius:6px;padding:8px">
       <option value="iterate">Iterate (revise skill)</option>
-      <option value="done">Done (accept results)</option>
-      <option value="more_evals">Run more evals</option>
+      <option value="accept">Accept (results are good enough)</option>
+      <option value="reject">Reject (start over or pivot)</option>
     </select>
   </div>
   <button type="submit" style="background:#4f8ef7;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:15px;cursor:pointer">Submit Feedback</button>

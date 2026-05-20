@@ -19,9 +19,13 @@ description: >-
 - Generated SKILL.md files must be <=500 lines with progressive disclosure
 - Descriptions must be third-person with trigger phrases and negative cases
 - Agent model assignments must be right-sized:
-  - opus: complex generation, multi-step reasoning
-  - sonnet: research, analysis, moderate tasks
-  - haiku: scaffolding, validation, simple writes
+  - opus (`claude-opus-4-7`): complex generation, multi-step reasoning
+  - sonnet (`claude-sonnet-4-6`): research, analysis, moderate tasks
+  - haiku (`claude-haiku-4-5-20251001`): scaffolding, validation, simple writes
+- For progress tracking use `TaskCreate`/`TaskUpdate` — never recommend `TodoWrite` (deprecated, disabled by default v2.1.142+)
+- For hooks, prefer the `if` permission-rule filter over runtime stdin parsing; pick the lightest handler type that fits (`command` for deterministic checks, `prompt`+haiku for soft policy, `mcp_tool` for delegated checks)
+- Embed a checkpoint warning in any generated skill that uses Bash to modify files — see `${CLAUDE_PLUGIN_ROOT}/shared/checkpointing.md`
+- Prefer `userConfig` in `plugin.json` for any install-time prompt; reserve `$XDG_CONFIG_HOME` env-file pattern for existing external config
 
 ## Step 1 — Intake & Analysis
 
@@ -128,13 +132,14 @@ Read templates from `${CLAUDE_PLUGIN_ROOT}/shared/templates/`:
 
 Read relevant knowledge base docs from `${CLAUDE_PLUGIN_ROOT}/shared/`:
 
-- `skill-anatomy.md` — structure rules
+- `skill-anatomy.md` — structure rules (including the single-file plugin auto-loading pattern)
 - `description-engineering.md` — description writing
 - `anti-patterns.md` — what to avoid
-- `agent-design.md` — agent definitions
+- `agent-design.md` — agent definitions (modern frontmatter: `effort`, `maxTurns`, `isolation`)
 - `workflow-patterns.md` — workflow structure
-- `primitives-guide.md` — tool usage
-- `local-config-pattern.md` — if intake flagged config needs
+- `primitives-guide.md` — tool usage (`Task*`, `Monitor`, `LSP`, modern built-ins)
+- `local-config-pattern.md` — if intake flagged config needs (compare against `userConfig`)
+- `checkpointing.md` — when to embed Bash/checkpoint warnings in the generated skill
 
 Write the following files to `{$SKILL_DIR}/docs/`:
 

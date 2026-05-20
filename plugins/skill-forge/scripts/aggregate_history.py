@@ -9,6 +9,8 @@ Reports score trends, common changes, description churn, and trigger accuracy.
 Default output is human-readable; --json for machine-readable.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys
@@ -57,22 +59,48 @@ def score_trend(values: list[float], window: int = 3) -> str:
 
 
 def extract_dimension_scores(entries: list[dict]) -> dict[str, list[float]]:
-    """Collect per-dimension score series across all entries."""
+    """Collect per-dimension score series across all entries.
+
+    Per `history-schema.md`, each entry has `scores.after.{dimension}` with the
+    final score for that run. We collect the `after` series per dimension so a
+    trend reflects post-improvement scores over time. Falls back to flat
+    `scores[dim]` for any pre-schema legacy entries.
+    """
     dims: dict[str, list[float]] = {}
     for entry in entries:
         scores = entry.get("scores", {})
-        if isinstance(scores, dict):
+        if not isinstance(scores, dict):
+            continue
+        after = scores.get("after") if isinstance(scores.get("after"), dict) else None
+        if after is not None:
+            for dim, val in after.items():
+                if isinstance(val, (int, float)):
+                    dims.setdefault(dim, []).append(float(val))
+        else:
             for dim, val in scores.items():
                 if isinstance(val, (int, float)):
                     dims.setdefault(dim, []).append(float(val))
     return dims
 
 
-def count_changes(entries: list[dict], field: str) -> dict[str, int]:
-    """Count how often each change description appears in applied/skipped lists."""
+def count_changes(entries: list[dict], kind: str) -> dict[str, int]:
+    """Count how often each change description appears in applied/skipped lists.
+
+    Per `history-schema.md`, lists live under `changes.applied` and
+    `changes.skipped`. Falls back to top-level `applied_changes`/`skipped_changes`
+    for legacy entries written before the schema settled.
+    """
     counts: dict[str, int] = {}
     for entry in entries:
-        for item in entry.get(field, []):
+        items: list[Any] = []
+        changes = entry.get("changes")
+        if isinstance(changes, dict) and isinstance(changes.get(kind), list):
+            items = changes[kind]
+        else:
+            legacy_key = f"{kind}_changes"
+            if isinstance(entry.get(legacy_key), list):
+                items = entry[legacy_key]
+        for item in items:
             label = item if isinstance(item, str) else item.get("description", str(item))
             counts[label] = counts.get(label, 0) + 1
     return counts
@@ -83,10 +111,20 @@ def top_n(counts: dict[str, int], n: int = 5) -> list[tuple[str, int]]:
 
 
 def description_change_count(entries: list[dict]) -> int:
-    """Count entries where the description field changed vs previous entry."""
+    """Count entries that recorded a description change.
+
+    Per `history-schema.md`, each entry has a `description_changed: boolean`
+    field set by the improve-skill pipeline. Falls back to differencing the
+    `description`/`skill_description` field on legacy entries that predate
+    the schema.
+    """
     changes = 0
     prev_desc: str | None = None
     for entry in entries:
+        if isinstance(entry.get("description_changed"), bool):
+            if entry["description_changed"]:
+                changes += 1
+            continue
         desc = entry.get("description", entry.get("skill_description"))
         if desc is not None and desc != prev_desc and prev_desc is not None:
             changes += 1
@@ -96,20 +134,38 @@ def description_change_count(entries: list[dict]) -> int:
 
 
 def trigger_accuracy_series(entries: list[dict]) -> list[float]:
-    """Extract trigger accuracy values across entries (if present)."""
+    """Extract trigger accuracy values across entries (if present).
+
+    Per `history-schema.md`, trigger results live under
+    `trigger_test_results.should_trigger_accuracy`. Earlier ad-hoc layouts
+    used a flat `trigger_accuracy` or nested `eval.accuracy` — accept both
+    for backwards compatibility.
+    """
     series: list[float] = []
     for entry in entries:
-        acc = entry.get("trigger_accuracy", entry.get("eval", {}).get("accuracy") if isinstance(entry.get("eval"), dict) else None)
+        ttr = entry.get("trigger_test_results")
+        if isinstance(ttr, dict):
+            acc = ttr.get("should_trigger_accuracy")
+            if isinstance(acc, (int, float)):
+                series.append(float(acc))
+                continue
+        acc = entry.get("trigger_accuracy")
         if isinstance(acc, (int, float)):
             series.append(float(acc))
+            continue
+        legacy_eval = entry.get("eval")
+        if isinstance(legacy_eval, dict):
+            acc = legacy_eval.get("accuracy")
+            if isinstance(acc, (int, float)):
+                series.append(float(acc))
     return series
 
 
 def build_summary(entries: list[dict]) -> dict[str, Any]:
     earliest, latest = date_range(entries)
     dim_scores = extract_dimension_scores(entries)
-    applied_counts = count_changes(entries, "applied_changes")
-    skipped_counts = count_changes(entries, "skipped_changes")
+    applied_counts = count_changes(entries, "applied")
+    skipped_counts = count_changes(entries, "skipped")
     trigger_series = trigger_accuracy_series(entries)
 
     dim_trends: dict[str, dict] = {}

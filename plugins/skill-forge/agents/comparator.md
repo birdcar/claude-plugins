@@ -7,6 +7,7 @@ description: >-
   two runs of the same task.
 tools:
   - Read
+  - Write
   - Glob
   - Grep
 model: sonnet

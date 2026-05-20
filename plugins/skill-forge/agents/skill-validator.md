@@ -6,6 +6,7 @@ description: >-
   Use as the final quality gate in both create and improve workflows.
 tools:
   - Read
+  - Write
   - Glob
   - Grep
 model: haiku
@@ -37,24 +38,26 @@ Read all files in the skill directory:
 
 Check each item and report pass/fail:
 
-| Check                  | Rule                                                         | Severity |
-| ---------------------- | ------------------------------------------------------------ | -------- |
-| File name              | Must be exactly `SKILL.md` (case-sensitive)                  | CRITICAL |
-| Directory name         | Must be kebab-case (lowercase, hyphens only)                 | CRITICAL |
-| Frontmatter present    | YAML `---` delimiters at top of file                         | CRITICAL |
-| `name` field           | kebab-case, ≤64 chars, no "claude"/"anthropic", no XML `< >` | CRITICAL |
-| `description` field    | Present, ≤1024 chars, no XML, written in third person        | CRITICAL |
-| Description triggers   | Contains "Use when" or equivalent trigger phrases            | HIGH     |
-| Description negatives  | Contains "Do NOT use" or similar exclusion clause            | MEDIUM   |
-| Line count             | SKILL.md ≤500 lines                                          | HIGH     |
-| Progressive disclosure | Heavy reference content in references/, not inline           | MEDIUM   |
-| Constraints placement  | Critical rules appear within first 100 lines                 | MEDIUM   |
-| Agent tools            | `tools:` list follows least-privilege (no unnecessary tools) | MEDIUM   |
-| Agent model            | `model:` field set appropriately for task complexity         | LOW      |
-| Command allowed-tools  | Commands have appropriate tool restrictions                  | MEDIUM   |
-| Hooks location         | In hooks/hooks.json, not inline in plugin.json               | HIGH     |
-| Spec compliance        | Generated artifacts match spec's component manifest          | HIGH     |
-| Docs present           | docs/contract.md, spec.md, learnings.md exist                | MEDIUM   |
+| Check                  | Rule                                                                                                                   | Severity |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------- |
+| File name              | Must be exactly `SKILL.md` (case-sensitive)                                                                            | CRITICAL |
+| Directory name         | Must be kebab-case (lowercase, hyphens only)                                                                           | CRITICAL |
+| Frontmatter present    | YAML `---` delimiters at top of file                                                                                   | CRITICAL |
+| `name` field           | kebab-case, ≤64 chars, no "claude"/"anthropic", no XML `< >`                                                           | CRITICAL |
+| `description` field    | Present, ≤1024 chars, no XML, written in third person                                                                  | CRITICAL |
+| Description triggers   | Contains "Use when" or equivalent trigger phrases                                                                      | HIGH     |
+| Description negatives  | Contains "Do NOT use" or similar exclusion clause                                                                      | MEDIUM   |
+| Line count             | SKILL.md ≤500 lines                                                                                                    | HIGH     |
+| Progressive disclosure | Heavy reference content in references/, not inline                                                                     | MEDIUM   |
+| Constraints placement  | Critical rules appear within first 100 lines                                                                           | MEDIUM   |
+| Agent tools            | `tools:` list follows least-privilege (no unnecessary tools)                                                           | MEDIUM   |
+| Agent model            | `model:` field set appropriately for task complexity                                                                   | LOW      |
+| Command allowed-tools  | Commands have appropriate tool restrictions                                                                            | MEDIUM   |
+| Hooks present          | If hooks exist: file form (`hooks/hooks.json`) or inline in `plugin.json` — both valid in v2.1.146+                    | INFO     |
+| Hooks shape            | hooks.json wraps events in a top-level `"hooks"` key; handler `type` is one of: command, prompt, http, mcp_tool, agent | HIGH     |
+| Modern primitives      | No `TodoWrite` references; use `Task*` family. No outdated model IDs (`claude-sonnet-4-5`, `claude-opus-4-1`).         | MEDIUM   |
+| Spec compliance        | Generated artifacts match spec's component manifest                                                                    | HIGH     |
+| Docs present           | docs/contract.md, spec.md, learnings.md exist                                                                          | MEDIUM   |
 
 ### 3. Spec Compliance (if spec.md provided)
 
