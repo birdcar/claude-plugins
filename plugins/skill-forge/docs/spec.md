@@ -30,6 +30,60 @@
 
 All files not listed in New or Modified are unchanged (scaffold-writer, command entry points, and shared reference docs for description-engineering, agent-design, workflow-patterns, primitives-guide, and local-config-pattern).
 
+### 0.8.0 Additions (Harness-Creator Integration)
+
+**New files (Phase 1 — Knowledge base lift):**
+
+| File                                               | Purpose                                                                                                                                                                                |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shared/agentic-subsystems.md`                     | 5-subsystem mental model (Instructions / State / Verification / Scope / Lifecycle) ported from harness-creator. Shared mental framework for forge-skill and forge-harness. ~150 lines. |
+| `shared/references/memory-persistence-pattern.md`  | Ported from harness-creator with attribution. Memory layers, two-step save, local-wins priority. ~110 lines.                                                                           |
+| `shared/references/context-engineering-pattern.md` | Ported from harness-creator with attribution. SELECT / WRITE / COMPRESS / ISOLATE operations and context budgets. ~150 lines.                                                          |
+| `shared/references/tool-registry-pattern.md`       | Ported from harness-creator with attribution. Tool permissions, concurrency safety per call, audit trail. ~200 lines.                                                                  |
+| `shared/references/multi-agent-pattern.md`         | Ported from harness-creator with attribution. Coordinator / worker / reviewer roles, disjoint ownership. ~193 lines.                                                                   |
+| `shared/references/lifecycle-bootstrap-pattern.md` | Ported from harness-creator with attribution. Hook trust gates, two-phase eviction, dependency-ordered bootstrap. ~264 lines.                                                          |
+| `shared/references/gotchas.md`                     | Ported from harness-creator with attribution. Non-obvious failure modes. ~209 lines.                                                                                                   |
+| `scripts/validate-skill.mjs`                       | Pure Node-built-ins deterministic skill validator. Ports harness-creator's `validate-harness.mjs` adapted to SKILL.md schema. Outputs JSON + HTML. ~200 lines.                         |
+
+**New files (Phase 2 — Self-improving generated skills):**
+
+| File                                         | Purpose                                                                                                                                                                                                  |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shared/templates/evals-template.json`       | Template for `evals/evals.json` that the generator writes into every new skill. Schema mirrors harness-creator's evals.json. Contains placeholders the generator fills from the spec's success criteria. |
+| `shared/templates/validate-mjs-template.mjs` | Template for per-skill `evals/validate.mjs` that the generator writes alongside the SKILL.md. Reads the skill's evals.json + component manifest, scores structural conformance.                          |
+
+**New files (Phase 3 — forge-harness):**
+
+| File                                                | Purpose                                                                                                                                                                                                       |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `skills/forge-harness/SKILL.md`                     | New skill — scaffolds AGENTS.md/CLAUDE.md + feature_list.json + progress.md + init.sh + session-handoff.md into a target repo. ~250 lines.                                                                    |
+| `skills/forge-harness/trigger-tests.md`             | 20 trigger queries for the new skill.                                                                                                                                                                         |
+| `skills/forge-harness/evals/evals.json`             | First example of the new self-improving generated-skill pattern — eval cases for the harness-scaffolding flow.                                                                                                |
+| `skills/forge-harness/evals/validate.mjs`           | Per-skill validator.                                                                                                                                                                                          |
+| `commands/forge-harness.md`                         | Thin entry-point wrapper for `/forge-harness`.                                                                                                                                                                |
+| `shared/templates/harness/agents.md`                | Ported from harness-creator. Generator substitutes placeholders for target stack / verification commands.                                                                                                     |
+| `shared/templates/harness/feature-list.json`        | Ported template with 5 placeholder features.                                                                                                                                                                  |
+| `shared/templates/harness/feature-list.schema.json` | Ported JSON schema for feature-list validation.                                                                                                                                                               |
+| `shared/templates/harness/progress.md`              | Ported template.                                                                                                                                                                                              |
+| `shared/templates/harness/init.sh`                  | Ported template.                                                                                                                                                                                              |
+| `shared/templates/harness/session-handoff.md`       | Ported template.                                                                                                                                                                                              |
+| `scripts/create-harness.mjs`                        | Ported from harness-creator with attribution. Detects target project stack (Node/Python/Go/Rust/Java/.NET) and synthesizes stack-appropriate verification commands. Used by the forge-harness skill via Bash. |
+| `scripts/validate-harness.mjs`                      | Ported from harness-creator with attribution. Scores the 5 subsystems of a harness in a target repo. Used by forge-harness for audits.                                                                        |
+
+**Modified files (0.8.0):**
+
+| File                            | Changes                                                                                                                                                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agents/intake-analyst.md`      | Adds harness-scaffolding intent recognition. New artifact type: `harness`. Routes "scaffold harness", "add AGENTS.md", "feature tracker for this repo" intents to forge-harness instead of forge-skill. |
+| `agents/skill-generator.md`     | Updated component manifest: every generated skill now emits `evals/evals.json` + `evals/validate.mjs`. Reads the spec's success criteria to populate evals.json placeholders.                           |
+| `agents/skill-validator.md`     | Delegates structural checks to `scripts/validate-skill.mjs`. Retains semantic checks (anti-pattern violations not grep-detectable, description-quality scoring).                                        |
+| `agents/skill-optimizer.md`     | Step 2 (Analysis) now also reads the skill's `evals/validate.mjs` output if present. Deterministic structural scores feed into the four-dimension scorecard alongside semantic scores.                  |
+| `skills/create-skill/SKILL.md`  | Step 4 generation manifest extended. Step 5 validation calls `scripts/validate-skill.mjs` before spawning the agent.                                                                                    |
+| `skills/improve-skill/SKILL.md` | Step 5 re-validation runs `scripts/validate-skill.mjs` if present.                                                                                                                                      |
+| `shared/anti-patterns.md`       | Restructured to Problem → Golden Rules → Trade-offs → Implementation Patterns → Gotchas → Related Patterns shape.                                                                                       |
+| `shared/skill-anatomy.md`       | Documents `evals/` directory convention. Documents the 5-subsystem mental model as the design lens for new skills.                                                                                      |
+| `plugin.json`                   | Version bump 0.7.1 → 0.8.0. No new agents (the new scripts are invoked via Bash, not via Agent).                                                                                                        |
+
 ## Skill Architecture
 
 ### New Forge Pipeline (6 Steps)
@@ -293,6 +347,65 @@ Phase 1 (templates + knowledge base)     Phase 3 (intake analyst)
 - Phases 2 and 3 can run in parallel (both depend only on Phase 1)
 - Phases 4 and 5 can run in parallel (both depend on 1 and 2; only 4 depends on 3)
 - Phase 6 is sequential — must follow both 4 and 5
+
+### Phase 7: 0.8.0 Knowledge Base Lift (no dependencies on prior phases — additive)
+
+Port harness-creator reference docs and add the 5-subsystem mental model. All file writes are additive; no existing files are removed.
+
+- Copy 6 reference docs into `shared/references/` with attribution header (Source: walkinglabs/learn-harness-engineering MIT license)
+- Write `shared/agentic-subsystems.md` (new file documenting the 5-subsystem model)
+- Restructure `shared/anti-patterns.md` to the Problem → Golden Rules → Trade-offs → Implementation → Gotchas → Related Patterns shape
+- Write `scripts/validate-skill.mjs` — port of harness-creator's validate-harness.mjs adapted to SKILL.md schema
+
+Phase 7 sub-tasks can run in parallel (all 4 are independent file writes).
+
+### Phase 8: 0.8.0 Self-Improving Generation (depends on Phase 7's validate-skill.mjs)
+
+Make every newly generated skill ship with its own deterministic structural validator.
+
+- Write `shared/templates/evals-template.json`
+- Write `shared/templates/validate-mjs-template.mjs`
+- Update `agents/skill-generator.md` to add `evals/` to its component manifest
+- Update `agents/skill-validator.md` to delegate structural checks to `scripts/validate-skill.mjs`
+- Update `agents/skill-optimizer.md` to consume per-skill `evals/validate.mjs` output during Step 2 analysis
+- Update `skills/create-skill/SKILL.md` Step 4 generation manifest + Step 5 validator delegation
+- Update `skills/improve-skill/SKILL.md` Step 5 to run per-skill validate.mjs when present
+
+### Phase 9: 0.8.0 forge-harness Skill (depends on Phase 7)
+
+Create the sibling skill that scaffolds harnesses into target repos.
+
+- Write `skills/forge-harness/SKILL.md`
+- Write `commands/forge-harness.md` (thin entry point)
+- Copy 6 templates into `shared/templates/harness/` (agents.md, feature-list.json, feature-list.schema.json, init.sh, progress.md, session-handoff.md)
+- Port `scripts/create-harness.mjs` and `scripts/validate-harness.mjs` with attribution
+- Update `agents/intake-analyst.md` to recognize harness intents and route correctly
+- Write `skills/forge-harness/evals/evals.json` (first concrete example of the self-improving pattern)
+- Write `skills/forge-harness/evals/validate.mjs`
+- Write `skills/forge-harness/trigger-tests.md`
+
+Phases 8 and 9 can run in parallel (both depend on Phase 7).
+
+### Phase 10: 0.8.0 Plugin Metadata and Validation (depends on Phases 8, 9)
+
+- Bump `plugin.json` version 0.7.1 → 0.8.0
+- Run `bun run sync` to update marketplace.json
+- Run `bun install && bun run format && bun run typecheck && bun run build`
+- Run `node scripts/validate-skill.mjs --target plugins/skill-forge/skills/forge-skill` (self-test the new validator)
+
+### 0.8.0 Dependency Graph
+
+```
+Phase 7 (knowledge base lift)
+        │
+        ├──── Phase 8 (self-improving generation)
+        │           │
+        │           │
+        └──── Phase 9 (forge-harness skill)
+                    │
+                    │
+              Phase 10 (metadata + sync + validation)
+```
 
 ## Retrospective Configuration
 

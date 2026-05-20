@@ -69,8 +69,8 @@
     {
       "name": "skill-forge",
       "source": "./plugins/skill-forge",
-      "description": "Generate and optimize production-grade Claude Code skills from brain dumps",
-      "version": "0.7.1"
+      "description": "Generate and optimize production-grade Claude Code skills from brain dumps, and scaffold agentic harnesses into target repositories",
+      "version": "0.8.0"
     }
   ]
 }

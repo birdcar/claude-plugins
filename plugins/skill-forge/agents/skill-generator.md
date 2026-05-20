@@ -80,7 +80,11 @@ You are an expert Claude Code skill author. You generate production-grade skills
    - Follow `${CLAUDE_PLUGIN_ROOT}/shared/templates/hooks-json-template.md`
    - matcher targets tool names (e.g. "Bash", "Write|Edit"), not command content
 
-10. Write all generated files to the target path. After writing, compare the files created against the spec's component manifest. Report any deviations (files in the spec not created, or files created not in the spec).
+10. Generate `evals/evals.json` and `evals/validate.mjs` for the generated skill (required for marketplace skills; optional for project/global skills):
+    - Derive at least 5 eval cases from the spec's success criteria — each case states an input scenario and the expected behavior.
+    - Copy `evals/validate.mjs` from `${CLAUDE_PLUGIN_ROOT}/shared/templates/validate-mjs-template.mjs` and customize it with the skill name and the spec's component manifest so the script knows which files to assert against.
+
+11. Write all generated files to the target path. After writing, compare the files created against the spec's component manifest. Report any deviations (files in the spec not created, or files created not in the spec).
 
 ## Constraints
 
@@ -91,3 +95,4 @@ You are an expert Claude Code skill author. You generate production-grade skills
 - Hook placement: `hooks/hooks.json` OR inline in `plugin.json` are both valid in v2.1.146+. Don't split the same plugin's hooks across both locations
 - Never grant Agent tool to agents unless the task explicitly requires spawning sub-agents
 - Scan output against anti-patterns.md before writing — fix violations proactively
+- Every marketplace skill MUST have an `evals/` directory containing `evals.json` and `validate.mjs` after generation. The plugin-level validator (`scripts/validate-skill.mjs`) FAILS the run if `evals/evals.json` is missing. Project/global skills may omit `evals/` since they don't share the marketplace lifecycle.

@@ -1,686 +1,78 @@
-## CRITICAL — Blocks Deployment
+# Anti-Patterns
 
-### [CRITICAL] XML in frontmatter
+> Not ported. Restructured from skill-forge's prior flat anti-pattern list into the standard reference shape used by `shared/references/*-pattern.md`.
 
-**What**: Angle brackets (`< >`) used in any frontmatter field value, including `description`, `name`, `argument-hint`, or custom fields.
-**Why it's bad**: Frontmatter is injected directly into the system prompt. XML/HTML tags can break prompt structure or trigger security restrictions that prevent the skill from loading.
-**Fix**: Remove all XML and HTML tags from frontmatter. Move tagged content into the skill body if needed.
+## Problem
 
-**Example**:
+Anti-patterns are the failure modes that make skills load but not work, or work but not trigger, or trigger but mislead. A flat checklist tells you _what_ to avoid; this document teaches _why_ each cluster of mistakes exists so a generator (or human author) can recognize new variants of the same failure.
 
-```bad
----
-name: format-output
-description: Formats output as <html> or <json> based on user request
----
-```
+This file is the canonical reference grepped by `agents/skill-validator.md` and consumed by `agents/skill-optimizer.md`. The validator scans for severity tags (`[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`) and reports matches. **Severity tags must be preserved verbatim** — they are load-bearing for the validator's grep.
 
-```good
----
-name: format-output
-description: Formats output as HTML or JSON based on user request
----
-```
+## Golden Rules
 
----
+These five rules collapse every cluster below into one mental model:
 
-### [CRITICAL] Non-kebab-case name
+1. **Descriptions are trigger surfaces, not summaries.** Anything in the description has to help Claude decide _whether_ to fire. Anything that doesn't earn its place against that bar belongs in the body.
+2. **Structure exists to enable progressive disclosure.** The skill body is hot context; references are warm; scripts are cold. Putting cold content in hot context degrades every other instruction.
+3. **Agents and tools follow least-privilege.** Every additional tool, every loaded file, every forked subagent costs reliability. Justify each one against a concrete need.
+4. **Specs and learnings are the memory of the skill.** When they drift or stay empty, the next improve run reasons from stale or absent context and silently regresses behavior.
+5. **Secrets and PII never live in the repo.** Local config (`$XDG_CONFIG_HOME/{skill-name}/`) is the only correct home — `${CLAUDE_PLUGIN_ROOT}` is not private.
 
-**What**: Skill `name` field contains spaces, capital letters, underscores, or other non-kebab characters.
-**Why it's bad**: Skill names are used as identifiers in the registry and CLI. Non-kebab names cause lookup failures, install errors, or silent mismatches.
-**Fix**: Use lowercase letters and hyphens only. No spaces, no underscores, no camelCase.
+## Trade-offs
 
-**Example**:
+| Tension                                      | Benefit of one side                           | Cost of overcorrecting                                    |
+| -------------------------------------------- | --------------------------------------------- | --------------------------------------------------------- |
+| Description precision vs recall              | Tight triggers fire on the right queries      | Over-narrow descriptions miss synonymous requests         |
+| Strict tool grants vs flexibility            | Least-privilege agents are auditable and safe | Over-restriction forces awkward workarounds in edge cases |
+| Inline guidance vs progressive disclosure    | Inline content is always in context           | Inline bloat pushes past the 500-line effectiveness cliff |
+| Mandate-style rules vs explained constraints | Short rules are easy to scan                  | Unexplained mandates get treated as emphasis, not law     |
+| Spec-as-design vs spec-as-implementation     | Design intent stays relevant across refactors | Implementation-detail specs go stale on first edit        |
+| Local config vs convenience                  | Secrets stay out of git history               | Setup requires an extra one-time step per machine         |
 
-```bad
----
-name: processData
----
-```
+## Implementation Patterns
 
-```good
----
-name: process-data
----
-```
+### Cluster 1: Description Anti-Patterns
 
----
+**Problem.** The description is the only thing Claude sees when deciding whether to activate a skill. It is a trigger surface. Vague, first-person, overlapping, or trigger-less descriptions all produce the same failure: the skill loads, but it fires on the wrong queries — or never fires at all. Trigger rates below 30% almost always trace back to this cluster.
 
-### [CRITICAL] Wrong file name
+- **[CRITICAL] XML in frontmatter** — Angle brackets (`< >`) in any frontmatter value (`description`, `name`, `argument-hint`, custom fields). Frontmatter is injected directly into the system prompt; tags can break prompt structure or trigger security restrictions that prevent the skill from loading. Fix: strip all XML/HTML tags from frontmatter; if you need them in content, move into the body.
+- **[CRITICAL] Description exceeds 1024 characters** — The value is silently truncated at 1024 chars. Truncation cuts the trigger phrases at the end, which are the most important part. Fix: trim to essential what/when/trigger; move detail into the body.
+- **[HIGH] Vague description** — Abstract or generic terms without specifying what triggers it or when to use it. Yields trigger rates below 30%. Fix: apply the formula `[what] + [when] + [specific trigger phrases]`.
+- **[HIGH] Overlapping descriptions** — Two or more skills activate on the same queries with no differentiation. Wrong skill fires ~50% of the time. Fix: add negative cases that explicitly exclude the other skill's domain.
+- **[HIGH] First-person description** — `"I help you..."`, `"I process..."`. Treated as Claude self-referring, not as a skill spec, breaking discovery. Fix: write third-person.
+- **[HIGH] No trigger phrases** — Description explains _what_ without _when_. Activation is inferred and inconsistent. Fix: add explicit `"Use when the user asks to..."` with concrete verbs.
+- **[HIGH] ALL CAPS directives without rationale** — `NEVER X` / `ALWAYS Y` without a reason. Without rationale, ALL CAPS reads as emphasis, not as a hard constraint, especially when it conflicts with the user. Fix: `"Avoid X because [reason]"`.
+- **[MEDIUM] No negative cases in description** — No `"Do NOT use for..."` clause despite similar skills existing. Ambiguous queries trigger the wrong skill. Fix: name what this skill does _not_ handle and which skill does.
 
-**What**: The skill file is named anything other than exactly `SKILL.md` — e.g., `SKILL.MD`, `Skill.md`, `skill.md`, `INSTRUCTIONS.md`, `README.md`.
-**Why it's bad**: Auto-discovery scans for `SKILL.md` (case-sensitive). Any other name is invisible to the skill loader; the skill will never register.
-**Fix**: Rename the file to exactly `SKILL.md`.
-
-**Example**:
-
-```bad
-skills/my-skill/INSTRUCTIONS.md
-skills/my-skill/skill.md
-skills/my-skill/README.md
-```
-
-```good
-skills/my-skill/SKILL.md
-```
-
----
-
-### [CRITICAL] Reserved words in name
-
-**What**: Skill `name` contains the strings `claude` or `anthropic`.
-**Why it's bad**: These are reserved identifiers. Skills using them will fail validation and cannot be installed.
-**Fix**: Choose a descriptive name that doesn't reference the platform.
-
-**Example**:
-
-```bad
----
-name: claude-helper
----
-```
+**Right way (Implementation Pattern).** A well-formed description packs four moves into one paragraph: a third-person _what_, a `Use when…` trigger sentence with the verbs users actually say, a `Do NOT use for… — use {other-skill} instead` clause if a sibling exists, and zero XML, zero first-person, zero ALL CAPS. Stay under 1024 characters; everything else goes in the body.
 
 ```good
 ---
-name: context-helper
+name: review-pr
+description: Reviews pull requests for correctness, logic errors, and security
+  issues. Use when the user asks to review a PR, audit a diff, or check a
+  change before merge. Do NOT use for style or formatting feedback — use
+  code-style for that. Do NOT use for writing PR descriptions — use
+  pr-description for that.
 ---
 ```
 
----
+### Cluster 2: Identity and Naming Anti-Patterns
 
-### [CRITICAL] Description exceeds 1024 characters
+**Problem.** Names, file paths, and metadata fields are the skill's identity in the registry. Get any of them wrong and the skill is either invisible (auto-discovery skips it), unaddressable (CLI can't find it), or undetectable as changed (`claude plugin update` sees no version delta). These are mechanical failures with mechanical fixes — but unlike the description cluster, they often hard-block deployment.
 
-**What**: The `description` frontmatter field is longer than 1024 characters.
-**Why it's bad**: The value is silently truncated at 1024 characters. Truncation typically cuts off the trigger phrases at the end, which are the most important part for activation. The skill appears to load but triggers unreliably or never.
-**Fix**: Trim the description to its essential what/when/trigger content. Move detailed guidance into the skill body.
+- **[CRITICAL] Non-kebab-case name** — Spaces, capitals, underscores, camelCase in the `name` field. Causes lookup failures, install errors, silent mismatches. Fix: lowercase + hyphens only.
+- **[CRITICAL] Wrong file name** — Anything other than exactly `SKILL.md` (case-sensitive). Auto-discovery never registers the skill. Fix: rename to `SKILL.md`.
+- **[CRITICAL] Reserved words in name** — `claude` or `anthropic` in the name. Fails validation. Fix: choose a descriptive name that doesn't reference the platform.
+- **[CRITICAL] Missing frontmatter** — No `---` delimiters, or missing `name`/`description`. Claude falls back to the first paragraph as the description; identifier and metadata are lost. Fix: add a complete frontmatter block.
+- **[LOW] Missing metadata fields** — Only `name` and `description`, no `version`, `author`, `tags`. Skill works but is undiscoverable in the marketplace and `claude plugin update` cannot detect changes. Fix: add `version` (semver), `author`, `tags`.
+- **[LOW] No argument-hint** — Slash-command skill lacks `argument-hint`. Autocomplete shows no hint about what to type. Fix: add a short `argument-hint`.
+- **[LOW] Versioned names** — `commit-v2`, `research-helper-v2`. Creates parallel registrations that stack instead of replace. Fix: keep a single name, use `version` metadata.
 
-**Example**:
-
-```bad
----
-description: This skill handles data processing tasks including CSV parsing,
-  JSON transformation, XML normalization, Excel import, database export,
-  schema validation, type coercion, null handling, deduplication... [continues
-  for 800 more characters] ...Use when the user asks to process data.
----
-```
+**Right way (Implementation Pattern).** Treat the filename, the directory name, and the `name` field as a single atomic identifier. They should all agree on the same kebab-case string, with no version suffix and no platform reserved word. Add `version`, `author`, and `tags` as standard metadata so the marketplace and update detection both work.
 
 ```good
----
-description: Processes and transforms structured data files (CSV, JSON, XML).
-  Use when the user asks to parse, convert, clean, or validate data files.
----
-```
-
----
-
-### [CRITICAL] Missing frontmatter
-
-**What**: The `SKILL.md` file has no `---` delimiters at the top, or is missing required fields (`name`, `description`).
-**Why it's bad**: Without frontmatter, Claude falls back to using the first paragraph of the file as the description. This loses the `name` identifier, the structured description, and any metadata — breaking discovery and triggering entirely.
-**Fix**: Add a complete frontmatter block with at minimum `name` and `description`.
-
-**Example**:
-
-```bad
-# My Skill
-
-This skill helps process files. Run it when needed.
-```
-
-```good
----
-name: process-files
-description: Processes and organizes files by type. Use when the user asks
-  to sort, rename, or categorize files in a directory.
----
-
-# Process Files
-```
-
----
-
-### [CRITICAL] Sensitive data stored in repository
-
-**What**: API keys, tokens, credentials, machine-specific paths, or PII stored in files tracked by git — including under `${CLAUDE_PLUGIN_ROOT}`, `references/`, or anywhere in the repo.
-**Why it's bad**: Secrets in a repo are exposed to anyone with read access. Even in private repos, they end up in git history permanently. Storing them under `${CLAUDE_PLUGIN_ROOT}` is especially tempting but requires `.gitignore` hacks and is fragile.
-**Fix**: Use the local configuration pattern: store sensitive data in `$XDG_CONFIG_HOME/{skill-name}/` (typically `~/.config/{skill-name}/`) and source it via scripts that output only the specific values needed. See `${CLAUDE_PLUGIN_ROOT}/shared/local-config-pattern.md`.
-
-**Example**:
-
-```bad
-# references/credentials.md (tracked in git)
-COOLIFY_TOKEN=abc123
-CF_API_KEY=xyz789
-
-# Or .gitignore'd file under plugin root
-# ${CLAUDE_PLUGIN_ROOT}/local/secrets.env
-```
-
-```good
-# ~/.config/my-skill/credentials.env (chmod 600, not in any repo)
-COOLIFY_TOKEN=abc123
-CF_API_KEY=xyz789
-
-# scripts/get-token.sh sources from XDG_CONFIG_HOME, outputs only what's needed
-```
-
----
-
-## HIGH — Degrades Effectiveness
-
-### [HIGH] PII in committed or persisted content
-
-**What**: Real names, email addresses, usernames, or other personally identifiable information appear in skill files, reference docs, memory entries, or any content that gets committed to git.
-**Why it's bad**: PII in repos or memory persists indefinitely, is hard to scrub from git history, and may violate privacy expectations. Even in private repos, contributors and tools can access it.
-**Fix**: Anonymize all references to people using role-based handles (`@colleague`, `@manager`, `@oncall-lead`). Store real identifiers in local config (`~/.config/{skill-name}/config.env`) and source them through scripts that output only role-based keys. Memory entries should describe roles, never individuals.
-
-**Example**:
-
-```bad
-# In a reference doc or memory
-The deploy lead is jane.smith@company.com — ping her on Slack before pushing.
-```
-
-```good
-# In a reference doc
-The deploy lead (@deploy-lead) should be notified before pushing.
-
-# In ~/.config/my-skill/config.env (local, not committed)
-DEPLOY_LEAD_SLACK=jane.smith
-```
-
----
-
-### [HIGH] Vague description
-
-**What**: The `description` field describes the skill in abstract or generic terms without specifying what triggers it or when to use it.
-**Why it's bad**: Claude uses the description to decide whether to activate the skill. Vague descriptions yield trigger rates below 30% — the skill exists but rarely fires.
-**Fix**: Apply the formula: [what the skill does] + [when to use it] + [specific trigger phrases].
-
-**Example**:
-
-```bad
----
-description: Helps with documents and development tasks.
----
-```
-
-```good
----
-description: Generates and refines technical documentation (READMEs, API docs,
-  changelogs). Use when the user asks to write docs, document a function,
-  create a README, or update a changelog.
----
-```
-
----
-
-### [HIGH] Overlapping descriptions
-
-**What**: Two or more skills have descriptions that activate on the same queries, with no differentiation between them.
-**Why it's bad**: Claude picks one arbitrarily when descriptions overlap. The wrong skill fires ~50% of the time, and users can't predict behavior.
-**Fix**: Add negative cases to each skill's description that explicitly exclude the other skill's domain.
-
-**Example**:
-
-```bad
-# skill-a description
-Analyzes code for issues. Use when the user asks to review code.
-
-# skill-b description
-Reviews code and suggests improvements. Use when the user asks to review code.
-```
-
-```good
-# skill-a description
-Analyzes code for bugs and security issues. Use when the user asks to find
-bugs, audit security, or check for errors. Do NOT use for style or formatting
-reviews — use code-style for those.
-
-# skill-b description
-Reviews code style, formatting, and readability. Use when the user asks to
-improve code quality, check naming, or enforce style. Do NOT use for bug
-finding — use code-audit for that.
-```
-
----
-
-### [HIGH] Buried constraints
-
-**What**: Non-negotiable rules, safety guardrails, or critical constraints appear after line 100 of the skill body.
-**Why it's bad**: Claude processes context with recency and position bias. Instructions deep in a long file get deprioritized, especially in long conversations where the skill content competes with accumulated context. Critical rules are ignored.
-**Fix**: Move all non-negotiable constraints to the first 100 lines, immediately after the frontmatter.
-
-**Example**:
-
-```bad
-# My Skill
-
-[50 lines of context and background]
-[30 lines of general guidance]
-[20 lines of examples]
-
-## Important Rules
-- Never write to files outside the project root
-- Always confirm before deleting
-```
-
-```good
-# My Skill
-
-## Rules
-- Never write to files outside the project root
-- Always confirm before deleting
-
-## Context
-[background and guidance follows]
-```
-
----
-
-### [HIGH] Deeply nested references
-
-**What**: `SKILL.md` links to `reference.md`, which links to `details.md`, which links to further files — creating a chain of references more than one level deep.
-**Why it's bad**: Claude may read the first reference but often stops at the second level. Content in deeply nested files is partially or entirely missed, causing silent gaps in behavior.
-**Fix**: All referenced files should link directly from `SKILL.md`. A flat reference structure (SKILL.md → files) is reliable; chains (SKILL.md → ref → details) are not.
-
-**Example**:
-
-```bad
-# SKILL.md
-See [patterns](./shared/patterns.md) for output formats.
-
-# shared/patterns.md
-See [examples](./examples/full-examples.md) for complete examples.
-```
-
-```good
-# SKILL.md
-See [patterns](./shared/patterns.md) for output formats.
-See [examples](./shared/examples.md) for complete examples.
-```
-
----
-
-### [HIGH] ALL CAPS directives without rationale
-
-**What**: Instructions written as `NEVER do X` or `ALWAYS do Y` without explaining why.
-**Why it's bad**: Language models respond better to explained constraints than unexplained mandates. Without rationale, ALL CAPS rules are more likely to be interpreted as emphasis than as hard constraints, especially when they conflict with user requests.
-**Fix**: Replace mandate-style directives with explained constraints. "Avoid X because [reason]" is more reliably followed than "NEVER X".
-
-**Example**:
-
-```bad
-NEVER run git push without user confirmation.
-ALWAYS use bun instead of npm.
-```
-
-```good
-Avoid running `git push` without user confirmation — pushing is irreversible
-and the user may need to review what's being sent.
-
-Use `bun` instead of `npm` because this project uses Bun workspaces; npm
-will break workspace resolution.
-```
-
----
-
-### [HIGH] SKILL.md over 500 lines
-
-**What**: The skill body exceeds 500 lines of content.
-**Why it's bad**: Skill effectiveness degrades significantly past 500 lines. Later content is deprioritized, instructions compete with each other, and Claude's ability to follow all of them simultaneously drops sharply.
-**Fix**: Move detailed content to files in a `shared/` or `references/` directory and link to them from SKILL.md. Use progressive disclosure — put the most important rules and patterns inline, and link to reference material for edge cases.
-
-**Example**:
-
-```bad
-# SKILL.md (600 lines)
-[inline patterns, examples, edge cases, full API reference, error codes...]
-```
-
-```good
-# SKILL.md (120 lines, core instructions)
-For output format patterns, see [patterns](./shared/patterns.md).
-For error handling, see [errors](./shared/errors.md).
-```
-
----
-
-### [HIGH] First-person description
-
-**What**: The `description` field is written in first person ("I help you...", "I process...").
-**Why it's bad**: Claude uses the description to match user intent against skill capabilities. First-person descriptions are interpreted as Claude speaking, not as a skill specification — this causes discovery failures because the matching logic treats them as self-references, not as skill definitions.
-**Fix**: Write in third person, describing what the skill does and when to use it.
-
-**Example**:
-
-```bad
----
-description: I help you process files and organize directories.
----
-```
-
-```good
----
-description: Processes files and organizes directories by type or date.
-  Use when the user asks to sort, clean up, or reorganize project files.
----
-```
-
----
-
-### [HIGH] No trigger phrases
-
-**What**: The description explains what the skill does but doesn't specify when to activate it — no "Use when..." or equivalent trigger guidance.
-**Why it's bad**: Without trigger phrases, Claude has to infer activation from the skill's general description. This produces inconsistent triggering — the skill fires on some synonymous requests and not others, with no way to predict which.
-**Fix**: Add explicit trigger phrases using "Use when the user asks to..." followed by specific verbs and phrases the skill should respond to.
-
-**Example**:
-
-```bad
----
-description: Generates database migration files for schema changes.
----
-```
-
-```good
----
-description: Generates database migration files for schema changes. Use when
-  the user asks to create a migration, add a column, rename a table, or
-  update a schema.
----
-```
-
----
-
-### [HIGH] Spec drift
-
-**What**: The skill's actual structure, behavior, or scope has diverged from what `docs/spec.md` describes, without the spec being updated.
-**Why it's bad**: The spec is the source of truth for design intent. When the skill drifts from the spec, future improve runs make decisions based on stale context — proposing changes that conflict with undocumented decisions, or missing the rationale behind current behavior.
-**Fix**: When modifying a skill, update `docs/spec.md` to reflect the change. The improve-skill pipeline does this automatically (spec-first updates), but manual edits bypass it.
-
----
-
-### [HIGH] Empty learnings file
-
-**What**: A `docs/learnings.md` file exists but has never been written to beyond the initial header.
-**Why it's bad**: The learnings file is the retrospective's accumulation target. If it's always empty, either the retrospective isn't running or it's not finding anything worth capturing — both suggest the feedback loop is broken.
-**Fix**: Ensure the retrospective step runs after every forge and improve run. If the skill is simple enough that nothing is ever worth capturing, the learnings file should contain a note explaining that rather than being silently empty.
-
----
-
-### [HIGH] Retrospective modifies target code
-
-**What**: A retrospective agent edits the skill's functional artifacts (SKILL.md, agents, commands, hooks) instead of only updating knowledge base files (docs/, references/, shared/).
-**Why it's bad**: The retrospective's job is to observe and persist knowledge, not to change behavior. Behavior changes should go through the improve pipeline with user approval. A retrospective that modifies functional code bypasses the approval gates and can introduce regressions silently.
-**Fix**: Restrict retrospective agents to writing docs/learnings.md and proposing (not applying) reference doc updates. Functional changes go through `/improve-skill`.
-
----
-
-## MEDIUM — Reduces Quality
-
-### [MEDIUM] Spec describes implementation instead of design intent
-
-**What**: The `docs/contract.md` file reads like an implementation guide (specific code patterns, function names, line-by-line instructions) rather than a design document (problem, goals, decisions, rationale).
-**Why it's bad**: Specs that describe implementation become stale immediately — the first refactor invalidates them. Design-intent specs stay relevant because they capture _why_, not _how_. Future improve runs need the rationale, not a snapshot of the code at creation time.
-**Fix**: Keep the contract focused on problem, goals, scope, and design decisions. Keep the spec focused on component manifest and architecture. Implementation details belong in the generated artifacts themselves.
-
----
-
-### [MEDIUM] Time-sensitive information
-
-**What**: Instructions that reference specific dates, version numbers, or time windows — "if before August 2025...", "as of v3.2, use the new API".
-**Why it's bad**: Skills are written once and used indefinitely. Hard-coded dates and version pins become incorrect silently, causing the skill to give stale guidance with no indication it's out of date.
-**Fix**: Use relative references or version-check patterns instead of absolute dates and version numbers.
-
-**Example**:
-
-```bad
-If you're on a version before August 2025, use the legacy endpoint.
-As of v3.2, the `transform` method replaces `convert`.
-```
-
-```good
-Check the project's package.json for the installed version. If using the
-legacy API (v2.x), use the `convert` method. For v3.x and later, use
-`transform`.
-```
-
----
-
-### [MEDIUM] Inconsistent terminology
-
-**What**: The skill uses multiple terms interchangeably for the same concept — e.g., "endpoint", "URL", "path", and "route" all referring to the same thing.
-**Why it's bad**: Claude treats each term as potentially distinct, leading to subtle interpretation drift. Instructions that say "check the endpoint" may not apply when the user says "check the URL" if the skill has used both inconsistently.
-**Fix**: Pick one term for each concept and use it throughout the skill. Define it on first use if there's any ambiguity.
-
-**Example**:
-
-```bad
-Check the endpoint before calling the URL. The route must match the path
-defined in the API. Validate the URL format before hitting the endpoint.
-```
-
-```good
-Check the endpoint before calling it. The endpoint must match the pattern
-defined in the API. Validate the endpoint URL format before making requests.
-```
-
----
-
-### [MEDIUM] Windows-style paths
-
-**What**: File path examples use backslashes (`\`) as separators.
-**Why it's bad**: Skills run in Claude Code, which operates primarily on macOS and Linux. Backslash paths don't work on Unix systems and cause confusion when Claude generates commands or file references based on examples.
-**Fix**: Use forward slashes in all path examples, regardless of the author's local OS.
-
-**Example**:
-
-```bad
-Output goes to: dist\output\report.json
-Run: scripts\build.bat
-```
-
-```good
-Output goes to: dist/output/report.json
-Run: scripts/build.sh
-```
-
----
-
-### [MEDIUM] Inline deterministic logic instead of scripts
-
-**What**: The skill instructs Claude to perform a fixed sequence of shell commands, data transformations, or validation checks inline — logic that produces the same result every time regardless of LLM reasoning.
-**Why it's bad**: LLM reasoning tokens are wasted on deterministic operations. Inline shell sequences are harder to test, debug, and version. They also risk subtle variation across invocations as the LLM paraphrases or reorders commands.
-**Fix**: Move fixed-logic operations to scripts in the skill's `scripts/` directory. The skill invokes the script via Bash and acts on its output. Reserve LLM reasoning for decisions, not mechanical execution.
-
-**Example**:
-
-```bad
-Run the following commands in order:
-1. `git diff --name-only HEAD~1`
-2. Pipe the output through `grep '\.ts$'`
-3. For each file, run `bun run lint --file <path>`
-4. Collect all errors into a report
-```
-
-```good
-Run `bash ${CLAUDE_SKILL_DIR}/scripts/lint-changed.sh` and present its output.
-If the script reports errors, ask the user which ones to fix.
-```
-
----
-
-### [MEDIUM] No examples
-
-**What**: The skill gives instructions for what to produce but includes no input/output examples showing what the result should look like.
-**Why it's bad**: Without examples, Claude infers the output format from the instructions alone. Ambiguous instructions produce inconsistent output format, structure, and level of detail across invocations.
-**Fix**: Add 2–3 concrete before/after or input/output examples that demonstrate the expected behavior.
-
-**Example**:
-
-```bad
-Generate a commit message following conventional commits format based on
-the staged changes.
-```
-
-```good
-Generate a commit message following conventional commits format.
-
-Example output for a bug fix:
-```
-
-fix(auth): handle expired token refresh race condition
-
-Adds mutex lock around token refresh to prevent duplicate refresh calls
-when multiple requests fire simultaneously on expiry.
-
-```
-
-Example output for a new feature:
-```
-
-feat(export): add CSV export for report data
-
-```
-
-```
-
----
-
-### [MEDIUM] No error handling in scripts
-
-**What**: The skill includes scripts or instructs Claude to run commands without handling failure cases — no exit code checks, no error messages, no fallback behavior.
-**Why it's bad**: Silent failures leave Claude in an ambiguous state. Without explicit error handling, Claude may proceed as if a step succeeded when it failed, producing incorrect results or corrupting state.
-**Fix**: Include explicit error handling — check exit codes, emit clear error messages, and specify what Claude should do when a step fails.
-
-**Example**:
-
-```bad
-Run `bun install` then `bun run build`.
-```
-
-```good
-Run `bun install`. If it fails, stop and report the error — do not proceed.
-Run `bun run build`. If the build fails, show the error output and ask the
-user whether to fix the errors or abort.
-```
-
----
-
-### [MEDIUM] Loading scripts into context
-
-**What**: Instructions tell Claude to read a script file to understand what it does — "Read scripts/helper.py to understand the algorithm before proceeding."
-**Why it's bad**: Loading a script into context consumes tokens and rarely adds value. Claude reads and summarizes the script but doesn't execute it — the information is available but unused. For large scripts, this crowds out more relevant context.
-**Fix**: Tell Claude to run the script, not read it. If understanding the output requires knowing how it works, provide a brief inline summary instead of loading the full file.
-
-**Example**:
-
-```bad
-Read `scripts/analyze.py` to understand what it checks, then apply
-the same logic to the current file.
-```
-
-```good
-Run `python scripts/analyze.py <target-file>` and use its output to
-identify issues in the current file.
-```
-
----
-
-### [MEDIUM] Offering too many tool options without a default
-
-**What**: The skill lists multiple equivalent tools for a task — "You can use Bash, Python, Node, or Deno for this" — without specifying which to prefer.
-**Why it's bad**: When given no default, Claude picks arbitrarily based on context clues. This produces inconsistent behavior across invocations and projects, making the skill harder to predict and debug.
-**Fix**: Specify the preferred tool explicitly. Mention alternatives only as fallbacks with a clear condition for when to use them.
-
-**Example**:
-
-```bad
-You can use Bash, Python, Node.js, or Deno to run this transformation.
-```
-
-```good
-Use Bash for this transformation. If the project has a `package.json`,
-use `bun` (or `node`) instead to match the project's runtime.
-```
-
----
-
-### [MEDIUM] No negative cases in description
-
-**What**: The skill's description has no "Do NOT use for..." clause, even though similar skills exist that handle related but distinct use cases.
-**Why it's bad**: Without explicit exclusions, Claude can't distinguish between similar skills based on the description alone. Ambiguous queries trigger the wrong skill.
-**Fix**: Add explicit negative cases that name what this skill does not handle and, where possible, name the skill that should handle those cases instead.
-
-**Example**:
-
-```bad
----
-description: Reviews pull requests and provides feedback on code quality.
----
-```
-
-```good
----
-description: Reviews pull requests for correctness, logic errors, and
-  security issues. Use when the user asks to review a PR or audit a diff.
-  Do NOT use for style or formatting feedback — use code-style for that.
-  Do NOT use for writing PR descriptions — use pr-description for that.
----
-```
-
----
-
-### [MEDIUM] context:fork on reference-only skills
-
-**What**: A skill uses `context: fork` but contains no explicit task instructions — it's purely a reference document or pattern guide.
-**Why it's bad**: `context: fork` creates a subagent. A subagent needs a task to execute and results to return. A reference-only skill has no task, so the subagent spawns, reads the reference, has nothing to do, and returns nothing. The fork overhead is wasted and the skill produces no output.
-**Fix**: Only use `context: fork` for skills that include explicit task instructions with a clear deliverable. Reference-only skills should use `context: include` or no context directive.
-
-**Example**:
-
-```bad
----
-name: style-guide
-context: fork
----
-# Style Guide Reference
-
-Use sentence case for headings. Prefer active voice...
-```
-
-```good
----
-name: style-guide
-context: include
----
-# Style Guide Reference
-
-Use sentence case for headings. Prefer active voice...
-```
-
----
-
-## LOW — Minor Improvements
-
-### [LOW] Missing metadata fields
-
-**What**: The frontmatter has only `name` and `description`, with no `version`, `author`, or `tags`.
-**Why it's bad**: The skill is functional, but lacks the metadata needed for marketplace discoverability, update detection, and attribution. Without a `version`, `claude plugin update` can't detect when the skill has changed.
-**Fix**: Add a metadata block with at minimum `version` (semver), `author`, and relevant `tags`.
-
-**Example**:
-
-```bad
----
-name: process-data
-description: Processes structured data files.
----
-```
-
-```good
+# skills/process-data/SKILL.md
 ---
 name: process-data
 description: Processes structured data files. Use when the user asks to
@@ -688,120 +80,126 @@ description: Processes structured data files. Use when the user asks to
 version: 1.0.0
 author: your-username
 tags: [data, csv, json, transform]
+argument-hint: <file-path>
 ---
 ```
 
----
+### Cluster 3: Structural and Progressive-Disclosure Anti-Patterns
 
-### [LOW] No argument-hint
+**Problem.** The skill body is hot context — every line competes for Claude's attention with every other line and with the rest of the conversation. Past ~500 lines, effectiveness degrades sharply; buried rules get deprioritized; deeply nested references aren't read at all. Structural anti-patterns all share one failure mode: instructions that exist on disk but don't actually steer behavior.
 
-**What**: A slash command skill has no `argument-hint` field in its frontmatter.
-**Why it's bad**: When a user types the slash command in Claude Code, the autocomplete shows no hint about what argument to provide. Users have to guess or look up the skill documentation.
-**Fix**: Add an `argument-hint` field with a short description of the expected argument.
+- **[HIGH] Buried constraints** — Non-negotiable rules appear after line 100. Recency and position bias deprioritize them, especially in long sessions. Fix: move all hard constraints into the first 100 lines, immediately after frontmatter.
+- **[HIGH] Deeply nested references** — `SKILL.md → ref.md → details.md → …`. Claude often stops at the second level. Fix: flat reference structure — all referenced files link directly from `SKILL.md`.
+- **[HIGH] SKILL.md over 500 lines** — Effectiveness drops; later instructions compete with earlier ones. Fix: progressive disclosure — core rules inline, edge cases and patterns linked from `shared/` or `references/`.
+- **[MEDIUM] Inconsistent terminology** — `endpoint`/`URL`/`path`/`route` used interchangeably. Each term is treated as potentially distinct, causing subtle interpretation drift. Fix: pick one term per concept and use it throughout.
+- **[MEDIUM] No examples** — Instructions but no input/output examples. Output format and structure vary across invocations. Fix: 2–3 concrete before/after or input/output examples.
+- **[LOW] Verbose instructions** — Dense prose paragraphs where numbered steps, tables, or code blocks would be clearer. Steps get skipped or reordered. Fix: numbered lists for sequences, tables for options, code blocks for commands.
 
-**Example**:
-
-```bad
----
-name: summarize
-description: Summarizes a file or URL.
----
-```
+**Right way (Implementation Pattern).** Front-load the body with hard constraints, then context, then patterns; link to reference docs for anything that's reference material rather than load-bearing instruction. Aim for ≤300 lines of skill body, with `shared/` or `references/` carrying detail. Use numbered steps and tables to make structure explicit.
 
 ```good
----
-name: summarize
-description: Summarizes a file or URL. Use when the user asks to summarize
-  or get an overview of content.
-argument-hint: <file-path or URL>
----
-```
+# SKILL.md (120 lines)
+## Rules
+- Never write to files outside the project root.
+- Always confirm before deleting.
 
----
-
-### [LOW] Verbose instructions
-
-**What**: Instructions are written as dense prose paragraphs where structured formatting (numbered steps, tables, code blocks) would be clearer.
-**Why it's bad**: Prose is harder for Claude to parse into discrete steps. Long paragraphs increase the chance of a step being skipped or reordered. Formatting signals structure explicitly.
-**Fix**: Use numbered steps for sequences, tables for options or mappings, and code blocks for commands or templates.
-
-**Example**:
-
-```bad
-First you should check if there's a tsconfig.json in the project root and
-if there is you should use it, otherwise you should create one. Then run
-the type checker and if it passes run the build and if that passes commit.
-```
-
-```good
-1. Check for `tsconfig.json` in the project root. Create one if missing.
+## Workflow
+1. Check `tsconfig.json`. Create one if missing.
 2. Run `bun run typecheck`. Stop and report errors if it fails.
 3. Run `bun run build`. Stop and report errors if it fails.
-4. Commit the changes.
+
+## References
+- Patterns: [shared/patterns.md](./shared/patterns.md)
+- Errors: [shared/errors.md](./shared/errors.md)
 ```
 
----
+### Cluster 4: Agent, Tool, and Script Anti-Patterns
 
-### [LOW] Versioned names
+**Problem.** Every tool grant, every forked subagent, every script Claude is told to _read_ rather than _run_ has a cost: tokens, indeterminism, or surface area. This cluster is about least-privilege and about reserving LLM reasoning for actual decisions — not for mechanical execution that scripts can do deterministically.
 
-**What**: The skill name includes a version suffix — `research-helper-v2`, `commit-v3`, `old-formatter`.
-**Why it's bad**: Versioned names create parallel skill registrations. Users end up with multiple versions installed. The correct version to use is unclear. Updates don't replace the old version — they stack alongside it.
-**Fix**: Use a single name and evolve the skill in place. Use the `version` metadata field to track changes. Remove old versions rather than naming around them.
+- **[MEDIUM] context:fork on reference-only skills** — Skill uses `context: fork` but has no explicit task or deliverable. Subagent spawns, reads, has nothing to do, returns nothing. Fix: only use `context: fork` for skills with a clear task; reference-only skills use `context: include`.
+- **[MEDIUM] Offering too many tool options without a default** — `"You can use Bash, Python, Node, or Deno"`. Claude picks arbitrarily, producing inconsistent behavior. Fix: name the preferred tool; list alternatives only as fallbacks with conditions.
+- **[MEDIUM] Inline deterministic logic instead of scripts** — Fixed shell sequences, transformations, or validation steps written inline. Wastes LLM tokens on deterministic work; varies across runs as Claude paraphrases. Fix: move fixed logic to `scripts/`; have the skill invoke and react to output.
+- **[MEDIUM] No error handling in scripts** — Commands or scripts without exit-code checks, error messages, or fallback behavior. Silent failures leave Claude in an ambiguous state. Fix: explicit error handling and explicit fallback instructions.
+- **[MEDIUM] Loading scripts into context** — `"Read scripts/helper.py to understand the algorithm..."`. Burns tokens reading something Claude won't execute from context. Fix: tell Claude to _run_ the script; if it needs context, write a brief inline summary.
+- **[MEDIUM] Windows-style paths** — Backslashes in path examples. Skills run primarily on macOS/Linux; backslashes break or confuse generated commands. Fix: forward slashes everywhere.
+- **[MEDIUM] Time-sensitive information** — Hard-coded dates or version pins (`"as of v3.2..."`, `"if before August 2025..."`). Goes stale silently. Fix: relative references and runtime version checks.
+- **[LOW] Assuming packages are installed** — `eslint src/` without checking the tool is available. Missing tool produces an error Claude recovers from incorrectly (global install instead of local, wrong version). Fix: check availability first; prefer project-local invocations.
+- **[LOW] Magic numbers in scripts** — `TIMEOUT = 47`, `sleep 30` with no rationale. Future editors can't tell hard limit from arbitrary guess. Fix: comment the origin or reasoning for any non-obvious constant.
 
-**Example**:
-
-```bad
----
-name: commit-v2
----
-```
+**Right way (Implementation Pattern).** Reserve the LLM for decisions; push deterministic work into scripts. For each tool reference, ask three questions: _Is this tool installed?_ _Is there a default I should name?_ _What happens if it fails?_ Each answer becomes one line in the skill — either a check, a default, or a fallback. For subagents, ask: _Does this task have a deliverable?_ If not, don't fork.
 
 ```good
----
-name: commit
-version: 2.0.0
----
+# In SKILL.md
+Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lint-changed.sh`.
+- If it exits non-zero, show the output and ask the user which errors to fix.
+- The script handles the git diff + grep + lint loop deterministically.
+
+# In scripts/lint-changed.sh
+#!/usr/bin/env bash
+set -euo pipefail
+# TIMEOUT=47 — GitHub API rate limit window is ~47s under sustained load
+...
 ```
 
----
+### Cluster 5: Spec, Learnings, and Workflow Anti-Patterns
 
-### [LOW] Assuming packages are installed
+**Problem.** A skill's spec and learnings file are the persistent memory the next improve run reasons from. When the spec drifts, when learnings stay empty, or when a retrospective edits functional code instead of knowledge, future runs operate on stale or wrong context — and silently regress behavior. This cluster is about the integrity of the feedback loop.
 
-**What**: The skill instructs Claude to run a tool (e.g., `eslint`, `prettier`, `jq`) without checking whether it's available in the project.
-**Why it's bad**: The tool may not be installed, may not be in PATH, or may need a project-local version. Running a missing tool produces an error that Claude has to recover from, and the recovery is usually wrong (installing globally when it should be local, or using the wrong version).
-**Fix**: Include an availability check or installation step before using external tools. Prefer project-local invocations (e.g., `bun run lint` over `eslint`).
+- **[HIGH] Spec drift** — Actual skill structure has diverged from `docs/spec.md` without the spec being updated. Future improve runs propose changes against stale intent. Fix: update `docs/spec.md` on every modification (the improve pipeline does this automatically; manual edits bypass it).
+- **[HIGH] Empty learnings file** — `docs/learnings.md` exists but only contains the header. Either retrospectives aren't running, or they aren't capturing anything — both signal a broken feedback loop. Fix: ensure retrospectives run after every forge/improve; if there's genuinely nothing to capture, write a note saying so rather than leaving it silently empty.
+- **[HIGH] Retrospective modifies target code** — A retrospective agent edits `SKILL.md`, agents, commands, or hooks instead of only writing knowledge files (`docs/`, `references/`, `shared/`). Bypasses approval gates and can regress behavior silently. Fix: restrict retrospectives to `docs/learnings.md` and _proposed_ reference updates; functional changes go through `/improve-skill`.
+- **[MEDIUM] Spec describes implementation instead of design intent** — `docs/contract.md` reads like an implementation guide (function names, line-by-line instructions) instead of a design doc (problem, goals, decisions, rationale). Goes stale on first refactor. Fix: keep contract focused on problem/goals/scope/decisions; component manifest and architecture go in `spec.md`; implementation lives in the artifacts themselves.
 
-**Example**:
-
-```bad
-Run `eslint src/` to check for linting errors.
-```
+**Right way (Implementation Pattern).** Maintain a clear contract between the four artifacts: `docs/contract.md` captures _why_ (problem, goals, rationale); `docs/spec.md` captures _what_ (component manifest, architecture); the generated files capture _how_; `docs/learnings.md` captures _what we found out_. Retrospectives write only to the last one and propose edits to the middle two — never to the artifacts themselves.
 
 ```good
-Check if the project has a lint script: look for `"lint"` in `package.json`
-scripts. If found, run `bun run lint`. If not, check if `eslint` is in
-`devDependencies` and run `bun eslint src/`. If neither, report that no
-linter is configured and ask the user how to proceed.
+docs/contract.md    # design intent: problem, goals, decisions, rationale
+docs/spec.md        # component manifest: what files exist and why
+docs/learnings.md   # retrospective findings, append-only
+SKILL.md, agents/, commands/, hooks/  # the actual implementation
 ```
 
----
+### Cluster 6: Security and Privacy Anti-Patterns
 
-### [LOW] Magic numbers in scripts
+**Problem.** Anything committed to git is committed forever. Secrets, PII, and machine-specific identifiers in skill files don't get cleaned up by `.gitignore` after the fact — they live in history. The fix is uniform: keep sensitive material in `$XDG_CONFIG_HOME/{skill-name}/` and source it through scripts that emit only what the skill needs.
 
-**What**: Scripts or commands in the skill use unexplained numeric constants — `TIMEOUT = 47`, `MAX_RETRIES = 3`, `sleep 30`.
-**Why it's bad**: Magic numbers give no indication of why that specific value was chosen. Claude and future editors can't tell whether the number is a hard limit, a performance tuning value, a protocol requirement, or an arbitrary guess. This makes adjustments risky.
-**Fix**: Add a comment explaining the origin or reasoning for any non-obvious numeric constant.
+- **[CRITICAL] Sensitive data stored in repository** — API keys, tokens, credentials, machine-specific paths, or PII tracked by git, including under `${CLAUDE_PLUGIN_ROOT}` or `references/`. Even in private repos this is permanent. Fix: store in `$XDG_CONFIG_HOME/{skill-name}/` (typically `~/.config/{skill-name}/`); source via scripts that emit only the values needed. See `${CLAUDE_PLUGIN_ROOT}/shared/local-config-pattern.md`.
+- **[HIGH] PII in committed or persisted content** — Real names, emails, usernames in skill files, references, memory entries, or anything that hits git. Hard to scrub from history; may violate privacy expectations. Fix: anonymize to role-based handles (`@deploy-lead`, `@oncall`); store real identifiers in local config and source through scripts; memory entries describe roles, never individuals.
 
-**Example**:
-
-```bad
-TIMEOUT = 47
-MAX_CHUNK_SIZE = 8192
-sleep 30
-```
+**Right way (Implementation Pattern).** Treat `${CLAUDE_PLUGIN_ROOT}` as public even if the repo is private. Use the local-config pattern uniformly: a `~/.config/{skill-name}/config.env` file with `chmod 600`, sourced through a script in the skill that outputs only the variable the skill needs at that moment.
 
 ```good
-TIMEOUT = 47  # GitHub API rate limit window is ~47s under sustained load
-MAX_CHUNK_SIZE = 8192  # Matches default TCP buffer size for streaming
-sleep 30  # Wait for the dev server to finish its initial build (~25s typical)
+# ~/.config/my-skill/credentials.env (chmod 600, not in any repo)
+COOLIFY_TOKEN=abc123
+DEPLOY_LEAD_SLACK=jane.smith
+
+# scripts/get-token.sh — sources from XDG_CONFIG_HOME, outputs only what's needed
+#!/usr/bin/env bash
+set -euo pipefail
+source "${XDG_CONFIG_HOME:-$HOME/.config}/my-skill/credentials.env"
+echo "$COOLIFY_TOKEN"
 ```
+
+## Gotchas
+
+Cross-cutting issues that don't sit neatly inside one cluster:
+
+1. **Severity tags are load-bearing.** `agents/skill-validator.md` greps this file for `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`. Changing the bracket format or dropping the tag from a line silently removes the rule from validation.
+2. **Anti-patterns interact.** A vague description (Cluster 1) plus an empty learnings file (Cluster 5) compound: low trigger rate goes uncaptured, so the next improve run has no evidence to act on.
+3. **"Fix the symptom" vs "fix the cause" diverge most in Cluster 3.** Trimming a 600-line `SKILL.md` to 499 lines clears the line-count check but doesn't fix the underlying problem — content that should be in references is still inline.
+4. **`context: fork` is the most-misused agent directive.** It looks cheap (one frontmatter line) but spawns a full subagent. Combined with a reference-only skill (Cluster 4), it produces silent no-ops.
+5. **Local config is one-time setup, not per-skill setup.** A shared `~/.config/{skill-name}/` layout means multiple skills in the same family can share credentials without re-prompting.
+
+## Related Patterns
+
+- [skill-anatomy.md](skill-anatomy.md) — the structural contract this file's Cluster 3 enforces
+- [description-engineering.md](description-engineering.md) — deep dive on Cluster 1
+- [quality-checklist.md](quality-checklist.md) — the validator's positive-form counterpart to this file
+- [agentic-subsystems.md](agentic-subsystems.md) — Cluster 4 in pattern form (being written in parallel)
+- [shared/references/multi-agent-pattern.md](references/multi-agent-pattern.md) — coordinator/fork/swarm trade-offs referenced by Cluster 4
+- [shared/references/memory-persistence-pattern.md](references/memory-persistence-pattern.md) — the memory model Cluster 5 protects
+- [shared/references/context-engineering-pattern.md](references/context-engineering-pattern.md) — progressive disclosure theory behind Cluster 3
+- [shared/local-config-pattern.md](local-config-pattern.md) — the secret-handling pattern Cluster 6 mandates
+
+<!-- TODO: No new anti-patterns were invented during restructure. If gaps are discovered in future passes, note them here with a proposed severity and cluster before adding to the body. -->

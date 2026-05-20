@@ -1,0 +1,83 @@
+{
+  "skill_name": "forge-harness",
+  "evals": [
+    {
+      "id": 1,
+      "name": "Minimal Harness Creation — TypeScript + React",
+      "prompt": "I have a TypeScript + React project at /tmp/eval-target with no agent setup. Scaffold a minimal harness so an agent can work on it reliably.",
+      "expected_output": "Invokes create-harness.mjs with --target /tmp/eval-target, detects Node stack via package.json, produces AGENTS.md, feature_list.json with 5 placeholder features, progress.md, session-handoff.md, and init.sh with bun/npm install + typecheck + test + build commands. Reports detected stack and which files were written.",
+      "files": [],
+      "expectations": [
+        "Runs `node ${CLAUDE_PLUGIN_ROOT}/scripts/create-harness.mjs --target /tmp/eval-target` (with or without additional flags)",
+        "Reports the detected stack (Node / TypeScript / React) back to the user",
+        "feature_list.json contains 5 placeholder feature entries with id, name, description, status fields",
+        "init.sh contains npm/bun/pnpm verification commands appropriate for the package manager, not Go or Python commands",
+        "Lists which of AGENTS.md, feature_list.json, progress.md, session-handoff.md, init.sh were written vs skipped"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Audit Existing AGENTS.md",
+      "prompt": "I have an existing AGENTS.md at /tmp/eval-existing-harness but my agent still breaks things. Audit the harness and tell me what to improve first.",
+      "expected_output": "Invokes validate-harness.mjs with --target /tmp/eval-existing-harness --json, reports overall score, names the bottleneck subsystem, and recommends 2-3 prioritized improvements that target the lowest-scoring subsystem. Frames bottleneck as 'candidate' not confirmed cause.",
+      "files": [],
+      "expectations": [
+        "Runs `node ${CLAUDE_PLUGIN_ROOT}/scripts/validate-harness.mjs --target /tmp/eval-existing-harness --json`",
+        "Reports an overall score (0-100) and names which of the 5 subsystems (instructions/state/verification/scope/lifecycle) is the bottleneck",
+        "Recommends 2-3 concrete prioritized improvements rather than a generic list",
+        "Does NOT claim the bottleneck is the proven cause of agent failures — uses language like 'candidate bottleneck' until confirmed by an agent session"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "HTML Assessment Report",
+      "prompt": "Generate a shareable HTML harness assessment for /tmp/eval-target so I can send it to my team.",
+      "expected_output": "Invokes validate-harness.mjs with --target /tmp/eval-target --html <TARGET>/harness-assessment.html, writes a self-contained HTML file to the target directory, and reports the absolute path of the produced HTML to the user.",
+      "files": [],
+      "expectations": [
+        "Runs validate-harness.mjs (or run-benchmark.mjs) with both --target and --html flags",
+        "HTML output path is inside the target directory and reported as an absolute path",
+        "Output explicitly notes this is a structural benchmark, not a behavioral one, and that real effectiveness still requires before/after agent-session testing",
+        "Does NOT skip the framing about structural-vs-behavioral evaluation"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Force Overwrite Consent Flow",
+      "prompt": "Scaffold a harness in /tmp/eval-target — there's already an AGENTS.md there but I want to start fresh.",
+      "expected_output": "Refuses to silently pass --force. Uses AskUserQuestion to confirm whether to overwrite the existing AGENTS.md (and any other existing harness files), offering options for overwrite-this-file / skip / overwrite-all. Only after explicit user approval invokes create-harness.mjs with --force.",
+      "files": [],
+      "expectations": [
+        "Detects the existing AGENTS.md before invoking create-harness.mjs with --force",
+        "Uses AskUserQuestion (not plain text) to surface the overwrite decision",
+        "Offers at minimum three options: overwrite this file, skip this file, overwrite all existing harness files",
+        "Does NOT invoke create-harness.mjs with --force before user confirms"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Go-only Repo Without package.json",
+      "prompt": "Scaffold a harness for my Go project at /tmp/eval-go-repo. There's no package.json — it's pure Go with a go.mod file.",
+      "expected_output": "Invokes create-harness.mjs with --target /tmp/eval-go-repo. Detector falls back to Go stack via go.mod presence. init.sh contains Go-flavored verification commands (e.g., `go build ./...`, `go test ./...`, `go vet ./...`) rather than npm/bun-flavored commands. AGENTS.md and other artifacts are still produced normally.",
+      "files": [],
+      "expectations": [
+        "Runs create-harness.mjs successfully without failing on missing package.json",
+        "init.sh uses Go commands like `go test ./...` or `go build ./...` and does NOT contain `npm`, `bun`, `pnpm`, or `yarn` commands",
+        "AGENTS.md, feature_list.json, progress.md, session-handoff.md, and init.sh are all written to /tmp/eval-go-repo"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Misuse — User Wants a Skill, Not a Harness",
+      "prompt": "Create a Claude Code skill for extracting tables from PDFs.",
+      "expected_output": "Recognizes this is a Claude Code skill request, not a harness scaffolding request. Does NOT invoke create-harness.mjs. Redirects the user to the forge-skill workflow (or stays inactive so forge-skill can pick it up).",
+      "files": [],
+      "expectations": [
+        "Does NOT run `node ${CLAUDE_PLUGIN_ROOT}/scripts/create-harness.mjs`",
+        "Does NOT produce AGENTS.md, feature_list.json, progress.md, session-handoff.md, or init.sh",
+        "Names forge-skill (or create-skill) as the correct workflow for building a Claude Code skill",
+        "Distinguishes between scaffolding an agent harness in a target repo vs creating a reusable Claude Code skill primitive"
+      ]
+    }
+  ]
+}

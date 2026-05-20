@@ -1,5 +1,7 @@
 # Skill-Forge Harness Evolution — Contract
 
+> **2026-05-20 — 0.8.0 harness-creator integration revision.** Mined the walkinglabs/learn-harness-engineering `harness-creator` skill for stealable patterns. Three new problems addressed in this revision: (1) skill-forge's reference docs are reference-list-flavored, not tutorial-shaped — porting harness-creator's 6 reference docs (Problem → Golden Rules → Trade-offs → Implementation → Gotchas → Related Patterns) gives generated skills better foundation material; (2) generated skills don't ship with their own `evals/` directory or per-skill validator, so improve-skill has no deterministic ground truth across runs (the eval pipeline is plugin-internal only) — fix is to add `evals/evals.json` and `evals/validate.mjs` to every generated skill, mirroring harness-creator's pattern; (3) skill-forge generates Claude Code skills but cannot scaffold a harness (AGENTS.md/CLAUDE.md/feature_list.json/init.sh/session-handoff.md) INTO a target repo — adding a sibling `forge-harness` skill extends skill-forge from "skill factory" to "agentic-tooling factory" without changing the core skill-generation flow.
+
 > **2026-05-20 — 0.7.0 modernization revision.** The original problem (spec-driven pipeline, retrospective learning, three-way improve analysis) shipped in 0.4.0. The new problem this contract revision addresses is that the shared knowledge base has fallen behind Claude Code's feature surface. Generators now teach skills to use deprecated primitives (`TodoWrite`), miss new hook handler types (`prompt`, `mcp_tool`, `http`, `agent`), the `if` filter, modern hook events (`PostToolBatch`, `PermissionRequest`, `SubagentStart/Stop`, `TaskCreated/Completed`, `FileChanged`, `PreCompact/PostCompact`), and never reference the modern plugin manifest fields (`displayName`, `userConfig`, `dependencies`, `monitors`, `channels`, `lspServers`, `outputStyles`). The 0.7.0 revision modernizes the knowledge base and fixes accumulated cross-file consistency drift.
 
 ## Problem Statement
@@ -26,6 +28,8 @@ The creation flow also lacks documentation. The confidence gate decides "I know 
 3. Complex skills get retrospective capability built in, gated by the intake analyst's complexity classification
 4. The creation flow produces a spec that serves as both the design record and the execution plan for generation — replacing the confidence gate and generation plan approval with a single, documentable artifact
 5. The improve flow performs three-way analysis (spec + current skill + braindump) when a spec exists, and offers retroactive spec generation for pre-existing skills
+6. Every generated skill ships with `evals/evals.json` + `evals/validate.mjs` so improve-skill has deterministic ground truth across versions (added 0.8.0)
+7. Skill-forge scaffolds agentic harnesses INTO target repositories via a sibling `forge-harness` skill — same plugin, distinct output class (added 0.8.0)
 
 ## Success Criteria
 
@@ -40,6 +44,11 @@ The creation flow also lacks documentation. The confidence gate decides "I know 
 - [ ] `/improve-skill` offers retroactive spec generation for skills that predate this feature
 - [ ] Score history is appended to `{skill-dir}/docs/learnings.md` after every improve run
 - [ ] Validator checks spec compliance (generated artifacts match the spec's component manifest)
+- [ ] Every generated skill has `evals/evals.json` (≥5 cases) and `evals/validate.mjs` (port of `scripts/validate-skill.mjs`) (added 0.8.0)
+- [ ] `forge-harness` skill scaffolds the 5-subsystem harness (Instructions/State/Verification/Scope/Lifecycle) into a target repo (added 0.8.0)
+- [ ] `scripts/validate-skill.mjs` exists, runs deterministically (no LLM), and produces JSON + HTML reports for any skill directory (added 0.8.0)
+- [ ] `shared/agentic-subsystems.md` documents the 5-subsystem mental model — referenced by both `forge-skill` and `forge-harness` (added 0.8.0)
+- [ ] 6 reference docs ported from harness-creator under `shared/references/` with attribution (added 0.8.0)
 
 ## Scope Boundaries
 
@@ -73,6 +82,37 @@ The creation flow also lacks documentation. The confidence gate decides "I know 
 - Version bump to 0.7.0
 - Update root `MEMORY.md` (the project-level auto-memory at `~/.claude/projects/-Users-birdcar-Code-birdcar-claude-plugins/memory/`) to reflect the now-correct inline hooks support in plugin.json
 
+### 0.8.0 Harness-Creator Integration (added 2026-05-20)
+
+Mined `walkinglabs/learn-harness-engineering/skills/harness-creator` for stealable patterns and adopted them as the 0.8.0 work.
+
+**Phase 1 — Knowledge base lift (Light):**
+
+- Port 6 reference docs into `shared/references/` with `walkinglabs/learn-harness-engineering` attribution: `memory-persistence-pattern.md`, `context-engineering-pattern.md`, `tool-registry-pattern.md`, `multi-agent-pattern.md`, `lifecycle-bootstrap-pattern.md`, `gotchas.md`
+- New `shared/agentic-subsystems.md` documenting the 5-subsystem mental model (Instructions / State / Verification / Scope / Lifecycle) — shared between forge-skill and forge-harness
+- Restructure `shared/anti-patterns.md` to follow the Problem → Golden Rules → Trade-offs → Implementation Patterns → Gotchas → Related Patterns shape used by the ported reference docs
+- New `scripts/validate-skill.mjs` ported from harness-creator's `validate-harness.mjs` — pure Node-built-ins script that scores a skill directory structurally (frontmatter validity, line counts, anti-pattern matches, kebab-case, required files) with JSON + HTML output
+
+**Phase 2 — Self-improving generated skills (Medium):**
+
+- Every generated skill now emits `evals/evals.json` populated from the spec's success criteria (at least 5 cases, each with prompt + expected_output + expectations array)
+- Every generated skill emits `evals/validate.mjs` — a per-skill specialization of `scripts/validate-skill.mjs` that knows the skill's expected component manifest
+- `skill-generator.md` updated to add `evals/` to the generation manifest
+- `skill-validator.md` delegates structural checks to `scripts/validate-skill.mjs`; the agent retains semantic checks only (anti-pattern violations that grep can't catch, description quality scoring)
+- The improve-skill pipeline runs the per-skill `evals/validate.mjs` as part of Step 2 analysis when present, providing deterministic structural scores alongside the semantic optimizer scoring
+
+**Phase 3 — `forge-harness` sibling skill (Full):**
+
+- New skill at `skills/forge-harness/SKILL.md` — scaffolds AGENTS.md/CLAUDE.md + feature_list.json + progress.md + init.sh + session-handoff.md INTO a target repo
+- New command `commands/forge-harness.md` — entry point
+- New templates under `shared/templates/harness/`: `agents.md`, `feature-list.json`, `feature-list.schema.json`, `progress.md`, `init.sh`, `session-handoff.md` (ported from harness-creator with attribution)
+- New scripts `scripts/create-harness.mjs` and `scripts/validate-harness.mjs` (ported)
+- `intake-analyst.md` extended: recognizes "scaffold harness into project" / "add AGENTS.md" / "feature tracker for this repo" intents and routes to forge-harness instead of forge-skill
+- New eval cases under `skills/forge-harness/evals/evals.json` covering the 5-subsystem scaffolding flow
+- Plugin name unchanged — `skill-forge` is now a slight stretch but the parallel SKILL.md structure keeps the mental model clean (`forge-skill` for Claude Code skills, `forge-harness` for in-repo harnesses)
+
+**Version bump:** 0.7.1 → 0.8.0
+
 ### Out of Scope
 
 - Multi-document specs (phasing within a single spec is sufficient for skill-forge's bounded output)
@@ -81,6 +121,8 @@ The creation flow also lacks documentation. The confidence gate decides "I know 
 - Evidence markers / hash-verified testing (validator output is sufficient)
 - Changes to scaffold-writer agent (unchanged role)
 - Changes to command entry points (thin wrappers, unchanged)
+- **Cross-agent compatibility** (reaffirmed 0.8.0): skill-forge generates Claude Code skills only. harness-creator's `metadata.json` cross-agent compat (claude-code/codex-cli/cursor/windsurf/generic) is explicitly NOT adopted. The 5-subsystem mental model and ported reference docs are framework-agnostic, but the generators remain Claude-Code-specific
+- **Real LLM-judge eval pipeline for generated skills** (added 0.8.0): the per-skill `evals/validate.mjs` does deterministic structural checks only. Running with-skill/without-skill comparison runs remains in the plugin-internal `commands/eval-skill.md` pipeline; generated skills don't ship a runnable eval pipeline of their own
 
 ### Future Considerations
 

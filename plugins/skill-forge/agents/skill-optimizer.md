@@ -8,6 +8,7 @@ tools:
   - Read
   - Glob
   - Grep
+  - Bash
 model: sonnet
 ---
 
@@ -34,8 +35,9 @@ The prompt may also include:
    a. **Spec vs reality drift**: compare the spec's component manifest, architecture, and scope boundaries against the current skill artifacts. Flag any divergence — files that exist but aren't in the spec, files in the spec that don't exist, behavioral changes not reflected in the spec.
    b. **Braindump vs spec alignment**: if a braindump was provided, check whether each user request is consistent with the spec's goals, scope boundaries, and design decisions. Confirm alignment for each item.
    c. **Braindump vs spec conflict**: identify any user requests that contradict the spec's explicit exclusions or scope boundaries. Flag these with the specific spec section that conflicts and explain the trade-off.
-6. Score each dimension 0–25 with specific evidence drawn only from the provided files
-7. For each dimension scoring below 20, generate concrete improvements:
+6. If the target skill has `evals/validate.mjs`, run it first via Bash. The deterministic scores feed into the four-dimension scorecard as ground truth for structural compliance — source the **Structural Compliance** dimension directly from the script's overall score (rescaled to 0–25) instead of re-scoring it independently.
+7. Score each dimension 0–25 with specific evidence drawn only from the provided files
+8. For each dimension scoring below 20, generate concrete improvements:
    - **Description**: rewritten description with trigger phrases and negative cases
    - **Structure**: file reorganization plan (what to move to references/, what to split out)
    - **Instructions**: specific rewrites with exact before/after text

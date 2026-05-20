@@ -201,7 +201,7 @@ Read the approved `{$SKILL_DIR}/docs/spec.md` — this is the primary input for 
    - The approved spec.md as PRIMARY input
    - Target path: `$SKILL_DIR`
 
-   The generator reads shared/ reference docs for writing quality but follows the spec for WHAT to create. It executes the spec's execution plan for ordering and parallelization, and reports any deviations from the spec.
+   The generator reads shared/ reference docs for writing quality but follows the spec for WHAT to create. It executes the spec's execution plan for ordering and parallelization, and reports any deviations from the spec. The generator also writes `evals/evals.json` and `evals/validate.mjs` to `$SKILL_DIR`, deriving at least 5 eval cases from the spec's success criteria.
 
 4. If the spec's retrospective configuration is `full`: generate a retrospective agent using `${CLAUDE_PLUGIN_ROOT}/shared/templates/retrospective-agent-template.md`, and a retrospective command if marketplace.
 
@@ -227,6 +227,14 @@ If the user selects eval testing:
 This step is most valuable for complex skills with multiple agents or intricate workflows. For simple skills, skipping is fine.
 
 ## Step 5 — Validate
+
+First run the deterministic structural validator:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/validate-skill.mjs --target $SKILL_DIR --json
+```
+
+Capture the output — the deterministic structural checks (frontmatter, line counts, kebab-case, required files, evals presence) happen here. The skill-validator agent then performs semantic checks on top of the deterministic baseline.
 
 Spawn the `skill-forge:skill-validator` agent (Haiku) via the Agent tool, passing:
 

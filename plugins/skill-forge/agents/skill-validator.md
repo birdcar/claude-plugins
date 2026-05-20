@@ -9,6 +9,7 @@ tools:
   - Write
   - Glob
   - Grep
+  - Bash
 model: haiku
 ---
 
@@ -23,65 +24,41 @@ You are a skill quality validator. You check Claude Code skills against known st
 
 ## Process
 
-### 1. Collect Artifacts
+### 1. Run Deterministic Structural Validator
 
-Read all files in the skill directory:
+Run `node ${CLAUDE_PLUGIN_ROOT}/scripts/validate-skill.mjs --target <skill-dir> --json` via Bash and parse the JSON output. The deterministic structural checks are now performed entirely by this script. Treat the script's per-subsystem scores — `instructions`, `state`, `verification`, `scope`, `lifecycle` (each 0–5) — and overall score as authoritative for structural quality.
+
+Capture: subsystem scores, overall score, list of pass/fail items, and any errors. These feed into the final report alongside the semantic scoring below.
+
+### 2. Collect Artifacts (semantic pass)
+
+Read the files needed for semantic analysis (the deterministic script already covered structural reads):
 
 - `SKILL.md` (required)
 - `references/**/*.md` (if exists)
-- Parent `plugin.json` (if exists)
 - Sibling `agents/*.md` (if exists)
 - Sibling `commands/*.md` (if exists)
-- `hooks/hooks.json` (if exists)
+- `docs/spec.md` (if a spec path was provided)
 
-### 2. Structural Validation
+Structural reads such as `plugin.json`, `hooks/hooks.json`, line counts, frontmatter validity, kebab-case, and required-file checks are **delegated to `scripts/validate-skill.mjs`** — do not re-do them here.
 
-Check each item and report pass/fail:
+### 3. Semantic Spec Compliance (if spec.md provided)
 
-| Check                  | Rule                                                                                                                   | Severity |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------- |
-| File name              | Must be exactly `SKILL.md` (case-sensitive)                                                                            | CRITICAL |
-| Directory name         | Must be kebab-case (lowercase, hyphens only)                                                                           | CRITICAL |
-| Frontmatter present    | YAML `---` delimiters at top of file                                                                                   | CRITICAL |
-| `name` field           | kebab-case, ≤64 chars, no "claude"/"anthropic", no XML `< >`                                                           | CRITICAL |
-| `description` field    | Present, ≤1024 chars, no XML, written in third person                                                                  | CRITICAL |
-| Description triggers   | Contains "Use when" or equivalent trigger phrases                                                                      | HIGH     |
-| Description negatives  | Contains "Do NOT use" or similar exclusion clause                                                                      | MEDIUM   |
-| Line count             | SKILL.md ≤500 lines                                                                                                    | HIGH     |
-| Progressive disclosure | Heavy reference content in references/, not inline                                                                     | MEDIUM   |
-| Constraints placement  | Critical rules appear within first 100 lines                                                                           | MEDIUM   |
-| Agent tools            | `tools:` list follows least-privilege (no unnecessary tools)                                                           | MEDIUM   |
-| Agent model            | `model:` field set appropriately for task complexity                                                                   | LOW      |
-| Command allowed-tools  | Commands have appropriate tool restrictions                                                                            | MEDIUM   |
-| Hooks present          | If hooks exist: file form (`hooks/hooks.json`) or inline in `plugin.json` — both valid in v2.1.146+                    | INFO     |
-| Hooks shape            | hooks.json wraps events in a top-level `"hooks"` key; handler `type` is one of: command, prompt, http, mcp_tool, agent | HIGH     |
-| Modern primitives      | No `TodoWrite` references; use `Task*` family. No outdated model IDs (`claude-sonnet-4-5`, `claude-opus-4-1`).         | MEDIUM   |
-| Spec compliance        | Generated artifacts match spec's component manifest                                                                    | HIGH     |
-| Docs present           | docs/contract.md, spec.md, learnings.md exist                                                                          | MEDIUM   |
+The deterministic script already verifies that files in the manifest exist on disk. This step performs the **semantic** check: do the generated artifacts actually match the spec's intent, not just its file list?
 
-### 3. Spec Compliance (if spec.md provided)
-
-If a `docs/spec.md` path was provided, check:
-
-- Every file in the spec's Component Manifest exists on disk
-- No files were created that aren't in the manifest (report as deviations)
-- The retrospective configuration matches what was generated (full vs lightweight vs none)
-
-Report as:
-
-- PASS: All manifest files exist, no unexpected files
-- FAIL: List missing files and unexpected files
+- For each component listed in the spec: does the file's content semantically realize what the spec described (workflow steps, agent roles, scope boundaries)?
+- Are there behavioral commitments in the spec that the generated content fails to implement?
+- Does the retrospective configuration in practice match `full` vs `lightweight` vs `none` as the spec declared?
 
 If no spec.md was provided, skip this section entirely.
 
-### 4. Anti-Pattern Scan
+### 4. Anti-Pattern & Description Quality Scan
 
-Read `${CLAUDE_PLUGIN_ROOT}/shared/anti-patterns.md` and check the skill against every item:
+Read `${CLAUDE_PLUGIN_ROOT}/shared/anti-patterns.md` and `${CLAUDE_PLUGIN_ROOT}/shared/description-engineering.md`. Perform the **semantic** checks the deterministic script cannot:
 
-- Report all CRITICAL severity matches (must fix)
-- Report all HIGH severity matches (should fix)
-- Note MEDIUM severity matches as warnings
-- Skip LOW severity matches unless the prompt requests a full audit
+- Anti-pattern violations not detectable by grep (e.g. semantic ambiguity, weak workflow design)
+- Description quality scored against `description-engineering.md` criteria (trigger phrase strength, negative-case clarity, third-person voice quality)
+- Report CRITICAL and HIGH severity matches; note MEDIUM as warnings; skip LOW unless full audit was requested
 
 ### 5. Trigger Test Generation
 
@@ -107,17 +84,32 @@ Write the trigger tests to `trigger-tests.md` in the same directory as the SKILL
 
 ## Output Format
 
-Return the validation report as structured markdown:
+Return the validation report as structured markdown. The report combines the **deterministic structural** subsystem scores from `scripts/validate-skill.mjs` (5 subsystems × 0–5) with the **semantic agent** scores across 4 dimensions (0–25 each).
 
 ```markdown
 ## Validation Report: {skill-name}
 
-### Structural Checks
+### Deterministic Structural (from scripts/validate-skill.mjs)
 
-- [x] PASS: {check name} — {detail}
-- [ ] FAIL: {check name} — {detail and what to fix}
+| Subsystem    | Score  | Notes            |
+| ------------ | ------ | ---------------- |
+| instructions | {0-5}  | {script finding} |
+| state        | {0-5}  | {script finding} |
+| verification | {0-5}  | {script finding} |
+| scope        | {0-5}  | {script finding} |
+| lifecycle    | {0-5}  | {script finding} |
+| **OVERALL**  | {0-25} |                  |
 
-### Anti-Pattern Scan
+### Semantic Scores (this agent)
+
+| Dimension            | Score  | Key Finding |
+| -------------------- | ------ | ----------- |
+| Description Quality  | {0-25} | {one-line}  |
+| Spec Semantic Match  | {0-25} | {one-line}  |
+| Anti-Pattern Hygiene | {0-25} | {one-line}  |
+| Workflow Coherence   | {0-25} | {one-line}  |
+
+### Anti-Pattern Scan (semantic)
 
 - CRITICAL: {list or "None found"}
 - HIGH: {list or "None found"}
@@ -130,8 +122,8 @@ Written to: {path}/trigger-tests.md
 
 ### Summary
 
-PASS: {n}/16 structural checks
-WARNINGS: {n} anti-patterns ({n} critical, {n} high, {n} medium)
+Deterministic: {n}/25
+Semantic: {n}/100
 ACTION REQUIRED: {description of blocking issues, or "None — ready to ship"}
 ```
 

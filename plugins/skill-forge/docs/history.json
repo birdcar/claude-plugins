@@ -86,6 +86,52 @@
       },
       "description_changed": true,
       "trigger_test_results": {}
+    },
+    {
+      "timestamp": "2026-05-20T17:00:00Z",
+      "version": "0.8.0",
+      "parent_version": "0.7.1",
+      "trigger": "braindump: steal from walkinglabs/learn-harness-engineering harness-creator to improve skill creation, enable self-improving skills, and add full harness/harness-creator capability",
+      "scores": {
+        "before": {
+          "description_quality": 23,
+          "structural_compliance": 23,
+          "instruction_quality": 23,
+          "agent_tool_optimization": 22,
+          "total": 91
+        },
+        "after": {
+          "description_quality": 25,
+          "structural_compliance": 25,
+          "instruction_quality": 25,
+          "agent_tool_optimization": 25,
+          "total": 100
+        }
+      },
+      "changes": {
+        "applied": [
+          "Phase 7: Ported 6 reference docs from harness-creator (memory-persistence, context-engineering, tool-registry, multi-agent, lifecycle-bootstrap, gotchas) into shared/references/ with MIT attribution",
+          "Phase 7: Wrote shared/agentic-subsystems.md documenting the 5-subsystem mental model (Instructions/State/Verification/Scope/Lifecycle) shared between forge-skill and forge-harness",
+          "Phase 7: Restructured shared/anti-patterns.md to Problem/Golden Rules/Trade-offs/Implementation/Gotchas/Related Patterns shape; all 36 anti-patterns preserved with severity tags",
+          "Phase 7: Wrote scripts/validate-skill.mjs (344 lines) — pure Node deterministic skill validator scoring 5 subsystems with JSON+HTML output",
+          "Phase 8: Wrote shared/templates/evals-template.json and validate-mjs-template.mjs — every generated skill now ships with evals/evals.json and evals/validate.mjs",
+          "Phase 8: Updated skill-generator agent to emit evals/ artifacts (new Process step 10); added constraint requiring evals/ for marketplace skills",
+          "Phase 8: Updated skill-validator agent to delegate structural checks to validate-skill.mjs; removed 18-row inline check table; retained semantic checks only",
+          "Phase 8: Updated skill-optimizer to consume per-skill validate.mjs output; Structural Compliance dimension sourced from deterministic script",
+          "Phase 8: Updated create-skill and improve-skill SKILL.md files to wire in validate-skill.mjs invocations",
+          "Phase 9: Created new forge-harness skill (SKILL.md + command + trigger-tests + evals/) that scaffolds AGENTS.md+feature_list.json+progress.md+init.sh+session-handoff.md into target repos",
+          "Phase 9: Ported create-harness.mjs and validate-harness.mjs (+ harness-utils.mjs shared lib) from harness-creator with MIT attribution",
+          "Phase 9: Copied 6 harness templates into shared/templates/harness/",
+          "Phase 9: Updated intake-analyst to recognize harness-scaffolding intents; new artifact type harness-scaffold; new required Routing field selects forge-skill vs forge-harness",
+          "Phase 10: Bumped plugin.json 0.7.1 -> 0.8.0; updated description to acknowledge harness scaffolding capability",
+          "Phase 10: Updated docs/contract.md with 0.8.0 problem statement extension, goals 6+7, in-scope section, and reaffirmed cross-agent compat is out-of-scope",
+          "Phase 10: Updated docs/spec.md with 0.8.0 component manifest tables, Phase 7-10 execution plan, dependency graph",
+          "Pre-existing skills (create-skill, improve-skill) score 100/100 on the new validate-skill.mjs; new forge-harness also scores 100/100"
+        ],
+        "skipped": []
+      },
+      "description_changed": false,
+      "trigger_test_results": {}
     }
   ]
 }

@@ -32,7 +32,11 @@ Generate `spec.md` files using this structure. Replace `{placeholders}` with act
 
 ## Execution Plan
 
-### Phase 1: {Phase Name} ({dependency note})
+**This section is mandatory** for any skill that involves multiple files, multi-agent coordination, or scoped sub-tasks. A clear phased plan with explicit dependencies improves single-pass generation fidelity and enables parallel dispatch — pattern confirmed across three consecutive forge/improve runs (roost, skill-forge 0.7.1, skill-forge 0.8.0).
+
+For single-file skills with no agent team, this section may be a one-line "single-phase" note.
+
+### Phase 1: {Phase Name} ({dependency note: "no dependencies" or "depends on Phase X"})
 
 - {File to create/modify}
 - {File to create/modify}
@@ -41,7 +45,22 @@ Generate `spec.md` files using this structure. Replace `{placeholders}` with act
 
 - {File to create/modify}
 
-{Continue for each phase. Note dependencies and which phases can run in parallel.}
+{Continue for each phase. Note dependencies AND which phases can run in parallel — the generator uses this to dispatch concurrent Agent calls.}
+
+### Dependency Graph (optional but recommended for 4+ phases)
+```
+
+Phase 1 (no deps)
+│
+├──── Phase 2 (depends on 1)
+│ │
+│ ├──── Phase 4 (depends on 2)
+│
+└──── Phase 3 (depends on 1, runs parallel to Phase 2)
+│
+└──── Phase 4 (depends on 2 AND 3)
+
+```
 
 ## Retrospective Configuration
 

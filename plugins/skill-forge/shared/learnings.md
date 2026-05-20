@@ -76,3 +76,33 @@ Accumulated observations from retrospective runs. The retrospective agent append
 ### Knowledge Base Updates
 
 - No updates proposed (no pattern has reached 3 logged occurrences; missing-tool pattern is at 2)
+
+## Retrospective — 2026-05-20
+
+### Run: improve — skill-forge (scope-expansion, v0.7.1 → 0.8.0, braindump: adopt harness-creator patterns)
+
+### Scores
+
+- Before: 91 total (Description 23, Structure 23, Instructions 23, Agents/Tools 22)
+- After: 100 total (+9) — perfect score; deterministic validate-skill.mjs now covers structural checks
+
+### Observations
+
+- Scope-expansion vs defect-cleanup: this is the first improve run that added a net-new sibling skill (forge-harness) rather than fixing existing artifacts — existing contract.md/spec.md structure handled it but the contract revision felt bolted-on; contract templates assume scope is fixed at intake, not expanded mid-run
+- Stealing-with-attribution workflow: 6 reference docs + 2 scripts ported from walkinglabs/learn-harness-engineering (MIT); no prior precedent in the plugin; no external-sources index exists — if ported content drifts from upstream, there is no mechanism to detect it or propose a sync
+- Deterministic validator displacement: scripts/validate-skill.mjs now does structural checks that skill-validator agent previously did via LLM reasoning; this is the first occurrence of script-displacing-agent for mechanical validation
+- Template-syntax landmine: `{{COMPONENT_MANIFEST}}` in validate-mjs-template.mjs broke Prettier because the unsubstituted file was not valid JS; workaround was wrapping placeholders in valid-syntax envelopes (e.g., `JSON.parse('{{...}}')`) — this class of bug will recur for any template containing object/array placeholder syntax
+- forge-harness meta-level gap: plugin now has forge-skill (creates skills) + forge-harness (creates harnesses); "forge-meta" (creates harness creators) was discussed but not built; current assessment is forge-skill is sufficient — a harness creator is just a skill with a create-harness.mjs in its scripts/; no real gap at this time
+- Phased execution plan (10 phases) correlated with zero generation deviations and zero skipped scope items — third run where phased spec structure correlates with single-pass generation fidelity
+
+### Patterns Detected
+
+- Phased execution plan correlating with single-pass generation: now at 3 occurrences (roost, 0.7.1, 0.8.0) — threshold reached; propose adding mandatory phased execution plan to spec template for multi-agent or multi-phase runs
+- Scope-expansion via improve run (contract template friction): first logged occurrence — watch; if it recurs 2 more times, propose a scope-expansion contract section in the contract template
+- Stealing-with-attribution workflow (no external-sources index): first logged occurrence — watch; if it recurs 2 more times, propose `shared/external-sources.md` tracking ported content + license + origin commit SHA
+- Deterministic script displacing LLM agent for mechanical validation: first logged occurrence — watch; if it recurs 2 more times, propose Golden Rule addition to agentic-subsystems.md
+- Template-syntax landmine (unsubstituted placeholders breaking formatter): first logged occurrence — watch; if it recurs 2 more times, propose new entry in anti-patterns.md Cluster 3
+
+### Knowledge Base Updates
+
+- PROPOSED (3-occurrence threshold reached): add mandatory phased execution plan guidance to spec template for multi-agent or multi-phase plugins — awaiting orchestrator approval before editing `shared/templates/spec-template.md`

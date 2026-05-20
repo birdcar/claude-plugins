@@ -184,8 +184,9 @@ This step is most valuable when significant instruction or workflow changes were
 After all approved changes are applied:
 
 1. Re-read all modified files
-2. Re-score all four dimensions (you may do this inline, no need to re-spawn the agent unless the changes are extensive)
-3. Present a before/after scorecard:
+2. If the skill has `evals/validate.mjs`, run it via Bash to get the deterministic structural scores. These become the authoritative source for the **Structural Compliance** dimension — the orchestrator does not need to re-score that dimension independently.
+3. Re-score the remaining dimensions inline (no need to re-spawn the agent unless changes were extensive)
+4. Present a before/after scorecard:
 
 ```
 Dimension          Before  After  Change
@@ -198,7 +199,7 @@ Agents/Tools           8     19    +11
 TOTAL                 53     85    +32
 ```
 
-4. Append a score history entry to `{skill-root}/docs/learnings.md`. Create the file if it does not exist.
+5. Append a score history entry to `{skill-root}/docs/learnings.md`. Create the file if it does not exist.
 
 ```markdown
 ## YYYY-MM-DD — Improvement Run
@@ -212,7 +213,7 @@ TOTAL                 53     85    +32
 
 Use the actual date (from the system) and real scores. This creates an audit trail of improvement runs over time.
 
-5. Write an entry to `{skill-root}/docs/history.json`. Create the file if it does not exist (initialize with `{ "skill_name": "<name>", "entries": [] }`). The entry schema is defined in `${CLAUDE_PLUGIN_ROOT}/shared/history-schema.md`. Include:
+6. Write an entry to `{skill-root}/docs/history.json`. Create the file if it does not exist (initialize with `{ "skill_name": "<name>", "entries": [] }`). The entry schema is defined in `${CLAUDE_PLUGIN_ROOT}/shared/history-schema.md`. Include:
    - Timestamp (current time, ISO 8601)
    - Version from `plugin.json` (or `"unversioned"` for non-plugin skills)
    - Before and after scores for all four dimensions
@@ -220,7 +221,7 @@ Use the actual date (from the system) and real scores. This creates an audit tra
    - Whether the description was changed
    - Trigger test results if applicable
 
-6. If the skill is inside a marketplace plugin (a `package.json` exists in the plugin directory with `bun` scripts), run:
+7. If the skill is inside a marketplace plugin (a `package.json` exists in the plugin directory with `bun` scripts), run:
 
    ```bash
    bun run typecheck && bun run build
@@ -228,7 +229,7 @@ Use the actual date (from the system) and real scores. This creates an audit tra
 
    Report the result.
 
-7. If the description field was changed, spawn the `skill-forge:skill-validator` agent (Haiku) with the skill directory path. The validator generates 20 trigger test queries and writes them to `trigger-tests.md` alongside the improved SKILL.md. Include the trigger test path in the report.
+8. If the description field was changed, spawn the `skill-forge:skill-validator` agent (Haiku) with the skill directory path. The validator generates 20 trigger test queries and writes them to `trigger-tests.md` alongside the improved SKILL.md. Include the trigger test path in the report.
 
 ## Step 6 — Retrospective
 
