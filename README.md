@@ -35,11 +35,13 @@ Git workflow commands: `/commit` and `/pr`.
 
 Five language-agnostic slash commands for common development tasks: `/build`, `/test`, `/lint`, `/check`, and `/deps`. Each detects the project's tooling from lockfiles and config files — `/test` knows to run `bun test` in a Bun project, `pytest` in a Python project, or `cargo test` in a Rust project. `/check` chains all three validation steps (typecheck → lint → test) and stops on the first failure.
 
-### skill-forge `v0.6.0`
+### skill-forge `v0.8.0`
 
-Generate production-grade Claude Code plugins from a brain dump. `/forge-skill` takes a description — as rough or detailed as you like — and runs it through a pipeline of specialized agents (intake analyst, skill researcher, generator, validator, optimizer, scaffold writer) that turn it into a complete plugin with proper structure, optimized skill instructions, and passing type checks.
+Generate production-grade Claude Code plugins from a brain dump. `/forge-skill` takes a description — as rough or detailed as you like — and runs it through a spec-driven pipeline of specialized agents (intake analyst, skill researcher, generator, validator, optimizer, scaffold writer) that turn it into a complete plugin with proper structure, evals, retrospective wiring, and passing type checks. Every generated skill ships with `evals/evals.json` + `evals/validate.mjs` so future improve runs have deterministic ground truth.
 
-`/improve-skill` takes an existing skill or command and iteratively improves it based on feedback, showing proposed changes before applying them.
+`/improve-skill` takes an existing skill and runs a three-way analysis (spec + skill + your braindump), producing a before/after scorecard and an audit trail in `docs/history.json`.
+
+`/forge-harness` scaffolds an agentic harness _into_ a target repo — `AGENTS.md` (or `CLAUDE.md`), `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md` — with stack-aware verification commands (Node, Python, Go, Rust, Java, .NET). The harness scaffolder and its mental model (5-subsystem: Instructions/State/Verification/Scope/Lifecycle) are adapted from [`walkinglabs/learn-harness-engineering`](https://github.com/walkinglabs/learn-harness-engineering) under MIT.
 
 ### [focus](plugins/focus/) `v0.4.0`
 
