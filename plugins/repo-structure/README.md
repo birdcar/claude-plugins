@@ -1,8 +1,10 @@
 # repo-structure
 
-Enforces the `~/Code/ORG/REPO` directory convention for cloned repos and new projects. Implemented entirely as `PreToolUse` hooks — no skills or commands, just automatic interception.
+Enforces the `~/Code/ORG/REPO` directory convention for cloned repos. Implemented entirely as a `PreToolUse` hook — no skills or commands, just automatic interception.
 
-Without a consistent layout, repos accumulate on the Desktop, in Downloads, or directly in `~`. This plugin intercepts Bash commands before they run, so you don't have to remember the convention or police it manually. If Claude tries to clone or scaffold in the wrong place, the hook blocks the command and returns the corrected version with `mkdir -p` included.
+Without a consistent layout, clones accumulate on the Desktop, in Downloads, or directly in `~`. This plugin intercepts `git clone` and `gh repo clone` before they run, so you don't have to remember a target path. If Claude tries to clone into the wrong place, the hook blocks the command and returns the corrected version with `mkdir -p` included.
+
+It fires **only** on `git clone` and `gh repo clone`. Every other Bash command passes straight through untouched.
 
 ## Install
 
@@ -16,8 +18,6 @@ Without a consistent layout, repos accumulate on the Desktop, in Downloads, or d
 **Cloning** (`git clone`, `gh repo clone`): target must be `~/Code/{org}/{repo}`.
 
 Parses GitHub HTTPS URLs, SSH URLs, and `gh` CLI shorthand. Strips `.git` suffixes. Preserves any flags you pass (`--depth 1`, `--branch main`, etc.). Non-GitHub URLs pass through without validation.
-
-**Scaffolding** (`bun init`, `npm init`, `pnpm init`, `uv init`, `cargo init`, `cargo new`): target must be `~/Code/{owner}/{project}`. When no explicit owner is given, it defaults to `birdcar`.
 
 ## WorkOS repo routing
 
@@ -33,7 +33,7 @@ WorkOS repos get special-cased into subdirectories rather than landing directly 
 
 ## Exceptions
 
-These paths always pass through:
+These clone targets always pass through:
 
 - `~/Code/_*/` — underscore directories for experiments and learning
 - `~/Code/workos/demo` — the single WorkOS demo app (distinct from `demos/`)
@@ -41,10 +41,10 @@ These paths always pass through:
 
 ## Implementation notes
 
-Clone validation runs as a shell script (`hooks/validate-clone.sh`) to do fast regex extraction without spinning up a Node process. Scaffolding validation runs as a prompt hook since the path inference logic benefits from Claude's context awareness — for example, knowing the CWD when no explicit path is given.
+Clone validation runs as a shell script (`hooks/validate-clone.sh`) so it can do fast regex extraction without spinning up a Node process. The script self-gates: it exits immediately (allowing the command) unless the command begins with `git clone` or `gh repo clone`, so the overhead on unrelated commands is negligible.
 
-When a command is blocked, the hook returns a corrected version with `mkdir -p` so the target directory tree is created automatically.
+When a clone is blocked, the hook returns a corrected version with `mkdir -p` included so the target directory tree gets created automatically.
 
 ## Limitations
 
-The default owner (`birdcar`) is hardcoded in the prompt hook. If you fork this plugin, update that string in `hooks/hooks.json`. The clone script has no equivalent default — org is always parsed from the URL.
+Org is always parsed from the clone URL; there is no default owner. The hook matches `git clone` / `gh repo clone` only at the start of a command, so a clone chained behind another command (e.g. `cd foo && git clone …`) passes through unvalidated — in that case you've already chosen an explicit location.

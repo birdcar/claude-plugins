@@ -6,43 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git clone *)",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-clone.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(gh repo clone *)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-clone.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(bun init*)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-init.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(npm init*)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-init.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(pnpm init*)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-init.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(uv init*)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-init.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(cargo init*)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-init.sh"
-          },
-          {
-            "type": "command",
-            "if": "Bash(cargo new *)",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-init.sh"
           }
         ]
       }
