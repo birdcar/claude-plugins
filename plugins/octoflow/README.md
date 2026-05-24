@@ -61,6 +61,6 @@ Like `/commit`, the description is presented for approval before the PR is creat
 
 ## Hook
 
-The `intercept-git-commit` hook watches all `Bash` tool calls for `git commit` commands. If the command already starts with a conventional commit type prefix (`feat:`, `fix(scope):`, `chore!:`, etc.) it passes through — this lets `/commit`'s own generated commands work normally. If not, it blocks the commit with an exit code of 2 and redirects to `/commit`.
+The `validate-commit.sh` hook watches `Bash` tool calls for `git commit` commands. It self-gates: any command that isn't a `git commit` exits immediately and passes through, so there's no overhead (and no model inference) on unrelated commands. If the commit message already carries a conventional commit type prefix (`feat:`, `fix(scope):`, `chore!:`, etc.) it passes through — this lets `/commit`'s own generated commands work normally. If not, it blocks the commit with an exit code of 2 and redirects to `/commit`.
 
 When blocked, Claude sees a message explaining what happened and what to do next. Raw `git commit -m "update stuff"` gets caught; the plugin's own workflow doesn't get interrupted.
