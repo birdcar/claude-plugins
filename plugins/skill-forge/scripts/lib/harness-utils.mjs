@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const SKILL_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const TEMPLATE_DIR = path.join(SKILL_ROOT, 'templates');
+export const TEMPLATE_DIR = path.join(SKILL_ROOT, 'shared', 'templates', 'harness');
 export const SUBSYSTEMS = ['instructions', 'state', 'verification', 'scope', 'lifecycle'];
 
 export function parseArgs(argv) {
@@ -88,19 +88,40 @@ export async function detectProject(root) {
   const files = await listFiles(root, { maxFiles: 800 });
   const has = (name) => files.some((file) => file === name || file.endsWith(`/${name}`));
   const hasPrefix = (prefix) => files.some((file) => file.startsWith(prefix));
-  const packageJsonPath = path.join(root, 'package.json');
-  const packageJson = await exists(packageJsonPath).then((ok) =>
-    ok ? readJson(packageJsonPath) : null
-  );
+
+  // Read manifests up front. `parse` is applied to the file contents (JSON.parse
+  // for JSON manifests); pyproject.toml is kept as raw text — Node has no built-in
+  // TOML parser and the harness scripts must stay dependency-free.
+  const readManifest = async (name, parse) => {
+    const full = path.join(root, name);
+    if (!(await exists(full))) return null;
+    try {
+      const text = await readText(full);
+      return parse ? parse(text) : text;
+    } catch {
+      return null;
+    }
+  };
+
+  const packageJson = await readManifest('package.json', JSON.parse);
+  const composerJson = await readManifest('composer.json', JSON.parse);
+  const pyproject = await readManifest('pyproject.toml');
 
   let stack = 'generic';
-  if (packageJson) {
+  if (composerJson) {
+    // PHP is checked BEFORE package.json: Laravel / Filament apps ship both a
+    // composer.json (the backend, primary stack) and a package.json (Vite/asset
+    // build). composer.json presence means PHP is the stack that drives verification.
+    const deps = { ...composerJson.require, ...composerJson['require-dev'] };
+    stack = deps['laravel/framework'] || has('artisan') ? 'php-laravel' : 'php';
+  } else if (packageJson) {
     const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
     if (deps.react || hasPrefix('src/renderer')) stack = 'typescript-react';
     else if (deps.typescript || has('tsconfig.json')) stack = 'typescript';
     else stack = 'node';
-  } else if (has('pyproject.toml') || has('requirements.txt')) {
-    stack = 'python';
+  } else if (pyproject !== null || has('requirements.txt')) {
+    // manage.py is the strongest Django signal; fall back to a dependency hint.
+    stack = has('manage.py') || /django/i.test(pyproject || '') ? 'python-django' : 'python';
   } else if (has('go.mod')) {
     stack = 'go';
   } else if (has('Cargo.toml')) {
@@ -117,6 +138,8 @@ export async function detectProject(root) {
     root,
     stack,
     packageJson,
+    composerJson,
+    pyproject,
     files,
     packageManager: detectPackageManager(root),
   };
@@ -162,15 +185,58 @@ export async function listFiles(root, { maxFiles = 1000 } = {}) {
 
 export function verificationCommands(project, explicitPackageManager) {
   const pm = explicitPackageManager || project.packageManager || 'npm';
-  const scripts = project.packageJson?.scripts ?? {};
-  const run = (script) => {
-    if (pm === 'npm') return `npm run ${script}`;
-    if (pm === 'yarn') return `yarn ${script}`;
-    return `${pm} run ${script}`;
-  };
+  const files = project.files ?? [];
+  const has = (name) => files.some((file) => file === name || file.endsWith(`/${name}`));
 
-  if (project.stack === 'python') {
-    return ['python -m pytest', 'python -m compileall .'];
+  // --- PHP (Laravel / Filament / plain) ---
+  // Composer scripts first: honor project-defined verification scripts when present,
+  // then fall back to framework-native commands (artisan / pint / pest / phpunit).
+  if (project.stack === 'php' || project.stack === 'php-laravel') {
+    const composer = project.composerJson ?? {};
+    const deps = { ...composer.require, ...composer['require-dev'] };
+    const scripts = composer.scripts ?? {};
+    const cmds = ['composer install'];
+
+    const scripted = [
+      scripts.lint ? 'composer lint' : null,
+      scripts.analyse
+        ? 'composer analyse'
+        : scripts.stan
+          ? 'composer stan'
+          : scripts.phpstan
+            ? 'composer phpstan'
+            : null,
+      scripts.test ? 'composer test' : null,
+    ].filter(Boolean);
+
+    if (scripted.length > 0) return dedupe([...cmds, ...scripted]);
+
+    // Framework fallback when composer.json defines no verification scripts.
+    if (deps['laravel/pint']) cmds.push('./vendor/bin/pint --test');
+    if (project.stack === 'php-laravel') cmds.push('php artisan test');
+    else if (deps['pestphp/pest']) cmds.push('./vendor/bin/pest');
+    else cmds.push('./vendor/bin/phpunit');
+    return dedupe(cmds);
+  }
+
+  // --- Python (uv / Django / ruff / ty) ---
+  if (project.stack === 'python' || project.stack === 'python-django') {
+    const py = project.pyproject ?? '';
+    const useUv = has('uv.lock') || /\[tool\.uv\]/.test(py);
+    const prefix = useUv ? 'uv run ' : '';
+    const cmds = [];
+    if (useUv) cmds.push('uv sync');
+    else if (has('requirements.txt')) cmds.push('pip install -r requirements.txt');
+    if (/\bruff\b/.test(py) || has('ruff.toml') || has('.ruff.toml')) {
+      cmds.push(`${prefix}ruff check .`);
+    }
+    if (/\bty\b/.test(py)) cmds.push(`${prefix}ty check`);
+    if (project.stack === 'python-django' || has('manage.py')) {
+      cmds.push(`${prefix}python manage.py test`);
+    } else {
+      cmds.push(`${prefix}pytest`);
+    }
+    return dedupe(cmds);
   }
 
   if (project.stack === 'go') return ['go test ./...'];
@@ -185,6 +251,12 @@ export function verificationCommands(project, explicitPackageManager) {
     ];
   }
 
+  const scripts = project.packageJson?.scripts ?? {};
+  const run = (script) => {
+    if (pm === 'npm') return `npm run ${script}`;
+    if (pm === 'yarn') return `yarn ${script}`;
+    return `${pm} run ${script}`;
+  };
   const install = pm === 'npm' ? 'npm install' : pm === 'yarn' ? 'yarn install' : `${pm} install`;
   const candidates = [
     scripts.check ? run('check') : null,

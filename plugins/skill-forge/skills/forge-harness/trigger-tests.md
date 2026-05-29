@@ -28,8 +28,8 @@ Target: 90%+ activation on should-trigger, <10% activation on should-not-trigger
 
 ### Embedded Context
 
-9. "I've got a Node + React project at /Users/me/code/store and I want to generate a harness assessment HTML report so I can share my agent setup with the team"
-10. "My init.sh in /repo isn't verifying anything useful — set up init.sh verification for /repo with the right commands for our stack"
+9. "I've got a Laravel + Filament app at /Users/me/code/admin-panel and I want to make it agent-ready with a harness so an agent can run my tests reliably"
+10. "Set up init.sh verification for my Django project at /repo — it uses uv, so make sure the commands use the right runner"
 
 ## Should NOT Trigger (expect skill to stay inactive)
 

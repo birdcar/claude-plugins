@@ -78,6 +78,32 @@
         "Names forge-skill (or create-skill) as the correct workflow for building a Claude Code skill",
         "Distinguishes between scaffolding an agent harness in a target repo vs creating a reusable Claude Code skill primitive"
       ]
+    },
+    {
+      "id": 7,
+      "name": "Laravel + Filament App With Both composer.json and package.json",
+      "prompt": "Scaffold a harness for my Laravel + Filament app at /tmp/eval-laravel. It has a composer.json plus a package.json for Vite assets.",
+      "expected_output": "Invokes create-harness.mjs with --target /tmp/eval-laravel. Detector resolves to the PHP/Laravel stack via composer.json + laravel/framework even though a package.json is present (the PHP backend is primary; package.json is just the Vite asset build). init.sh contains PHP verification commands (composer install, php artisan test, and ./vendor/bin/pint --test when Laravel Pint is present, or the project's composer scripts) rather than npm/bun-flavored commands. Reports the detected php-laravel stack.",
+      "files": [],
+      "expectations": [
+        "Runs `node ${CLAUDE_PLUGIN_ROOT}/scripts/create-harness.mjs --target /tmp/eval-laravel`",
+        "Reports the detected stack as PHP/Laravel (php-laravel), NOT node or typescript, despite the package.json being present",
+        "init.sh contains `composer install` and a PHP test command (`php artisan test`, `composer test`, or `./vendor/bin/pest`/`phpunit`) and does NOT contain `npm`, `bun`, `pnpm`, `yarn`, or `pytest` commands",
+        "AGENTS.md (or CLAUDE.md), feature_list.json, progress.md, session-handoff.md, and init.sh are all written"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Python + uv + Django Project",
+      "prompt": "Set up an agent harness for my Django project at /tmp/eval-django. It uses uv (there's a uv.lock and [tool.uv] in pyproject.toml) and has a manage.py.",
+      "expected_output": "Invokes create-harness.mjs with --target /tmp/eval-django. Detector resolves to the python-django stack via manage.py + django dependency. init.sh uses uv-managed runners (`uv sync`, then `uv run ...` prefixed commands) and Django's `python manage.py test` rather than a bare `python -m pytest`. ruff and ty checks are included when configured. Reports the detected stack.",
+      "files": [],
+      "expectations": [
+        "Runs `node ${CLAUDE_PLUGIN_ROOT}/scripts/create-harness.mjs --target /tmp/eval-django`",
+        "init.sh uses uv (`uv sync` and `uv run` prefixes) and Django's `python manage.py test`, and does NOT use a bare `python -m pytest`/`python -m compileall` or npm commands",
+        "Reports the detected stack as python-django",
+        "AGENTS.md, feature_list.json, progress.md, session-handoff.md, and init.sh are all written to /tmp/eval-django"
+      ]
     }
   ]
 }

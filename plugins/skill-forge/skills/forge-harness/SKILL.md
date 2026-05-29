@@ -3,8 +3,9 @@ name: forge-harness
 description: >-
   Scaffolds an agentic harness into a target repository — AGENTS.md or CLAUDE.md,
   feature_list.json, progress.md, init.sh, and session-handoff.md. Detects the
-  target's stack (Node, Python, Go, Rust, Java, .NET) and emits stack-appropriate
-  verification commands. Use when the user asks to "scaffold a harness", "add
+  target's stack (Node, Python, PHP, Go, Rust, Java, .NET) and emits stack-appropriate
+  verification commands — framework-aware for Laravel/Filament, Django, and uv-managed
+  Python. Use when the user asks to "scaffold a harness", "add
   AGENTS.md", "set up CLAUDE.md", "make this repo agent-ready", "create a feature
   tracker for this repo", "add session continuity", or "audit this repo's
   agent harness".

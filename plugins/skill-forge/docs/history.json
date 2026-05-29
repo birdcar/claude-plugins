@@ -132,6 +132,48 @@
       },
       "description_changed": false,
       "trigger_test_results": {}
+    },
+    {
+      "timestamp": "2026-05-29T00:00:00Z",
+      "version": "0.9.0",
+      "parent_version": "0.8.0",
+      "target_skill": "forge-harness",
+      "trigger": "User braindump: make forge-harness aware of PHP (Laravel, Filament) and Python (FastAPI, FastMCP, Django, uv, Typer) practices",
+      "scores": {
+        "before": {
+          "description_quality": 21,
+          "structural_compliance": 25,
+          "instruction_quality": 16,
+          "agent_tool_optimization": 22,
+          "total": 84
+        },
+        "after": {
+          "description_quality": 24,
+          "structural_compliance": 25,
+          "instruction_quality": 23,
+          "agent_tool_optimization": 22,
+          "total": 94
+        }
+      },
+      "changes": {
+        "applied": [
+          "Fixed critical latent bug: harness-utils.mjs TEMPLATE_DIR resolved to <plugin>/templates instead of shared/templates/harness/, so create-harness.mjs failed with ENOENT on every run — the entire create flow was non-functional",
+          "detectProject: added PHP detection via composer.json (php-laravel when laravel/framework dep or artisan present, else php), checked BEFORE package.json so Laravel/Filament apps that ship both manifests resolve to the PHP backend",
+          "detectProject: refined Python granularity to python-django (manage.py present or django dep); reads pyproject.toml as raw text (no TOML dependency) and composer.json as JSON",
+          "verificationCommands PHP branch: composer install + composer scripts-first (lint/analyse/stan/phpstan/test) with framework fallback to ./vendor/bin/pint --test + php artisan test (Laravel) or pest/phpunit (plain PHP)",
+          "verificationCommands Python branch: uv-aware (uv sync + 'uv run' prefix when uv.lock or [tool.uv]), ruff check + ty check when configured, python manage.py test for Django else pytest",
+          "SKILL.md description: added PHP to the stack list and framework-awareness phrasing (Laravel/Filament, Django, uv) to the trigger surface",
+          "Spec-first updates: contract.md 0.9.0 revision note; spec.md create-harness.mjs row updated with PHP + framework-awareness + template-path note",
+          "evals/evals.json: added case 7 (Laravel+Filament with both composer.json and package.json — PHP must beat Node) and case 8 (Python+uv+Django — uv-aware commands)",
+          "trigger-tests.md: reworked embedded-context queries 9-10 to exercise Laravel/Filament and Django/uv triggers",
+          "Bumped plugin.json 0.8.0 -> 0.9.0; ran sync; typecheck + build + format:check all green; verified end-to-end against PHP/Laravel, plain-PHP, Python-uv-Django, Node-React, and Go fixtures"
+        ],
+        "skipped": [
+          "Did not spawn skill-optimizer/skill-validator sub-agents — the change lived in the deterministic .mjs engine (which the optimizer's four-dimension prose rubric does not score), so analysis, scoring, and the trigger-test refresh were done inline with full context and runtime fixture proof"
+        ]
+      },
+      "description_changed": true,
+      "trigger_test_results": {}
     }
   ]
 }

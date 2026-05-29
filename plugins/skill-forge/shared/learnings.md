@@ -106,3 +106,30 @@ Accumulated observations from retrospective runs. The retrospective agent append
 ### Knowledge Base Updates
 
 - PROPOSED (3-occurrence threshold reached): add mandatory phased execution plan guidance to spec template for multi-agent or multi-phase plugins — awaiting orchestrator approval before editing `shared/templates/spec-template.md`
+
+## Retrospective — 2026-05-29
+
+### Run: improve — forge-harness (capability-extension, v0.8.0 → 0.9.0, braindump: PHP/Laravel/Filament + Python FastAPI/FastMCP/Django/uv/Typer awareness)
+
+### Scores
+
+- Before: 84 total (Description 21, Structure 25, Instructions 16, Agents/Tools 22)
+- After: 94 total (+10) (Description 24, Structure 25, Instructions 23, Agents/Tools 22)
+
+### Observations
+
+- The braindump targeted a capability that lives entirely in a **bundled deterministic script** (`scripts/lib/harness-utils.mjs` — `detectProject` + `verificationCommands`), not in SKILL.md prose. The four-dimension optimizer rubric (Description/Structure/Instructions/Agents) does not score script logic, so the standard "spawn skill-optimizer" step would have under-served this run. Analysis was done inline with runtime fixture proof instead.
+- A **critical latent bug surfaced only because the work required executing the script**: `TEMPLATE_DIR` resolved to `<plugin>/templates` (the origin repo's layout) while skill-forge placed templates at `shared/templates/harness/`. `create-harness.mjs` had been failing with `ENOENT` on every `create` run since the 0.8.0 port. The per-skill `validate.mjs` reported 100/100 the whole time because it checks structure, never executes the script. This is occurrence 2 of the "ported-content drift" class first logged in 0.8.0 (stealing-with-attribution, no integration smoke test).
+- Stack detection ordering matters more than expected: Laravel/Filament apps ship **both** `composer.json` and `package.json`. Naively checking `package.json` first misclassifies every Laravel app as Node. The fix (check `composer.json` first) is a domain insight that a language-agnostic detector misses.
+- Library-level frameworks (FastAPI, FastMCP, Typer) have **no reliable filesystem fingerprint** distinct from "Python managed by uv." Serving them implicitly via the uv-aware baseline (`uv sync` + `uv run pytest` + ruff/ty) is the correct call; only Django earns a distinct branch because `manage.py` changes the test command. Detection granularity should track _what changes the verification command_, not _what the user names_.
+- Description trigger-surface value: adding "PHP", "Laravel/Filament", "Django", "uv" to the SKILL.md description directly serves a user whose dominant stack was previously invisible to the trigger matcher.
+
+### Patterns Detected
+
+- **Improve run where the target behavior lives in a bundled script, not prose (occurrence 1).** The optimizer's prose rubric is blind to deterministic engine logic. If this recurs 2 more times: propose an explicit improve-skill step — "if the skill delegates behavior to a bundled script, read and run that script against a fixture as part of Step 2 analysis."
+- **Ported scripts carry origin-repo path/layout assumptions, undetected by structural validators (occurrence 2 of ported-content drift).** 0.8.0 logged "no external-sources index"; this run found the concrete failure mode (broken runtime path shipped + survived a release). At occurrence 3, the case for a port-integration smoke test in CI becomes strong.
+- **Stack detector ordering bugs for polyglot projects (occurrence 1).** Laravel-beats-Node is now encoded in an eval; watch for the same class with other backend+frontend combos (Rails+package.json, Django+package.json).
+
+### Knowledge Base Updates
+
+- No new updates proposed at threshold this run. The "ported-content drift" pattern is now at 2 logged occurrences — one more warrants proposing a `shared/external-sources.md` index **plus** a port-integration smoke-test Golden Rule in `agentic-subsystems.md` (Verification subsystem). The pre-existing phased-execution-plan proposal remains open.
