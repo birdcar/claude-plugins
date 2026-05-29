@@ -1,6 +1,6 @@
 {
   "name": "skill-forge",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Generate and optimize production-grade Claude Code skills from brain dumps, and scaffold agentic harnesses into target repositories",
   "commands": ["./commands/"],
   "agents": [

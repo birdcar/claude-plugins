@@ -35,7 +35,7 @@
       "expected_output": "Invokes validate-harness.mjs with --target /tmp/eval-target --html <TARGET>/harness-assessment.html, writes a self-contained HTML file to the target directory, and reports the absolute path of the produced HTML to the user.",
       "files": [],
       "expectations": [
-        "Runs validate-harness.mjs (or run-benchmark.mjs) with both --target and --html flags",
+        "Runs validate-harness.mjs with both --target and --html flags",
         "HTML output path is inside the target directory and reported as an absolute path",
         "Output explicitly notes this is a structural benchmark, not a behavioral one, and that real effectiveness still requires before/after agent-session testing",
         "Does NOT skip the framing about structural-vs-behavioral evaluation"

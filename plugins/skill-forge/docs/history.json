@@ -174,6 +174,42 @@
       },
       "description_changed": true,
       "trigger_test_results": {}
+    },
+    {
+      "timestamp": "2026-05-29T00:00:01Z",
+      "version": "0.9.1",
+      "parent_version": "0.9.0",
+      "target_skill": "forge-harness",
+      "trigger": "Follow-up to 0.9.0: remove dead run-benchmark.mjs reference; add port-integration CI smoke test",
+      "scores": {
+        "before": {
+          "description_quality": 24,
+          "structural_compliance": 25,
+          "instruction_quality": 23,
+          "agent_tool_optimization": 22,
+          "total": 94
+        },
+        "after": {
+          "description_quality": 24,
+          "structural_compliance": 25,
+          "instruction_quality": 24,
+          "agent_tool_optimization": 22,
+          "total": 95
+        }
+      },
+      "changes": {
+        "applied": [
+          "Removed phantom scripts/run-benchmark.mjs reference from SKILL.md Step 5 (the live validate-harness.mjs --html already produces the report) and from eval case 3's expectations — the script never existed and was not in the spec manifest",
+          "Added scripts/smoke-harness.mjs — pure-Node end-to-end test that runs create-harness.mjs against php-laravel, python-django, node, and generic fixtures and asserts the generated init.sh carries the right commands",
+          "Wired the smoke test into .github/workflows/ci.yml as a step after Build (static command, no untrusted input)",
+          "Bumped plugin.json 0.9.0 -> 0.9.1"
+        ],
+        "skipped": [
+          "Reference-doc generalization (Golden Rule for executing ported scripts end-to-end + shared/external-sources.md index) held at occurrence 2 per the 3-occurrence knowledge-base gate; the CI smoke test is an engineering safeguard, not a knowledge-base mutation, so it does not advance or resolve the pattern count"
+        ]
+      },
+      "description_changed": false,
+      "trigger_test_results": {}
     }
   ]
 }

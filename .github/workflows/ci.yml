@@ -29,6 +29,9 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Harness smoke test
+        run: node plugins/skill-forge/scripts/smoke-harness.mjs
+
       - name: Verify sync is up to date
         run: |
           bun run sync

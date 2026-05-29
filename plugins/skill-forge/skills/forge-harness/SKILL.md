@@ -110,12 +110,6 @@ Present the result to the user. If overall < 70, recommend the first 2–3 chang
 node ${CLAUDE_PLUGIN_ROOT}/scripts/validate-harness.mjs --target <ABSOLUTE_PATH> --html <TARGET>/harness-assessment.html
 ```
 
-Or for the structural benchmark:
-
-```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/run-benchmark.mjs --target <ABSOLUTE_PATH> --html <TARGET>/harness-benchmark.html
-```
-
 After writing the HTML, tell the user the absolute path so they can open it in a browser.
 
 Be clear with the user: **this is a structural benchmark, not a behavioral one.** It confirms the harness is present and coherent. Real effectiveness still requires before/after agent-session testing on representative tasks.
