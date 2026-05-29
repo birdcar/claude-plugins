@@ -1,6 +1,0 @@
-{
-  "name": "dev-commands",
-  "version": "0.2.0",
-  "description": "Slash commands for common development workflows",
-  "commands": ["./commands/"]
-}

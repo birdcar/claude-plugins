@@ -1,5 +1,0 @@
-{
-  "name": "repo-structure",
-  "version": "0.3.0",
-  "description": "Enforces ~/Code/ORG/REPO directory convention for cloned repos"
-}

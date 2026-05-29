@@ -16,14 +16,6 @@
       "name": "@birdcar/claude-plugin-customer-voice",
       "version": "0.7.0",
     },
-    "plugins/dev-commands": {
-      "name": "@birdcar/dev-commands",
-      "version": "0.1.0",
-    },
-    "plugins/focus": {
-      "name": "@birdcar/claude-plugin-focus",
-      "version": "0.1.0",
-    },
     "plugins/github-actions-generator": {
       "name": "@birdcar/github-actions-generator",
       "version": "0.1.0",
@@ -40,14 +32,6 @@
       "name": "@birdcar/claude-plugin-octoflow",
       "version": "0.1.0",
     },
-    "plugins/repo-structure": {
-      "name": "@birdcar/claude-plugin-repo-structure",
-      "version": "0.1.0",
-    },
-    "plugins/roost": {
-      "name": "@birdcar/claude-plugin-roost",
-      "version": "0.2.0",
-    },
     "plugins/skill-forge": {
       "name": "@birdcar/claude-plugin-skill-forge",
       "version": "0.1.0",
@@ -58,21 +42,13 @@
 
     "@birdcar/claude-plugin-customer-voice": ["@birdcar/claude-plugin-customer-voice@workspace:plugins/customer-voice"],
 
-    "@birdcar/claude-plugin-focus": ["@birdcar/claude-plugin-focus@workspace:plugins/focus"],
-
     "@birdcar/claude-plugin-github-profile": ["@birdcar/claude-plugin-github-profile@workspace:plugins/github-profile"],
 
     "@birdcar/claude-plugin-home-server": ["@birdcar/claude-plugin-home-server@workspace:plugins/home-server"],
 
     "@birdcar/claude-plugin-octoflow": ["@birdcar/claude-plugin-octoflow@workspace:plugins/octoflow"],
 
-    "@birdcar/claude-plugin-repo-structure": ["@birdcar/claude-plugin-repo-structure@workspace:plugins/repo-structure"],
-
-    "@birdcar/claude-plugin-roost": ["@birdcar/claude-plugin-roost@workspace:plugins/roost"],
-
     "@birdcar/claude-plugin-skill-forge": ["@birdcar/claude-plugin-skill-forge@workspace:plugins/skill-forge"],
-
-    "@birdcar/dev-commands": ["@birdcar/dev-commands@workspace:plugins/dev-commands"],
 
     "@birdcar/github-actions-generator": ["@birdcar/github-actions-generator@workspace:plugins/github-actions-generator"],
 

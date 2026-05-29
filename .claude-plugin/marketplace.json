@@ -19,18 +19,6 @@
       "version": "0.7.0"
     },
     {
-      "name": "dev-commands",
-      "source": "./plugins/dev-commands",
-      "description": "Slash commands for common development workflows",
-      "version": "0.2.0"
-    },
-    {
-      "name": "focus",
-      "source": "./plugins/focus",
-      "description": "Personal productivity system with AI-powered goal cascade, daily planning, task capture, and external source review. Adapted from the Full Focus planner.",
-      "version": "0.4.0"
-    },
-    {
       "name": "github-actions-generator",
       "source": "./plugins/github-actions-generator",
       "description": "Generate TypeScript GitHub Actions with Bun workspaces",
@@ -53,18 +41,6 @@
       "source": "./plugins/octoflow",
       "description": "Core Git workflow commands for commits and pull requests",
       "version": "0.3.2"
-    },
-    {
-      "name": "repo-structure",
-      "source": "./plugins/repo-structure",
-      "description": "Enforces ~/Code/ORG/REPO directory convention for cloned repos",
-      "version": "0.3.0"
-    },
-    {
-      "name": "roost",
-      "source": "./plugins/roost",
-      "description": "Full-stack SaaS builder for the Cloudflare Workers + React Router 7 + WorkOS + Stripe + Resend + Twilio + PostHog stack. Generates production-ready applications with auth, billing, email, messaging, analytics, and deployment from a product description.",
-      "version": "0.4.0"
     },
     {
       "name": "skill-forge",
