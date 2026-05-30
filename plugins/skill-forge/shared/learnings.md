@@ -134,3 +134,29 @@ Accumulated observations from retrospective runs. The retrospective agent append
 ### Knowledge Base Updates
 
 - No new updates proposed at threshold this run. The "ported-content drift" pattern is now at 2 logged occurrences — one more warrants proposing a `shared/external-sources.md` index **plus** a port-integration smoke-test Golden Rule in `agentic-subsystems.md` (Verification subsystem). The pre-existing phased-execution-plan proposal remains open.
+
+## Retrospective — 2026-05-29
+
+### Run: audit — forge-harness (target: birdcar/zine, Laravel 13 + Livewire 4 + Vite)
+
+### Scores
+
+- Structural audit with the pre-change validator: 100/100 (5/5 every subsystem).
+- Post-change validator (new `claudeRoutesToHarness` instructions check): pre-fix repro of zine = 96/100 (instructions 5/6, bottleneck correctly surfaced as instructions); post-fix = 100/100.
+
+### Observations
+
+- **The validator OR's `AGENTS.md` | `CLAUDE.md`, masking a runtime file-loading reality.** `scoreHarness` reads `byPath.get('AGENTS.md') || byPath.get('CLAUDE.md')` for every instructions check. zine ships BOTH: `AGENTS.md` = laravel-boost guidelines + a `# Agent Harness` section; `CLAUDE.md` = laravel-boost guidelines only, zero harness references (grep-confirmed). Claude Code auto-loads `CLAUDE.md`, not `AGENTS.md` — so the harness scored a perfect 100 while being invisible to the exact runtime the repo is configured for. The 100 was real structurally and wrong operationally.
+- Same meta-failure class as 0.9.0/0.9.1 (structural green while runtime is broken — there it was the `TEMPLATE_DIR` ENOENT), but a NEW concrete mechanism: file-routing, not script execution.
+- Fix applied to the target: appended a concise `# Agent Harness` pointer to zine's `CLAUDE.md` AFTER the `</laravel-boost-guidelines>` closing tag — the same boost-update-safe placement `AGENTS.md` uses (`post-update-cmd` runs `boost:update`, which owns the tagged block).
+- Fix applied to the plugin: added `claudeRoutesToHarness` to the `instructions` checks. Conservative — passes when a repo has ≤1 of the two files (no ambiguity), fails only when both coexist and `CLAUDE.md` lacks any harness reference. Verified: pre-fix zine repro → 96 (FAIL); post-fix zine → 100 (PASS); single-file `AGENTS.md`-only harness → PASS (no regression); generator smoke test still PASSES.
+- Behavioral proof of the zine harness, independent of structure: `./init.sh` ran green end-to-end — composer install, env/sqlite/migrate bootstrap, bun build (153ms), Pint passed, Pest 67/67 (162 assertions, 10.6s), exit 0. The hand-tuned `init.sh` is RICHER than the improved generator output (`composer install` + `composer test`): it adds the DB bootstrap and asset build a Livewire+Vite app needs from a cold checkout. Regenerating with `--force` would REGRESS it.
+
+### Patterns Detected
+
+- **Interchangeable-file blind spot in the structural validator (occurrence 1).** The instructions subsystem treats `AGENTS.md` and `CLAUDE.md` as equivalent; the Claude Code runtime does not (loads only `CLAUDE.md` by default). Now guarded by `claudeRoutesToHarness`. If a sibling case recurs (e.g. a runtime that loads only `AGENTS.md` while the harness lives only in `CLAUDE.md`), generalize to "the auto-loaded instruction file must route to the harness," parameterized by runtime.
+- **"Structural green ≠ runtime-correct" meta-theme — 3rd distinct sighting** (after `create-harness` ENOENT and ported-content drift). Each sighting was a different mechanism caught only by execution or by reasoning about the runtime, never by the structural score. Strengthens the standing case for the end-to-end-execution Golden Rule held at occurrence 2 in `agentic-subsystems.md`.
+
+### Knowledge Base Updates
+
+- No reference-doc mutation proposed this run. `claudeRoutesToHarness` is an engineering safeguard (like the 0.9.1 smoke test), not a knowledge-base generalization. The "interchangeable-file blind spot" is at occurrence 1 — watch for a 2nd before proposing an `agentic-subsystems.md` note on runtime-aware instruction routing.

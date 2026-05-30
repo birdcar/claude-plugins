@@ -323,6 +323,10 @@ export function scoreHarness(files) {
         ['feature_list.json', 'progress.md'],
         'State artifacts routed from instructions'
       ),
+      claudeRoutesToHarness(
+        byPath,
+        'CLAUDE.md routes to the harness (when AGENTS.md and CLAUDE.md coexist)'
+      ),
     ],
     state: [
       hasFile(byPath, ['feature_list.json', 'feature-list.json'], 'Feature tracker exists'),
@@ -402,6 +406,29 @@ export function scoreHarness(files) {
 
 function hasFile(byPath, names, message) {
   return { pass: names.some((name) => byPath.has(name)), message };
+}
+
+// Claude Code auto-loads CLAUDE.md, not AGENTS.md. When a repo ships both, the
+// harness instructions can live entirely in AGENTS.md and still be invisible to a
+// Claude Code session — the structural checks pass because they OR the two files
+// together. Guard the both-files case: CLAUDE.md must reference the harness. Passes
+// when the repo has at most one of the two files (no routing ambiguity).
+function claudeRoutesToHarness(byPath, message) {
+  const claude = byPath.get('CLAUDE.md');
+  if (!byPath.has('AGENTS.md') || claude === undefined) {
+    return { pass: true, message };
+  }
+  const needles = [
+    'agents.md',
+    'feature_list',
+    'feature-list',
+    'init.sh',
+    'progress.md',
+    'session-handoff',
+    'harness',
+  ];
+  const lower = claude.toLowerCase();
+  return { pass: needles.some((needle) => lower.includes(needle)), message };
 }
 
 function textHas(text, needles, message) {
