@@ -23,7 +23,7 @@ To update after I've pushed changes:
 
 ## Available Plugins
 
-### octoflow `v0.3.0`
+### octoflow `v0.3.2`
 
 Git workflow commands: `/commit` and `/pr`.
 
@@ -31,7 +31,7 @@ Git workflow commands: `/commit` and `/pr`.
 
 `/pr` checks the current branch, compiles what's changed since main, generates a summary and test plan checklist, pushes if needed, then creates the PR via `gh pr create`. Returns the URL when done.
 
-### skill-forge `v0.8.0`
+### skill-forge `v0.9.1`
 
 Generate production-grade Claude Code plugins from a brain dump. `/forge-skill` takes a description — as rough or detailed as you like — and runs it through a spec-driven pipeline of specialized agents (intake analyst, skill researcher, generator, validator, optimizer, scaffold writer) that turn it into a complete plugin with proper structure, evals, retrospective wiring, and passing type checks. Every generated skill ships with `evals/evals.json` + `evals/validate.mjs` so future improve runs have deterministic ground truth.
 
