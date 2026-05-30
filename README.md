@@ -11,7 +11,7 @@ Register the marketplace, then install whatever you want:
 ```bash
 /plugin marketplace add birdcar/claude-plugins
 /plugin install octoflow@birdcar-plugins
-/plugin install dev-commands@birdcar-plugins
+/plugin install skill-forge@birdcar-plugins
 ```
 
 To update after I've pushed changes:
@@ -31,10 +31,6 @@ Git workflow commands: `/commit` and `/pr`.
 
 `/pr` checks the current branch, compiles what's changed since main, generates a summary and test plan checklist, pushes if needed, then creates the PR via `gh pr create`. Returns the URL when done.
 
-### dev-commands `v0.2.0`
-
-Five language-agnostic slash commands for common development tasks: `/build`, `/test`, `/lint`, `/check`, and `/deps`. Each detects the project's tooling from lockfiles and config files — `/test` knows to run `bun test` in a Bun project, `pytest` in a Python project, or `cargo test` in a Rust project. `/check` chains all three validation steps (typecheck → lint → test) and stops on the first failure.
-
 ### skill-forge `v0.8.0`
 
 Generate production-grade Claude Code plugins from a brain dump. `/forge-skill` takes a description — as rough or detailed as you like — and runs it through a spec-driven pipeline of specialized agents (intake analyst, skill researcher, generator, validator, optimizer, scaffold writer) that turn it into a complete plugin with proper structure, evals, retrospective wiring, and passing type checks. Every generated skill ships with `evals/evals.json` + `evals/validate.mjs` so future improve runs have deterministic ground truth.
@@ -43,19 +39,9 @@ Generate production-grade Claude Code plugins from a brain dump. `/forge-skill` 
 
 `/forge-harness` scaffolds an agentic harness _into_ a target repo — `AGENTS.md` (or `CLAUDE.md`), `feature_list.json`, `progress.md`, `init.sh`, `session-handoff.md` — with stack-aware verification commands (Node, Python, Go, Rust, Java, .NET). The harness scaffolder and its mental model (5-subsystem: Instructions/State/Verification/Scope/Lifecycle) are adapted from [`walkinglabs/learn-harness-engineering`](https://github.com/walkinglabs/learn-harness-engineering) under MIT.
 
-### [focus](plugins/focus/) `v0.4.0`
-
-A personal productivity system that uses GitHub Issues as its data layer. Inspired by the Full Focus Planner, it maps annual goals across 9 life domains (Body, Mind, Spirit, Love, Family, Money, Community, Hobbies, Work) to quarterly outcomes to daily tasks. Every morning, a GitHub Action creates a daily thread where you pick your Big 3. At night, it compiles into a journal entry.
-
-Nine slash commands cover the full loop: `/focus:init` bootstraps everything in one session, `/focus:plan` proposes your Big 3 each morning, `/focus:daily` shows your thread, `/focus:goal` and `/focus:task` create with coached interviews, `/focus:goals` views the cascade, `/focus:review` scans Slack/Granola/Gmail/Calendar for missed commitments, `/focus:rituals` manages your daily checklists, and `/focus:labels` syncs the taxonomy. Seven GitHub Actions automate daily threads, ritual postings, journal compilation, weekly reviews, and stale task cleanup.
-
 ### github-actions-generator `v0.1.0`
 
 Scaffold TypeScript GitHub Actions for Bun workspace monorepos. The `generate-action` skill handles the full lifecycle: `action.yml`, entrypoint, package.json, tsconfig, CI workflow, release workflow, Octokit patterns, error handling, and tests. It carries reference templates so the generated output follows established patterns rather than guessing.
-
-### repo-structure `v0.1.0`
-
-Enforces a `~/Code/ORG/REPO` directory convention for cloned repos and new projects. Implemented as a `PreToolUse` hook on Bash commands — when you run `git clone`, `gh repo clone`, or an init command (`bun init`, `cargo new`, etc.) in the wrong location, it blocks the command and gives you the corrected version.
 
 ### bat-kol `v0.8.0`
 
