@@ -160,3 +160,19 @@ Accumulated observations from retrospective runs. The retrospective agent append
 ### Knowledge Base Updates
 
 - No reference-doc mutation proposed this run. `claudeRoutesToHarness` is an engineering safeguard (like the 0.9.1 smoke test), not a knowledge-base generalization. The "interchangeable-file blind spot" is at occurrence 1 — watch for a 2nd before proposing an `agentic-subsystems.md` note on runtime-aware instruction routing.
+
+## Retrospective — 2026-06-09
+
+### Run: forge-harness (create) — HelpStripe (Laravel + Bun/Vite)
+
+### Observations
+
+- Stack detection (`php-laravel`) and verification commands (`composer install/lint/test`) were correct; both `lint` and `test` exist as real composer scripts, so `init.sh` is runtime-valid, not just structurally present.
+- Target already had Laravel Boost's `AGENTS.md` and `CLAUDE.md` — **byte-identical** (Boost writes both from the same managed block, wrapped in `<laravel-boost-guidelines>`). Scaffolder correctly skipped `AGENTS.md` (non-destructive create), wrote the 4 missing State/Verification/Lifecycle files.
+- Post-create score was 76 overall but Instructions 2/5: a Boost-managed instruction file is comprehensive on conventions yet has zero harness startup path (no startup workflow, no definition of done, no routing to `feature_list.json`, and `CLAUDE.md` didn't route to the harness). `min(scores)` heuristic correctly flagged Instructions as the bottleneck despite the high average.
+- Fix was purely additive: appended an `# Agent Harness` section **after** Boost's closing tag in both files (content outside the managed block survives Boost regeneration). Re-validation: all five subsystems 5/5, overall 100.
+
+### Patterns Detected
+
+- **Interchangeable-file blind spot — occurrence 2** (first was the prior run's `claudeRoutesToHarness` motivating case). Mechanism here: a generator-managed instruction file (Laravel Boost) is present-but-harness-blind, so `create`'s skip-if-exists leaves Instructions at 2/5 silently. The `claudeRoutesToHarness` check added last run caught it this run — safeguard validated. One more sighting (occurrence 3) should trigger a proposed `agentic-subsystems.md` note: "an Instructions file existing ≠ Instructions routing to the harness; framework-managed AGENTS.md/CLAUDE.md (Boost, etc.) are the canonical false-positive."
+- **Boost-managed-repo create pattern — occurrence 1.** When the target is a Laravel Boost (or similar framework-generated AGENTS.md) repo, expect a guaranteed Instructions-bottleneck after `create` and a follow-up additive append. If this recurs, consider teaching `create-harness.mjs` to detect a `<laravel-boost-guidelines>`-style managed block and emit the harness routing section appended after it automatically.
