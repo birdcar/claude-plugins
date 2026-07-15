@@ -176,3 +176,54 @@ Accumulated observations from retrospective runs. The retrospective agent append
 
 - **Interchangeable-file blind spot — occurrence 2** (first was the prior run's `claudeRoutesToHarness` motivating case). Mechanism here: a generator-managed instruction file (Laravel Boost) is present-but-harness-blind, so `create`'s skip-if-exists leaves Instructions at 2/5 silently. The `claudeRoutesToHarness` check added last run caught it this run — safeguard validated. One more sighting (occurrence 3) should trigger a proposed `agentic-subsystems.md` note: "an Instructions file existing ≠ Instructions routing to the harness; framework-managed AGENTS.md/CLAUDE.md (Boost, etc.) are the canonical false-positive."
 - **Boost-managed-repo create pattern — occurrence 1.** When the target is a Laravel Boost (or similar framework-generated AGENTS.md) repo, expect a guaranteed Instructions-bottleneck after `create` and a follow-up additive append. If this recurs, consider teaching `create-harness.mjs` to detect a `<laravel-boost-guidelines>`-style managed block and emit the harness routing section appended after it automatically.
+
+## Retrospective — wiz-kid run
+
+### Run: forge — wiz-kid (PRECISE-methodology GTM call-prep copilot, project skill)
+
+### Observations
+
+- Intake accuracy: classified skill-only / 0 agents — DIVERGED at runtime. A project skill cannot ship named agent definition files (plugin-only capability), but it CAN instruct dispatch of `general-purpose`/`Explore` subagents via the Agent tool at runtime. wiz-kid does exactly this: parallel background agents read lens sections from `references/research-lenses.md`. Intake conflated "cannot define agents" with "cannot use agents."
+- Parallel-agents-from-project-skill pattern: agent briefs living in a `references/` file (agents are told to Read their section) is a clean substitute for shipping agent definition files — keeps SKILL.md lean and gives end-users editable briefs.
+- Path variable: `${CLAUDE_SKILL_DIR}` used (not `${CLAUDE_PLUGIN_ROOT}`) — correct choice for a project skill distributed by copy; worth encoding as guidance.
+- Critical Rules heading: generated skill used "Hard rules" heading; validator's `critical-rules-in-first-100-lines` check greps for the literal string "Critical Rules." Any variation fails the check. Generated skills must use the exact heading "Critical Rules" to pass.
+- Validator path miscalculation for project-skill layout: `validate-skill.mjs` hard-codes `pluginRoot = path.resolve(skillDir, '..', '..')` and looks for `docs/` there. For a project skill at `repo/skills/<name>/`, that resolves to `repo/` — docs-presence checks report false missing even though `skills/<name>/docs/` exists. Structural score was depressed (~56) for a semantically valid skill.
+- Semantic validation (LLM pass): 99/100, zero CRITICAL/HIGH/MEDIUM anti-patterns — generator fidelity was high.
+- User correction: README.md requested post-generation (not in spec). Single addition, no rewrites.
+
+### Patterns Detected
+
+- **Intake under-scoping agent usage for project skills (occurrence 1):** intake sees "cannot ship agent files" and records 0 agents; misses runtime dispatch capability. If this recurs 2 more times, propose adding a note to the intake classification guidance distinguishing "agent definitions (plugin-only)" from "runtime agent dispatch (available to all skill types)."
+- **Validator structural green != semantically correct for project-skill layout (occurrence 1):** `docs/` path resolution bug depresses score for valid project skills. First logged occurrence — watch for recurrence. If it recurs once more, propose a validator fix (detect `docs/` adjacent to `SKILL.md` as a fallback path).
+- **Literal heading requirement not surfaced in generation guidance (occurrence 1):** "Critical Rules" must be the exact heading; generator produced a variant and failed the check. First logged occurrence — watch; if it recurs, propose adding the literal heading requirement to the generation reference doc or spec template.
+- **"Structural green != runtime/score-correct" meta-theme — 4th distinct sighting** (after `create-harness` ENOENT, CLAUDE.md routing, and now validator path miscalculation for project-skill layout). Each failure caught only by inspection or execution, not by the structural score. Pattern is now at 4 occurrences across different mechanisms.
+
+### Knowledge Base Updates
+
+- PROPOSED (4-occurrence threshold exceeded for "structural green != correct" theme): add a Golden Rule to `shared/agentic-subsystems.md` (Verification subsystem) — "A passing structural score is not sufficient evidence of runtime correctness. Any verification agent or validator script must be tested against the concrete execution path (script invocation, file routing, path resolution) before the score is trusted." Awaiting orchestrator approval before editing.
+
+## Retrospective — 2026-07-15
+
+### Run: forge — wtfdyd (DSE context-loading skill)
+
+### Observations
+
+- Intake conflated "skill performs the terminal action" with "skill feeds context to a separate tool that performs it" — classified multi-skill-plugin (research + diagnose); user corrected mid-flow that diagnosis is entirely out of scope. Final build: single skill, 2 agents.
+- `validate-skill.mjs` invocation cost 2 wrong attempts (plugin-root-as-`--target` → score 32 cascading false-fails; `docs/` moved under the skill dir → score 52) before the orchestrator read the script source and used the correct contract (`--target` = skill dir; `docs/` resolves at `skillDir/../..`). No doc states this contract anywhere short of source.
+- Generator wrote "## Rules (non-negotiable)" instead of the literal-regex-required "## Critical Rules" — despite `shared/templates/skill-template.md` already specifying "## Critical Rules" verbatim (line 39). This is a generator-fidelity miss, not a missing-guidance gap.
+- skill-validator agent wrote its own ad hoc Status/✓ summary table for trigger-tests.md instead of reusing `trigger-test-template.md`'s own Results table (which already has the validator-satisfying `| ... | Pass? |` format) — failed the `/\|.*pass/i` check until the orchestrator appended a literal table.
+- Step-4 marketplace scaffold assumes bun/npm/package.json; target repo (claude-plugins-internal) uses pnpm and needed only `plugin.json` + `pnpm run sync` — orchestrator correctly skipped scaffold-writer and recorded the deviation in the spec instead of forcing the bun scaffold.
+- skill-validator subagent completed and wrote its report to disk but never sent the final structured report via SendMessage (only an idle notification arrived) — required an orchestrator nudge to retrieve the actual content.
+
+### Patterns Detected
+
+- Intake scope-boundary conflation (performs-X vs. feeds-context-for-X-elsewhere): new mechanism, occurrence 1 — third distinct intake-classification-miss mechanism logged overall (roost's retrospective-agent off-by-one, wiz-kid's agent-dispatch conflation, this run's scope-boundary conflation). Different root causes each time; no merged fix proposed, but flag if a 4th distinct mechanism appears — may warrant a generic "confirm scope against the skill's actual output, not the domain it touches" callout in intake guidance.
+- `validate-skill.mjs` `--target`/`docs` path contract undocumented for operators: occurrence 2 (wiz-kid logged the same contract as a scoring bug for project-skill layouts; this run logged it as orchestrator confusion for a normal plugin layout requiring a source read). Two different manifestations of the same undocumented contract. One more occurrence should trigger documenting the contract explicitly in a `shared/` reference doc.
+- Agent paraphrases/restyles a `shared/templates/*.md` snippet that already contains the exact validator-enforced literal text, instead of reusing it verbatim — now at 3 occurrences: wiz-kid (skill-generator wrote "Hard rules"), this run (skill-generator repeated the miss: "Rules (non-negotiable)"), this run (skill-validator wrote an ad hoc Status/✓ table instead of the template's Pass? table). **THRESHOLD REACHED** — see Knowledge Base Updates.
+- Marketplace scaffold assumes bun/npm, breaks for pnpm-based target repos (occurrence 1) — watch.
+- skill-validator agent completing without sending its final report via SendMessage (occurrence 1) — watch; relates to `agentic-subsystems.md` agent-communication guidance but not yet at threshold.
+
+### Knowledge Base Updates
+
+- PROPOSED (3-occurrence threshold reached for "agent paraphrases template's validator-enforced literal text"): mark validator-enforced literal text explicitly in the templates so generating agents can't casually restyle it — (1) inline warning directly above "## Critical Rules" in `shared/templates/skill-template.md` noting the heading must be reproduced verbatim (validator regex: `#+\s*Critical Rules\b`); (2) inline warning above the Results table in `shared/trigger-test-template.md` noting a pipe-delimited "pass" token is validator-enforced (regex: `\|.*pass`, case-insensitive); (3) a short consolidated "Validator-Enforced Literals" list in `shared/quality-checklist.md` covering all of `validate-skill.mjs`'s literal-string/regex checks (Critical Rules heading, Problem Statement heading, Component Manifest heading, trigger-tests Pass column) so generator and validator agents can self-check against one list before finishing. Awaiting orchestrator approval before editing.
+- No other proposals this run — remaining findings are at occurrence 1 or 2.

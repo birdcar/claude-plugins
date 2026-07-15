@@ -48,6 +48,29 @@ For each, describe the prompt, the expected behavior, and the success criteria. 
 - **60–74**: Functional but needs work
 - **Below 60**: Not ready — significant issues
 
+## Validator-Enforced Literals
+
+`scripts/validate-skill.mjs` greps for these exact strings/patterns. Generator and
+validator agents must copy the template snippets that contain them VERBATIM — a
+paraphrase ("Rules", "Hard rules", a Status/✓ table) fails the deterministic score.
+This pattern (restyled template text failing a literal check) has recurred across
+three runs (wiz-kid ×2, wtfdyd ×2 — see `learnings.md` 2026-07-15).
+
+| File (resolved from `--target`) | Enforced literal / pattern |
+| --- | --- |
+| `SKILL.md` body, first 100 lines | heading matching `/#+\s*Critical Rules\b/i` (body ≤500 lines) |
+| `SKILL.md` frontmatter description | "Use when" trigger phrasing; a "Do NOT use" / "Do not use" clause; ≤1024 chars; third-person |
+| `docs/contract.md` | heading matching `/#+\s*Problem Statement\b/i` |
+| `docs/spec.md` | heading matching `/#+\s*Component Manifest\b/i` |
+| `docs/learnings.md` | contains `/improve\|retrospective/i` or a dated `## YYYY-MM-DD` entry |
+| `trigger-tests.md` | ≥10 numbered entries under a "should trigger" heading, ≥10 under "should not trigger"; a table row matching `/\|.*pass/i` (the template's "Pass?" column) |
+| `scripts/*.mjs`, `scripts/*.py` | shebang on line 1 |
+
+Path contract: `--target` is the SKILL directory (the one containing `SKILL.md`);
+`docs/` is resolved at the plugin root (`skillDir/../..`), and `trigger-tests.md`
+sits beside `SKILL.md`. Passing a plugin root as `--target` produces an all-false
+cascade (~32/100) even when every file exists.
+
 ## Where to find the underlying checks
 
 - **Structural check table (16 items)** → `agents/skill-validator.md` — the authoritative list. Don't duplicate here.

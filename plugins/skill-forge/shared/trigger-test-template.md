@@ -57,6 +57,10 @@ Target: 90%+ activation on should-trigger, <10% activation on should-not-trigger
 
 ## Results
 
+<!-- VALIDATOR-ENFORCED LITERAL: keep this table (or one like it) with a pipe-delimited
+     "Pass" token — validate-skill.mjs checks trigger-tests.md against /\|.*pass/i.
+     Do not restyle it into Status/checkmark columns; copy this table verbatim. -->
+
 | #   | Expected   | Actual | Pass? |
 | --- | ---------- | ------ | ----- |
 | 1   | trigger    |        |       |

@@ -38,6 +38,10 @@ description: >-
 
 ## Critical Rules
 
+{VALIDATOR-ENFORCED LITERAL: reproduce the heading above VERBATIM as "Critical Rules"
+(suffixes allowed, e.g. "Critical Rules (non-negotiable)"). validate-skill.mjs greps
+the first 100 body lines for /#+\s*Critical Rules\b/i — a paraphrase like "Rules" or
+"Hard rules" fails the structural score.}
 {Non-negotiable constraints that MUST be in the first 100 lines.}
 {Use bullet points, not prose.}
 {Explain why, not just what: "Use AskUserQuestion for all decisions because plain text questions can't capture structured responses."}
